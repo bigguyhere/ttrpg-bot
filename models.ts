@@ -49,8 +49,6 @@ class Character {
                 console.log(err)
                 throw err
             }
-            console.log(queryStr)
-            console.log(res)
         })
 
         return true
@@ -75,6 +73,21 @@ class Character {
             }
 
         })
+
+        return true
+    }
+
+    updateStat(db : mysql.Connection, tableBaseName : string, statName : string, statValue : string): boolean{
+        if(statName.toUpperCase() === 'NAME'){
+            return false
+        }
+
+        db.query(`UPDATE ${tableBaseName}_Characters SET ${statName} = '${statValue}' WHERE Name = '${this.name}';`, (err, res) => {
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })  
 
         return true
     }
@@ -142,7 +155,10 @@ class Character {
                     }
                 });
 
-                return resolve(new Character(res[0].Name, res[0].Pronouns, res[0].Owner, res[0].Health, res[0].DmgTaken, stats))
+                let retChr = new Character(res[0].Name, res[0].Pronouns, res[0].Owner, res[0].Health, res[0].DmgTaken, stats)
+                retChr.id = res[0].CHR_ID
+
+                return resolve(retChr)
             })
            })
         })
@@ -261,7 +277,10 @@ class DRCharacter extends Character {
                    return resolve(null)
                } 
                
-               return resolve(new DRCharacter(res[0].Name, res[0].Pronouns, res[0].Owner, res[0].Talent, res[0].Brains, res[0].Brawn, res[0].Nimble, res[0].Social, res[0].Intuition, []))
+               let retChr = new DRCharacter(res[0].Name, res[0].Pronouns, res[0].Owner, res[0].Talent, res[0].Brains, res[0].Brawn, res[0].Nimble, res[0].Social, res[0].Intuition, [])
+               retChr.id = res[0].CHR_ID
+               
+               return resolve(retChr)
            })
         })
     }
@@ -396,19 +415,51 @@ class ActiveGame{
         return true
     }
 
-    addToTable(db : mysql.Connection, dbName : string): boolean{
-
-        //Sets currently active game(s) to inactive
+    private inactivizeGames(db : mysql.Connection, dbName : string): void{
         db.query(`UPDATE ${dbName}.ActiveGames SET isActive = 0 WHERE isActive = 1 and SERV_ID = ${this.serverID};`, (err, res) => {
             if(err){
                 console.log(err)
                 throw err
             }
         })  
+    }
+
+    addToTable(db : mysql.Connection, dbName : string): boolean{
+
+        //Sets currently active game(s) to inactive
+        this.inactivizeGames(db, dbName)
 
         //Inserts new game to the game table, set as the active game
         db.query(`INSERT INTO ${dbName}.ActiveGames (SERV_ID, GameName, GameType, DM, isActive)
         VALUES (${this.serverID}, "${this.gameName}", "${this.gameType}", ${this.DM}, ${this.isActive});`, (err, res) =>  {
+            if(err){
+                console.log(err)
+                throw err
+            }
+            
+        })
+
+        return true
+    }
+
+    setDM(db : mysql.Connection, dbName : string): boolean{
+
+        db.query(`UPDATE ${dbName}.ActiveGames SET DM = '${this.DM}' WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
+            if(err){
+                console.log(err)
+                throw err
+            }
+            
+        })
+
+        return true
+    }
+
+    changeGame(db : mysql.Connection, dbName : string): boolean{
+
+        this.inactivizeGames(db, dbName)
+
+        db.query(`UPDATE ${dbName}.ActiveGames SET isActive = 1 WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err

@@ -25,8 +25,21 @@ const gamedb = mysql.createConnection({
     password: `powerpufffluff`
 })
 
+gamedb.connect( (err) => {
+    if(err){
+        console.log('Issue Connecting to MYSQL Database.')
+    }
+    return
+})
+
 client.on('ready', () => {
     console.log('Bot is ready.')
+
+    gamedb.query(`CREATE DATABASE IF NOT EXISTS ${gamesDBName}`, (err, res) => {
+        if(err){
+            console.log(err)
+        }
+    })
 
     const guildID = '1032153970254282753'
 
@@ -214,18 +227,18 @@ client.on('ready', () => {
         ]
     })
 
-   /* commands?.create({
-        name: 'set-DM',
+    commands?.create({
+        name: 'set-dm',
         description: 'Changes active game on server.',
         options: [
             {
-                name: 'newDM-name',
+                name: 'newdm-name',
                 description: 'User who will be the new DM of the currently active game.',
                 required: true,
                 type: 6
             }
         ]
-    })*/
+    })
 
 
     commands?.create({
@@ -273,17 +286,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return
     }
 
-    gamedb.connect( (err) => {
-        if(err){
-            console.log('Issue Connecting to MYSQL Database.')
-        }
-        return
-    })
-
     ActiveGame.createTable(gamedb, gamesDBName)
 
     const guildID = '1032153970254282753'
-
 
     let activeGame = await ActiveGame.getCurrentGame(gamedb, 'GamesDB', '1032153970254282753')
 
@@ -292,7 +297,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if(commandName === 'create-game'){
 
-        const gameName = options.getString('game_name')?.trim().replace(/ /g, '_')
+        const gameName = options.getString('game_name', true).trim().replace(/ /g, '_')
         const gameType = options.getString('game_type')
 
 
@@ -454,14 +459,58 @@ client.on(Events.InteractionCreate, async (interaction) => {
         const result = UtilityFunctions.parseRoll(query)
         
         interaction.reply({content: `${interaction.user} :game_die:\n**${identifier}** ${result?.[0]}\n**Total:** ${result?.[1]}`})
-    }
+    } else if(commandName === 'change-stat'){
+        const tableNameBase = `${gamesDBName}.${guildID}_${activeGame?.gameName}`;
 
-    /*gamedb.end( (err) => {
-        if(err){
-            console.log('Issue Connecting to MYSQL Database.')
+        const charName = options.getString('chr_name', true)
+        const stat_name = options.getString('stat-name', true)
+        const stat_value = options.getString('stat-value', true)
+
+        console.log(stat_name)
+        
+        let tbdChar = new Character(charName, null, '', -1, -1, []);
+        if(!tbdChar.updateStat(gamedb, tableNameBase, stat_name, stat_value)){
+            interaction.reply({
+                content: 'Cannot update the Name column of a character. Instead please remove the character and replace them with a new one.'
+            })
+            return 
         }
-        return
-    })*/
+
+        interaction.reply({
+            content: `The character stat **\"${stat_name}\"** for **\"${charName}\"** has successfully been changed to **\"${stat_value}\"**.`
+        })
+    } else if(commandName === 'set-dm'){
+        const newDM = options.getUser('newdm-name', true)
+
+        if(activeGame == null){
+            interaction.reply({
+                content: 'Issue retrieving active game.'
+            })
+            return
+        }
+        const guild = client.guilds.cache.get(guildID)
+        let oldDM = guild?.members.cache.get(activeGame.DM)
+
+        activeGame.DM = newDM.id
+        activeGame.setDM(gamedb, gamesDBName)
+
+        interaction.reply({
+            content: `Game successfully changed to from ${oldDM} to ${newDM}`
+        })
+    } else if(commandName === 'change-game'){
+
+        const newGameName = options.getString('newgame_name', true).trim().replace(/ /g, '_')
+
+        let newGame = new ActiveGame(guildID, newGameName, '', userId, true)
+
+        newGame.changeGame(gamedb, gamesDBName)
+
+        interaction.reply({
+            content: `Game successfully changed to from **\"${activeGame?.gameName}\"** to **\"${newGameName}\"**`
+        })
+    } else if(commandName === 'view-summary'){
+
+    }
 })
 
 client.login(process.env.TOKEN)
