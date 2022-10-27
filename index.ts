@@ -2,7 +2,7 @@ import DiscordJS, { Client, GatewayIntentBits, Events, EmbedBuilder } from 'disc
 import {UtilityFunctions}  from './utility'
 import dotenv from 'dotenv'
 import mysql from 'mysql'
-import { ActiveGame, Character, DRCharacter, DRSkill } from './models'
+import { ActiveGame, Character, DRCharacter, DRRelationship, DRSkill } from './models'
 
 var DrCharacter = require('./models.ts').Character
 
@@ -20,9 +20,10 @@ const client = new DiscordJS.Client({
 })
 
 const gamedb = mysql.createConnection({
-    host: `localhost`,
-    user: `root`,
-    password: `powerpufffluff`
+    host: 'localhost',
+    user: 'root',
+    password: 'powerpufffluff',
+    charset : 'utf8mb4'
 })
 
 gamedb.connect( (err) => {
@@ -116,6 +117,12 @@ client.on('ready', () => {
                 description: 'Brains stat value.',
                 required: true,
                 type: 10
+            },
+            {
+                name: 'emote',
+                description: 'Emote of character to be displayed. Must be an emote on this server.',
+                required: false,
+                type: 3
             },
             {
                 name: 'pronouns',
@@ -240,7 +247,6 @@ client.on('ready', () => {
         ]
     })
 
-
     commands?.create({
         name: 'add-chr',
         description: 'Adds a character to the game.',
@@ -249,6 +255,12 @@ client.on('ready', () => {
                 name: 'chr_name',
                 description: 'Name of character in game.',
                 required: true,
+                type: 3
+            },
+            {
+                name: 'emote',
+                description: 'Emote of character to be displayed. Must be an emote on this server.',
+                required: false,
                 type: 3
             },
             {
@@ -274,6 +286,55 @@ client.on('ready', () => {
                 description: 'Additional stats to be added. Format in "[Stat_Name_1]|[Value_1],[Stat_Name_2]|[Value_2],...".',
                 required: false,
                 type: 3
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'view-summary',
+        description: "View Summary of all characters in currently active game."
+    })
+
+    commands?.create({
+        name: 'view-relationship',
+        description: 'View relationship between two characters',
+        options: [
+            {
+                name: 'character-1',
+                description: 'Name of character 1.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'character-2',
+                description: 'Name of character 2.',
+                required: true,
+                type: 3
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'change-relationship',
+        description: 'View relationship between two characters',
+        options: [
+            {
+                name: 'character-1',
+                description: 'Name of character 1.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'character-2',
+                description: 'Name of character 2.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'value',
+                description: 'Value in which to change the relationship.',
+                required: true,
+                type: 10
             }
         ]
     })
@@ -323,6 +384,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
             DRSkill.createTables(gamedb, tableNameBase)
 
+            DRRelationship.createTable(gamedb, tableNameBase)
+
         } else if(gameType === 'pk'){
             interaction.reply({
                 content: 'PokeTTRPG has not been implemented yet.'
@@ -360,6 +423,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
 
         let newChar = new Character(charName, 
+                                    UtilityFunctions.getEmojiID(options.getString('emote')),
                                     options.getString('pronouns'),
                                     chr_id,
                                     options.getNumber('health'),
@@ -393,16 +457,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
 
         let newChar = new DRCharacter(charName, 
+                                    UtilityFunctions.getEmojiID(options.getString('emote')),
                                     options.getString('pronouns'),
                                     chr_id,
                                     options.getString('ult-talent'),
+                                    0,
+                                    0,
                                     options.getNumber('brains', true),
                                     options.getNumber('brawn', true),
                                     options.getNumber('nimble', true),
                                     options.getNumber('social', true),
                                     options.getNumber('intuition', true),
                                     []);
-        newChar.addToTable(gamedb, tableNameBase)    
+        newChar.addToTable(gamedb, tableNameBase)
+        newChar.generateRelations(gamedb, tableNameBase)  
 
         interaction.reply({
             content: 'The character ' + '**\"' + charName + '\"** has been successfully created.'
@@ -413,7 +481,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         const charName = options.getString('chr_name', true)
 
-        let tbdChar = new Character(charName, null, '', -1, -1, []);
+        let tbdChar = new Character(charName, null, null, '', -1, -1, []);
         tbdChar.removeFromTable(gamedb, tableNameBase)    
 
         interaction.reply({
@@ -425,7 +493,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         const charName = options.getString('chr_name', true)
         const user = interaction.user
-        const guild = client.guilds.cache.get(guildID)
+        const guild = interaction.guild
         let char : Character | null
 
         if(activeGame?.gameType === 'dr'){
@@ -441,7 +509,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             return
         }
 
-        interaction.channel?.send({embeds : [char.buildEmbed(user, guild)] });
+        interaction.channel?.send({embeds : [char.buildViewEmbed(user, guild)] });
 
         interaction.reply({
             content: 'The character ' + '**\"' + charName + '\"** has been successfully viewed.'
@@ -465,10 +533,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
         const charName = options.getString('chr_name', true)
         const stat_name = options.getString('stat-name', true)
         const stat_value = options.getString('stat-value', true)
-
-        console.log(stat_name)
         
-        let tbdChar = new Character(charName, null, '', -1, -1, []);
+        let tbdChar = new Character(charName, null, null, '', -1, -1, []);
         if(!tbdChar.updateStat(gamedb, tableNameBase, stat_name, stat_value)){
             interaction.reply({
                 content: 'Cannot update the Name column of a character. Instead please remove the character and replace them with a new one.'
@@ -495,7 +561,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         activeGame.setDM(gamedb, gamesDBName)
 
         interaction.reply({
-            content: `Game successfully changed to from ${oldDM} to ${newDM}`
+            content: `DM successfully changed to from ${oldDM} to ${newDM}`
         })
     } else if(commandName === 'change-game'){
 
@@ -509,7 +575,93 @@ client.on(Events.InteractionCreate, async (interaction) => {
             content: `Game successfully changed to from **\"${activeGame?.gameName}\"** to **\"${newGameName}\"**`
         })
     } else if(commandName === 'view-summary'){
+        const tableNameBase = `${gamesDBName}.${guildID}_${activeGame?.gameName}`;
 
+        if(activeGame == null){
+            interaction.reply({
+                content: 'Issue retrieving active game.'
+            })
+            return
+        }
+
+        let embed = Character.buildSummaryEmbed(interaction.user, interaction.guild, activeGame, await Character.getAllCharacters(gamedb, tableNameBase))
+
+        if(embed == null){
+            interaction.reply({
+                content: 'Error finding all characters and building embed.'
+            })
+            return
+        }
+
+        interaction.channel?.send({embeds : [embed] });
+
+        interaction.reply({
+            content: 'The characters in ' + '**\"' + activeGame.gameName + '\"** has been successfully viewed.'
+        })
+        
+    } else if(commandName === 'view-relationship'){
+        const tableNameBase = `${gamesDBName}.${guildID}_${activeGame?.gameName}`;
+        const charName1 = options.getString('character-1', true)
+        const charName2 = options.getString('character-2', true)
+
+        let char1 = await DRCharacter.getCharacter(gamedb, tableNameBase, charName1)
+        let char2 = await DRCharacter.getCharacter(gamedb, tableNameBase, charName2)
+
+        if(char1 == null){
+            interaction.reply({
+                content: 'Error obtaining character 1.'
+            })
+            return
+        } else if(char2 == null){
+            interaction.reply({
+                content: 'Error obtaining character 2.'
+            })
+            return
+        }
+
+        let relationship = await new DRRelationship(char1, char2).getRelationship(gamedb, tableNameBase)
+
+        if(relationship == null){
+            interaction.reply({
+                content: 'Error obtaining relationship.'
+            })
+            return
+        }
+
+        interaction.channel?.send({embeds : [relationship.buildViewEmbed(interaction.user, interaction.guild)] });
+
+        interaction.reply({
+            content: `${charName1} and ${charName2}'s relationship has been successfully viewed`
+        })
+    } else if(commandName === 'change-relationship'){
+        const tableNameBase = `${gamesDBName}.${guildID}_${activeGame?.gameName}`;
+
+        const charName1 = options.getString('character-1', true)
+        const charName2 = options.getString('character-2', true)
+        const value = options.getNumber('value', true)
+
+        let char1 = await DRCharacter.getCharacter(gamedb, tableNameBase, charName1)
+        let char2 = await DRCharacter.getCharacter(gamedb, tableNameBase, charName2)
+
+        if(char1 == null){
+            interaction.reply({
+                content: 'Error obtaining character 1.'
+            })
+            return
+        } else if(char2 == null){
+            interaction.reply({
+                content: 'Error obtaining character 2.'
+            })
+            return
+        }
+
+        let relationship = new DRRelationship(char1, char2)
+
+        relationship.changeRelationship(gamedb, tableNameBase, value)
+
+        interaction.reply({
+            content: `${charName1} and ${charName2}'s relationship has been successfully updated to ${value}`
+        })
     }
 })
 

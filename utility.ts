@@ -82,6 +82,18 @@ module UtilityFunctions{
         return [retStr, total]
     
     }
+
+    export function getEmojiID(emoji : string | null): string | null{
+        let matches = emoji?.match(/[0-9]+/)
+
+        if(matches != null){
+            return String(matches[0])
+        }
+
+        return emoji
+
+    }
+
 }
 
 export{UtilityFunctions}

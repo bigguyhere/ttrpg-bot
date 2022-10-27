@@ -1,4 +1,4 @@
-import DiscordJS, { Embed, EmbedBuilder } from 'discord.js';
+import DiscordJS, { Embed, EmbedBuilder, GuildEmoji, TextBasedChannelMixin } from 'discord.js';
 import mysql from 'mysql'
 
 interface Model{
@@ -9,7 +9,7 @@ class Character {
     public id: number;
     public prounouns: string;
     public health: number;
-    constructor(public name: string, prounouns: string | null, public owner: string, health: number | null, public dmgTaken : number, public otherStats : Array<[string, string]>) {
+    constructor(public name: string, public emote: string | null, prounouns: string | null, public owner: string, health: number | null, public dmgTaken : number, public otherStats : Array<[string, string]>) {
         this.id = -1;
         this.name = name;
         this.owner = owner;
@@ -33,7 +33,8 @@ class Character {
         let queryStr = `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Characters ( 
             CHR_ID INT NOT NULL AUTO_INCREMENT,
             Name varchar(255) NOT NULL,
-            Pronouns varchar(255),
+            Emote varchar(255),
+            Pronouns varchar(255) NOT NULL,
             Owner varchar(255),
             Health SMALLINT,
             DmgTaken SMALLINT,`
@@ -55,8 +56,8 @@ class Character {
     }
 
     addToTable(db : mysql.Connection, tableBaseName : string): boolean{
-        let queryStr = `INSERT INTO ${tableBaseName}_Characters (Name, Pronouns, Owner, Health, DmgTaken`
-        let valuesStr = `VALUES ("${this.name}", "${this.prounouns}", "${this.owner}", ${this.health}, ${this.dmgTaken}`
+        let queryStr = `INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, DmgTaken`
+        let valuesStr = `VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health}, ${this.dmgTaken}`
 
         this.otherStats.forEach(stat =>{
             queryStr += `, ${stat[0]}`
@@ -147,7 +148,7 @@ class Character {
                 } 
 
                 let stats = new Array<[string, string]>
-                let baseStats = ['CHR_ID', 'Name', 'Pronouns', 'Owner', 'Health', 'DmgTaken']
+                let baseStats = ['CHR_ID', 'Name', 'Emote', 'Pronouns', 'Owner', 'Health', 'DmgTaken']
 
                 ress.forEach((stat: { Field: string; Type: string; }) => {
                     if(!baseStats.includes(stat.Field)){
@@ -155,7 +156,7 @@ class Character {
                     }
                 });
 
-                let retChr = new Character(res[0].Name, res[0].Pronouns, res[0].Owner, res[0].Health, res[0].DmgTaken, stats)
+                let retChr = new Character(res[0].Name, res[0].Emote, res[0].Pronouns, res[0].Owner, res[0].Health, res[0].DmgTaken, stats)
                 retChr.id = res[0].CHR_ID
 
                 return resolve(retChr)
@@ -164,26 +165,116 @@ class Character {
         })
     }
 
-    buildEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | undefined): EmbedBuilder{
+    static getAllCharacters(db : mysql.Connection, tableBaseName : string): Promise<Array<Character> | null>{
+        return new Promise((resolve) =>{
+            db.query(`SELECT * FROM ${tableBaseName}_Characters;`, (err, res) =>  {
+                if(err){
+                    console.log(err)
+                    return resolve(null)
+               } 
 
+               let retArr = new Array<Character>
+
+               res.forEach((char: { CHR_ID: number; Name: string; Emote: string | null; Pronouns: string | null; Owner: string; Health: number | null; DmgTaken: number; }) =>{
+                let retChr = new Character(char.Name, char.Emote, char.Pronouns, char.Owner, char.Health, char.DmgTaken, [])
+                retChr.id = char.CHR_ID
+
+                console.log(retChr.name)
+
+                retArr.push(retChr)
+               })
+
+               return resolve(retArr)
+           })
+        })
+    }
+
+    buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{
+
+        let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
         const owner = guild?.members.cache.get(this.owner)
+
+        if(thumbnail == undefined){
+            thumbnail = String(owner?.displayAvatarURL())
+        }
+
         let embedBuilder = new EmbedBuilder()
         .setColor(0x7852A9)
         .setTitle(`**${this.name}**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
         .setDescription(`${this.prounouns}`)
-        .setThumbnail(String(owner?.displayAvatarURL()))
+        .setThumbnail(thumbnail)
         .addFields(
             { name: '**Owner:**', value: String(owner) },
 		    { name: '\u200B', value: '\u200B' },
+            { name: '**Health**', value: String(this.getCurrentHealth()) , inline: true},
         )
         .setTimestamp()
 
         this.otherStats.forEach(stat =>{
-            embedBuilder.addFields({ name: stat[0], value: stat[1]})
+            embedBuilder.addFields({ name: stat[0], value: stat[1], inline: true})
         })
 
         return embedBuilder
+    }
+
+    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame: ActiveGame, chars : Array<Character> | null): EmbedBuilder | null{
+
+        if(chars == null){
+            return null
+        }
+
+        let embedBuilder = new EmbedBuilder()
+        .setColor(0x7852A9)
+        .setTitle(`**${activeGame.gameName} Summary**`)
+        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+        .setThumbnail(String(guild?.iconURL()))
+        .setTimestamp()
+
+        let descStr = `**DM:** ${guild?.members.cache.get(activeGame.DM)}\n`
+        chars.forEach(char => {
+            let emoteStr
+            if(char.emote?.length != 2){
+                let emote = guild?.emojis.cache.get(String(char.emote))
+                emoteStr = emote == undefined ? '' : `<:${emote.name}:${emote.id}>`
+            }else{
+                emoteStr = char.emote
+            }
+
+            descStr += `\n${guild?.members.cache.get(char.owner)}: ${char.name} ${emoteStr}`
+        });
+
+        embedBuilder.setDescription(descStr)
+
+        return embedBuilder
+    }
+
+    async generateRelations(db : mysql.Connection, tableNameBase : string): Promise<boolean>{
+        let allChars = await Character.getAllCharacters(db, tableNameBase)
+        let queryStr = `INSERT INTO ${tableNameBase}_Relationships (CHR_ID1, CHR_ID2, VALUE)\nVALUES `
+
+        if(allChars == undefined){
+            return false
+        }
+
+        for(let charInd = 0; charInd < allChars.length - 1; ++charInd){
+            let char = allChars[charInd]
+
+            if(this.id != char.id){
+                queryStr += `(${this.id}, ${char.id}, 0),`
+            }
+        }
+
+        queryStr += `(${this.id}, ${allChars[allChars.length - 1].id}, 0);`
+
+        db.query(queryStr, (err, res) =>{
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return true
     }
 
     getCurrentHealth(): number{
@@ -196,16 +287,17 @@ class Character {
 }
 
 class DRCharacter extends Character {
-    public hope : number;
-    public despair : number;
     public spTotal : number;
     public spUsed : number;
 
     constructor(
          name: string,
+         emote : string | null,
          prounouns: string | null,
          owner : string,
          public talent : string | null,
+         public hope : number,
+         public despair : number,
          public brains : number,
          public brawn : number,
          public nimble : number, 
@@ -213,11 +305,11 @@ class DRCharacter extends Character {
          public intuition : number,
          public skills : Array<number> | null) {
             
-            super(name, prounouns, owner, brawn + 5, 0, []);
+            super(name, emote, prounouns, owner, brawn + 5, 0, []);
 
             this.talent = talent;
-            this.hope = 0;
-            this.despair = 0;
+            this.hope = hope
+            this.despair = despair;
             this.brains = brains;
             this.brawn = brawn;
             this.nimble = nimble;
@@ -259,25 +351,26 @@ class DRCharacter extends Character {
             talent = "null"
         }
 
-        db.query(`INSERT INTO ${tableBaseName}_Characters (Name, Pronouns, Owner, Health, DmgTaken, Talent, Hope, Despair, Brains, Brawn, Nimble, Social, Intuition, SPTotal, SPUsed)
-        VALUES ("${this.name}", "${this.prounouns}", "${this.owner}", ${this.health}, ${this.dmgTaken}, ${talent}, ${this.hope}, ${this.despair}, ${this.brains}, ${this.brawn}, ${this.nimble}, ${this.social}, ${this.intuition}, ${this.spTotal}, ${this.spUsed});`, (err, res) =>  {
+        db.query(`INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, DmgTaken, Talent, Hope, Despair, Brains, Brawn, Nimble, Social, Intuition, SPTotal, SPUsed)
+        VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health}, ${this.dmgTaken}, ${talent}, ${this.hope}, ${this.despair}, ${this.brains}, ${this.brawn}, ${this.nimble}, ${this.social}, ${this.intuition}, ${this.spTotal}, ${this.spUsed});`, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err
             }
+            this.id = res.insertId
         })
 
         return true
     }
 
-    static getCharacter(db : mysql.Connection, tableBaseName : string, char_name : string): Promise<Character | null>{
+    static getCharacter(db : mysql.Connection, tableBaseName : string, char_name : string): Promise<DRCharacter | null>{
         return new Promise((resolve) =>{
             db.query(`SELECT * FROM ${tableBaseName}_Characters WHERE Name = "${char_name}";`, (err, res) =>  {
                 if(err || res.length != 1){
                    return resolve(null)
                } 
                
-               let retChr = new DRCharacter(res[0].Name, res[0].Pronouns, res[0].Owner, res[0].Talent, res[0].Brains, res[0].Brawn, res[0].Nimble, res[0].Social, res[0].Intuition, [])
+               let retChr = new DRCharacter(res[0].Name, res[0].Emote, res[0].Pronouns, res[0].Owner, res[0].Talent, res[0].Hope, res[0].Despair, res[0].Brains, res[0].Brawn, res[0].Nimble, res[0].Social, res[0].Intuition, [])
                retChr.id = res[0].CHR_ID
                
                return resolve(retChr)
@@ -285,7 +378,7 @@ class DRCharacter extends Character {
         })
     }
 
-    buildEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | undefined): EmbedBuilder{
+    buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{
 
         const owner = guild?.members.cache.get(this.owner)
         return new EmbedBuilder()
@@ -297,6 +390,9 @@ class DRCharacter extends Character {
         .addFields(
             { name: '**Owner:**', value: String(owner) },
 		    { name: '\u200B', value: '\u200B' },
+            { name: 'Health', value: String(this.getCurrentHealth()) , inline: true},
+            {name: 'Hope', value: String(this.hope), inline: true},
+            { name: 'Despair', value: String(this.despair), inline: true},
             { name: 'Brains', value: String(this.brains), inline: true },
             { name: 'Brawn', value: String(this.brawn), inline: true },
             { name: 'Nimble', value: String(this.nimble), inline: true },
@@ -317,16 +413,14 @@ class DRCharacter extends Character {
 }
 
 class DRRelationship {
-    public value: number;
-    public char1 : DRCharacter;
-    public char2 : DRCharacter; 
+    public value: number
 
     constructor(
-        public signifier1: any,
-        public signifier2: any){
+        public char1 : DRCharacter,
+        public char2 : DRCharacter){
         
-        this.char1 = new DRCharacter('', '', '', '', 0, 0, 0, 0, 0, []);
-        this.char2 = new DRCharacter('', '', '', '', 0, 0, 0, 0, 0, []);
+        this.char1 = char1;
+        this.char2 = char2;
         this.value = 0;
     }
 
@@ -334,8 +428,64 @@ class DRRelationship {
         
     }*/
 
-    getRelationshipLvl() : string{
-        return ''
+    changeRelationship(db : mysql.Connection, tableNameBase : string, newValue : number): boolean{
+        db.query(`UPDATE ${tableNameBase}_Relationships SET Value = ${newValue} WHERE (CHR_ID1 = ${this.char1.id} and CHR_ID2 = ${this.char2.id}) OR (CHR_ID1 = ${this.char2.id} and CHR_ID2 = ${this.char1.id});`, (err, res) =>{
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return true
+    }
+
+    getRelationship(db : mysql.Connection, tableNameBase : string): Promise<DRRelationship | null>{
+        return new Promise((resolve) =>{
+            db.query(`SELECT * FROM ${tableNameBase}_Relationships WHERE (CHR_ID1 = ${this.char1.id} and CHR_ID2 = ${this.char2.id}) OR (CHR_ID1 = ${this.char2.id} and CHR_ID2 = ${this.char1.id});`, (err, res) =>  {
+                if(err || res.length != 1){
+                    console.log(err)
+                   return resolve(null)
+               } 
+               
+               this.value = res[0].VALUE
+               
+               return resolve(this)
+           })
+        })
+    }
+
+    static createTable(db : mysql.Connection, tableNameBase : string): boolean {
+        db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_Relationships ( 
+            CHR_ID1 INT NOT NULL,
+            CHR_ID2 INT NOT NULL,
+            Value INT NOT NULL,
+            PRIMARY KEY (CHR_ID1, CHR_ID2),
+            FOREIGN KEY (CHR_ID1) REFERENCES ${tableNameBase}_Characters(CHR_ID),
+            FOREIGN KEY (CHR_ID2) REFERENCES ${tableNameBase}_Characters(CHR_ID));`, (err, res) => {
+                if(err){
+                    console.log(err)
+                    throw err
+                }
+            })
+
+        return true
+    }
+
+    buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{
+
+        const owner1 = guild?.members.cache.get(this.char1.owner)
+        const owner2 = guild?.members.cache.get(this.char2.owner)
+        return new EmbedBuilder()
+        .setColor(0x7852A9)
+        .setTitle(`**${this.char1.name} X ${this.char2.name}**`)
+        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+        .setThumbnail(String(guild?.iconURL()))
+        .addFields(
+            {name: this.char1.name, value: `${this.char1.prounouns}\n${owner1}`, inline: true},
+            {name: '💖', value: `**${this.value}**`, inline: true},
+            {name: this.char2.name, value: `${this.char2.prounouns}\n${owner2}`, inline: true}
+        )
+        .setTimestamp()
     }
 }
 
