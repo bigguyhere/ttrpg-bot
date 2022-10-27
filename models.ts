@@ -179,8 +179,6 @@ class Character {
                 let retChr = new Character(char.Name, char.Emote, char.Pronouns, char.Owner, char.Health, char.DmgTaken, [])
                 retChr.id = char.CHR_ID
 
-                console.log(retChr.name)
-
                 retArr.push(retChr)
                })
 
@@ -199,7 +197,7 @@ class Character {
         }
 
         let embedBuilder = new EmbedBuilder()
-        .setColor(0x7852A9)
+        .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
         .setTitle(`**${this.name}**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
         .setDescription(`${this.prounouns}`)
@@ -381,17 +379,18 @@ class DRCharacter extends Character {
     buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{
 
         const owner = guild?.members.cache.get(this.owner)
+
         return new EmbedBuilder()
-        .setColor(0x7852A9)
+        .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
         .setTitle(`**${this.name}**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setDescription(`${this.talent}\n${this.prounouns}`)
+        .setDescription(`${this.talent == null ? '' : this.talent + '\n'}${this.prounouns}`)
         .setThumbnail(String(owner?.displayAvatarURL()))
         .addFields(
             { name: '**Owner:**', value: String(owner) },
 		    { name: '\u200B', value: '\u200B' },
             { name: 'Health', value: String(this.getCurrentHealth()) , inline: true},
-            {name: 'Hope', value: String(this.hope), inline: true},
+            { name: 'Hope', value: String(this.hope), inline: true},
             { name: 'Despair', value: String(this.despair), inline: true},
             { name: 'Brains', value: String(this.brains), inline: true },
             { name: 'Brawn', value: String(this.brawn), inline: true },

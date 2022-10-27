@@ -64,6 +64,12 @@ client.on('ready', () => {
                 type: 3
             },
             {
+                name: 'dm-name',
+                description: 'User who will be the DM of the created game. Defaults to user who set command.',
+                required: false,
+                type: 6
+            },
+            {
                 name: 'game_type',
                 description: 'Load Predefined TTRPG (Currently Implemented: DR).',
                 required: false,
@@ -360,9 +366,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         const gameName = options.getString('game_name', true).trim().replace(/ /g, '_')
         const gameType = options.getString('game_type')
+        let DM = options.getUser('dm-name')?.id
 
+        if(DM == null){
+            DM = userId
+        }
 
-        let newGame = new ActiveGame(guildID, gameName, gameType, userId, true)
+        let newGame = new ActiveGame(guildID, gameName, gameType, DM, true)
 
         newGame.addToTable(gamedb, gamesDBName)
 
