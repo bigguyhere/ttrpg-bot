@@ -2,7 +2,7 @@ import DiscordJS, { Client, GatewayIntentBits, Events, EmbedBuilder } from 'disc
 import {UtilityFunctions}  from './utility'
 import dotenv from 'dotenv'
 import mysql from 'mysql'
-import { ActiveGame, Character, DRCharacter, DRRelationship, DRSkill } from './models'
+import { ActiveGame, Character, DRCharacter, DRChrSkills, DRRelationship, DRSkill } from './models'
 
 var DrCharacter = require('./models.ts').Character
 
@@ -346,7 +346,7 @@ client.on('ready', () => {
     })
 
     commands?.create({
-        name: 'view-relationship',
+        name: 'dr-view-relationship',
         description: 'View relationship between two characters',
         options: [
             {
@@ -371,7 +371,7 @@ client.on('ready', () => {
     })
 
     commands?.create({
-        name: 'change-relationship',
+        name: 'dr-change-relationship',
         description: 'View relationship between two characters',
         options: [
             {
@@ -395,6 +395,112 @@ client.on('ready', () => {
             {
                 name: 'game-name',
                 description: 'Game for which relationship should be changed. Defaults to currently active game.',
+                required: false,
+                type: 3
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'dr-add-skill',
+        description: 'Adds skill to list of skills.',
+        options:[
+            {
+                name: 'skill-name',
+                description: 'Name of skill to be added.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'description',
+                description: 'Description of skill.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'sp-cost',
+                description: 'SP Cost of skill.',
+                required: true,
+                type: 10
+            },
+            {
+                name: 'prereqs',
+                description: 'Prerequisites for the skill. Defaults to none.',
+                required: false,
+                type: 3
+            },
+            {
+                name: 'game-name',
+                description: 'Game for which the skill will be added. Defaults to currently active game.',
+                required: false,
+                type: 3
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'dr-remove-skill',
+        description: 'Removes skill to list of skills.',
+        options:[
+            {
+                name: 'skill-name',
+                description: 'Name of skill to be removed.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'game-name',
+                description: 'Game for which the skill will be removed. Defaults to currently active game.',
+                required: false,
+                type: 3
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'dr-assign-skill',
+        description: 'Assigns skill to list of skills. Unassigns skill if already assigned.',
+        options:[
+            {
+                name: 'skill-name',
+                description: 'Name of skill to be assigned/unassigned.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'char-name',
+                description: 'Name of character to which the skill will be assigned/unassigned.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'game-name',
+                description: 'Game for which the skill will be assigned/unassigned. Defaults to currently active game.',
+                required: false,
+                type: 3
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'dr-view-skills',
+        description: 'View summary of all skills in current game or skills for a specific character.',
+        options:[
+            {
+                name: 'skill-name',
+                description: 'Name of skill to be viewed. Mutually exclusive with \'char-name\' option.',
+                required: false,
+                type: 3
+            },
+            {
+                name: 'char-name',
+                description: 'Name of character to be viewed. Mutually exclusive with \'skill-name\' option.',
+                required: false,
+                type: 3
+            },
+            {
+                name: 'game-name',
+                description: 'Game for which the skills will be viewed. Defaults to currently active game.',
                 required: false,
                 type: 3
             }
@@ -664,7 +770,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             content: 'The characters in ' + '**\"' + activeGame.gameName + '\"** has been successfully viewed.'
         })
         
-    } else if(commandName === 'view-relationship'){
+    } else if(commandName === 'dr-view-relationship'){
         const charName1 = options.getString('character-1', true)
         const charName2 = options.getString('character-2', true)
 
@@ -697,7 +803,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         interaction.reply({
             content: `${charName1} and ${charName2}'s relationship has been successfully viewed`
         })
-    } else if(commandName === 'change-relationship'){
+    } else if(commandName === 'dr-change-relationship'){
 
         const charName1 = options.getString('character-1', true)
         const charName2 = options.getString('character-2', true)
@@ -725,6 +831,167 @@ client.on(Events.InteractionCreate, async (interaction) => {
         interaction.reply({
             content: `${charName1} and ${charName2}'s relationship has been successfully updated to ${value}`
         })
+    } else if(commandName === 'dr-add-skill'){
+        if(activeGame?.gameType !== 'dr'){
+            interaction.reply({
+                content: 'Cannot add dr skill in non-dr game.'
+            })
+            return
+        }
+
+        const skillName = options.getString('skill-name', true)
+
+        let newSkill = new DRSkill(skillName,
+                                    options.getString('pre-reqs'),
+                                    options.getString('description', true),
+                                    options.getNumber('sp-cost', true))
+
+        newSkill.addToTable(gamedb, tableNameBase)
+
+        interaction.reply({
+            content: 'The skill ' + '**\"' + skillName + '\"** has been successfully created.'
+        })
+    } else if(commandName === 'dr-remove-skill'){ //can probably consolidate this and add skill into one command with how similar they are
+        if(activeGame?.gameType !== 'dr'){
+            interaction.reply({
+                content: 'Cannot remove dr skill in non-dr game.'
+            })
+            return
+        }
+
+        const skillName = options.getString('skill-name', true)
+
+        let tbdSkill = new DRSkill(skillName, '', '', -1)
+
+        tbdSkill.removeFromTable(gamedb, tableNameBase)    
+
+        interaction.reply({
+            content: 'The skill ' + '**\"' + skillName + '\"** has been successfully removed.'
+        })
+    } else if(commandName === 'dr-assign-skill'){
+        if(activeGame?.gameType !== 'dr'){
+            interaction.reply({
+                content: 'Cannot assign dr skill in non-dr game.'
+            })
+            return
+        }
+
+        const chrName = options.getString('char-name', true)
+        const skillName = options.getString('skill-name', true)
+
+        const chr = await DRCharacter.getCharacter(gamedb, tableNameBase, chrName)
+        const skill = await DRSkill.getSkill(gamedb, tableNameBase, skillName)
+
+        if(chr == null){
+            interaction.reply({
+                content: `Error finding character ${chrName}.`
+            })
+            return
+        } 
+        
+        if (skill == null){
+            interaction.reply({
+                content: `Error finding skill ${skillName}.`
+            })
+            return
+        }
+
+        let newChrSkill = new DRChrSkills(chr.id, skill.id)
+
+        let exists = await newChrSkill.ifExists(gamedb, tableNameBase)
+
+        if(exists == null){
+            interaction.reply({
+                content: `Error checking if ChrSkill exists.`
+            })
+        }else if(exists){
+            newChrSkill.removeFromTable(gamedb, tableNameBase)
+
+            interaction.reply({
+                content: `Removed skill **\"${skillName}\"** to character **\"${chrName}\"** successfully.`
+            })
+        }else{
+            newChrSkill.addToTable(gamedb, tableNameBase)
+
+            interaction.reply({
+                content: `Added skill **\"${skillName}\"** to character **\"${chrName}\"** successfully.`
+            })
+        }
+    } else if(commandName === 'dr-view-skills'){
+        if(activeGame?.gameType !== 'dr'){
+            interaction.reply({
+                content: 'Cannot assign dr skill in non-dr game.'
+            })
+            return
+        }
+
+        const chrName = options.getString('char-name')
+        const skillName = options.getString('skill-name')
+
+        if(chrName != null && skillName != null){
+            interaction.reply({
+                content: 'Must choose either Skill summary or Character Skill summary, not both.'
+            })
+            return
+        } else if(chrName != null){
+            const chr = await DRCharacter.getCharacter(gamedb, tableNameBase, chrName)
+
+            if(chr == null){
+                interaction.reply({
+                    content: `Error finding character ${chrName}.`
+                })
+                return
+            } 
+
+            const chrSkills = await chr.getAllChrSkills(gamedb, tableNameBase)
+
+            const embedBuilder = chr.buildSkillEmbed(interaction.user, interaction.guild, chrSkills)
+
+            if(embedBuilder == null){
+                interaction.reply({
+                    content: `Error building embed.`
+                })
+                return
+            }
+            
+            interaction.channel?.send({embeds : [embedBuilder] });
+
+            interaction.reply({
+                content: `**\"${chrName}\"'s** skills has been successfully viewed`
+            })
+        } else if(skillName != null){
+            const skill = await DRSkill.getSkill(gamedb, tableNameBase, skillName)
+
+            if(skill == null){
+                interaction.reply({
+                    content: `Error finding skill ${skillName}.`
+                })
+                return
+            } 
+            
+            interaction.channel?.send({embeds : [skill.buildViewEmbed(interaction.user, interaction.guild, activeGame)] });
+
+            interaction.reply({
+                content: `Skill **\"${skillName}\"** has been successfully viewed`
+            })
+        } else{
+            const allSkills = await DRSkill.getAllSkills(gamedb, tableNameBase)
+
+            const embedBuilder = DRSkill.buildSummaryEmbed(interaction.user, interaction.guild, activeGame, allSkills)
+
+            if(embedBuilder == null){
+                interaction.reply({
+                    content: `Error building embed.`
+                })
+                return
+            }
+            
+            interaction.channel?.send({embeds : [embedBuilder] });
+
+            interaction.reply({
+                content: `All skills have been successfully viewed`
+            })
+        }
     }
 })
 
