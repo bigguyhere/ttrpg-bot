@@ -247,34 +247,6 @@ class Character {
         return embedBuilder
     }
 
-    async generateRelations(db : mysql.Connection, tableNameBase : string): Promise<boolean>{
-        let allChars = await Character.getAllCharacters(db, tableNameBase)
-        let queryStr = `INSERT INTO ${tableNameBase}_Relationships (CHR_ID1, CHR_ID2, VALUE)\nVALUES `
-
-        if(allChars == undefined){
-            return false
-        }
-
-        for(let charInd = 0; charInd < allChars.length - 1; ++charInd){
-            let char = allChars[charInd]
-
-            if(this.id != char.id){
-                queryStr += `(${this.id}, ${char.id}, 0),`
-            }
-        }
-
-        queryStr += `(${this.id}, ${allChars[allChars.length - 1].id}, 0);`
-
-        db.query(queryStr, (err, res) =>{
-            if(err){
-                console.log(err)
-                throw err
-            }
-        })
-
-        return true
-    }
-
     getCurrentHealth(): number{
         return this.health - this.dmgTaken;
     }
@@ -368,7 +340,19 @@ class DRCharacter extends Character {
                    return resolve(null)
                } 
                
-               let retChr = new DRCharacter(res[0].Name, res[0].Emote, res[0].Pronouns, res[0].Owner, res[0].Talent, res[0].Hope, res[0].Despair, res[0].Brains, res[0].Brawn, res[0].Nimble, res[0].Social, res[0].Intuition, [])
+               let retChr = new DRCharacter(res[0].Name, 
+                                            res[0].Emote, 
+                                            res[0].Pronouns,
+                                            res[0].Owner,
+                                            res[0].Talent,
+                                            res[0].Hope,
+                                            res[0].Despair,
+                                            res[0].Brains,
+                                            res[0].Brawn,
+                                            res[0].Nimble,
+                                            res[0].Social,
+                                            res[0].Intuition,
+                                            [])
                retChr.id = res[0].CHR_ID
                
                return resolve(retChr)
@@ -400,6 +384,50 @@ class DRCharacter extends Character {
             { name: 'SP Used', value: String(this.spUsed), inline: true }
         )
         .setTimestamp()
+    }
+
+    async generateRelations(db : mysql.Connection, tableNameBase : string): Promise<boolean>{
+        let allChars = await Character.getAllCharacters(db, tableNameBase)
+        let queryStr = `INSERT INTO ${tableNameBase}_Relationships (CHR_ID1, CHR_ID2, VALUE)\nVALUES `
+
+        if(allChars == undefined){
+            return false
+        }
+
+        if(allChars.length < 2){
+            return true
+        }
+
+        for(let charInd = 0; charInd < allChars.length - 2; ++charInd){
+            let char = allChars[charInd]
+
+            if(this.id != char.id){
+                queryStr += `(${this.id}, ${char.id}, 0),`
+            }
+        }
+
+        queryStr += `(${this.id}, ${allChars[allChars.length - 2].id}, 0);`
+
+        db.query(queryStr, (err, res) =>{
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return true
+    }
+
+    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean{
+
+        db.query(`DELETE FROM ${tableBaseName}_Relationships WHERE (CHR_ID1 = ${this.id} OR CHR_ID2 = ${this.id});`, (err, res) =>{
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return super.removeFromTable(db, tableBaseName)
     }
 
     addSkill(skilSignifier : any) : boolean{
@@ -446,7 +474,7 @@ class DRRelationship {
                    return resolve(null)
                } 
                
-               this.value = res[0].VALUE
+               this.value = res[0].Value
                
                return resolve(this)
            })
@@ -619,9 +647,17 @@ class ActiveGame{
         return true
     }
 
-    static getCurrentGame(db : mysql.Connection, dbName : string, serverID : string | null) : Promise<ActiveGame | null>{
+    static getCurrentGame(db : mysql.Connection, dbName : string, serverID : string | null, gameName : string | undefined) : Promise<ActiveGame | null>{
         return new Promise((resolve) =>{
-            db.query(`SELECT * FROM ${dbName}.ActiveGames WHERE isActive = 1 AND SERV_ID = '${serverID}';`, (err, res) =>  {
+            let queryParam
+
+            if(gameName == undefined){
+                queryParam = 'isActive = 1'
+            }else{
+                queryParam = `GameName = '${gameName}'`
+            }
+
+            db.query(`SELECT * FROM ${dbName}.ActiveGames WHERE ${queryParam} AND SERV_ID = '${serverID}';`, (err, res) =>  {
                 if(err || res.length != 1){
                    return resolve(null)
                } 
