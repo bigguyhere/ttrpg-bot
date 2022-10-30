@@ -387,17 +387,23 @@ class DRCharacter extends Character {
     }
 
     buildSkillEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, skills : Array<DRSkill> | null): EmbedBuilder | null{
+        
         if(skills == null){
             return null
         }
 
+        let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
         const owner = guild?.members.cache.get(this.owner)
+
+        if(thumbnail == undefined){
+            thumbnail = String(owner?.displayAvatarURL())
+        }
 
         let embedBuilder = new EmbedBuilder()
         .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
         .setTitle(`**${this.name}'s Skills**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setThumbnail(String(guild?.iconURL()))
+        .setThumbnail(thumbnail)
         .setTimestamp()
 
         let spUsed = 0
@@ -718,8 +724,8 @@ class DRChrSkills{
         db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_ChrSkills (
             CHR_ID INT NOT NULL,
             SKL_ID INT NOT NULL,
-            FOREIGN KEY (CHR_ID) REFERENCES ${tableNameBase}_Characters(CHR_ID),
-            FOREIGN KEY (SKL_ID) REFERENCES ${tableNameBase}_Skills(SKL_ID));`, (err, res) => {
+            FOREIGN KEY (CHR_ID) REFERENCES ${tableNameBase}_Characters(CHR_ID) ON DELETE CASCADE,
+            FOREIGN KEY (SKL_ID) REFERENCES ${tableNameBase}_Skills(SKL_ID) ON DELETE CASCADE);`, (err, res) => {
                 if(err){
                     console.log(err)
                     throw err

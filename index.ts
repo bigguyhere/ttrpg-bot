@@ -842,7 +842,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         const skillName = options.getString('skill-name', true)
 
         let newSkill = new DRSkill(skillName,
-                                    options.getString('pre-reqs'),
+                                    options.getString('prereqs'),
                                     options.getString('description', true),
                                     options.getNumber('sp-cost', true))
 
@@ -957,7 +957,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             interaction.channel?.send({embeds : [embedBuilder] });
 
             interaction.reply({
-                content: `**\"${chrName}\"'s** skills has been successfully viewed`
+                content: `**${chrName}'s** skills has been successfully viewed.`
             })
         } else if(skillName != null){
             const skill = await DRSkill.getSkill(gamedb, tableNameBase, skillName)
