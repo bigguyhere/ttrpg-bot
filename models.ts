@@ -272,8 +272,7 @@ class DRCharacter extends Character {
          public brawn : number,
          public nimble : number, 
          public social : number, 
-         public intuition : number,
-         public skills : Array<number> | null) {
+         public intuition : number) {
             
             super(name, emote, prounouns, owner, brawn + 5, 0, []);
 
@@ -285,7 +284,6 @@ class DRCharacter extends Character {
             this.nimble = nimble;
             this.social = social;
             this.intuition = intuition;
-            this.skills = skills;
             this.spTotal = 15;
             this.spUsed = 0;
     }
@@ -293,15 +291,15 @@ class DRCharacter extends Character {
     static createTable(db : mysql.Connection, tableNameBase : string): boolean {
         db.query(`ALTER TABLE ${tableNameBase}_Characters 
             ADD Talent varchar(255),
-            ADD Hope TINYINT,
-            ADD Despair TINYINT,
-            ADD Brains TINYINT,
-            ADD Brawn TINYINT,
-            ADD Nimble TINYINT,
-            ADD Social TINYINT,
-            ADD Intuition TINYINT,
-            ADD SPTotal TINYINT,
-            ADD SPUsed TINYINT`, (err, res) => {
+            ADD Hope TINYINT NOT NULL,
+            ADD Despair TINYINT NOT NULL,
+            ADD Brains TINYINT NOT NULL,
+            ADD Brawn TINYINT NOT NULL,
+            ADD Nimble TINYINT NOT NULL,
+            ADD Social TINYINT NOT NULL,
+            ADD Intuition TINYINT NOT NULL,
+            ADD SPTotal TINYINT NOT NULL,
+            ADD SPUsed TINYINT NOT NULL`, (err, res) => {
                 if(err){
                     console.log(err)
                     throw err
@@ -351,8 +349,8 @@ class DRCharacter extends Character {
                                             res[0].Brawn,
                                             res[0].Nimble,
                                             res[0].Social,
-                                            res[0].Intuition,
-                                            [])
+                                            res[0].Intuition
+                                            )
                retChr.id = res[0].CHR_ID
                
                return resolve(retChr)
@@ -420,6 +418,38 @@ class DRCharacter extends Character {
         return embedBuilder
     }
 
+    buildTBEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, tbs : Array<DRTruthBullet> | null): EmbedBuilder | null{
+        
+        if(tbs == null){
+            return null
+        }
+
+        let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
+        const owner = guild?.members.cache.get(this.owner)
+
+        if(thumbnail == undefined){
+            thumbnail = String(owner?.displayAvatarURL())
+        }
+
+        let embedBuilder = new EmbedBuilder()
+        .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+        .setTitle(`**${this.name}'s Truth Bullets**`)
+        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+        .setThumbnail(thumbnail)
+        .setTimestamp()
+
+        let ctr = 0
+        let descStr = `**Truth Bullets:**\n`
+        tbs.forEach(tb => {
+            descStr += `\n**Trial ${tb.trial == -1 ? '?' : tb.trial}:** *${tb.name}*`
+        });
+        descStr += `\n\n**Total Truth Bullets:** ${tbs.length}`
+
+        embedBuilder.setDescription(descStr)
+
+        return embedBuilder
+    }
+
     async generateRelations(db : mysql.Connection, tableNameBase : string): Promise<boolean>{
         let allChars = await Character.getAllCharacters(db, tableNameBase)
         let queryStr = `INSERT INTO ${tableNameBase}_Relationships (CHR_ID1, CHR_ID2, VALUE)\nVALUES `
@@ -475,6 +505,33 @@ class DRCharacter extends Character {
         })
     }
 
+    getAllChrTBs(db : mysql.Connection, tableBaseName : string, trial : number | null): Promise<Array<DRTruthBullet> | null>{
+        return new Promise((resolve) =>{
+            let trialStr = ''
+            if(trial != null){
+                trialStr = `AND TBs.Trial = "${trial}"`
+            }
+            db.query(`SELECT * FROM ${tableBaseName}_TruthBullets as TBs JOIN ${tableBaseName}_ChrTBs as ChrTBs 
+                            WHERE ChrTBs.CHR_ID = ${this.id} AND ChrTBs.TB_ID = TBs.TB_ID ${trialStr};`, (err, res) =>  {
+                if(err){
+                    console.log(err)
+                    return resolve(null)
+                } 
+
+               let retArr = new Array<DRTruthBullet>
+
+               res.forEach((tb: { Name: string; Description: string; Trial: number | null; isUsed: boolean; TB_ID: number; }) =>{
+                let retTB = new DRTruthBullet(tb.Name, tb.Description, tb.Trial, tb.isUsed)
+                retTB.id = tb.TB_ID
+
+                retArr.push(retTB)
+               })
+
+               return resolve(retArr)
+           })
+        })
+    }
+
     removeFromTable(db : mysql.Connection, tableBaseName : string): boolean{
 
         db.query(`DELETE FROM ${tableBaseName}_Relationships WHERE (CHR_ID1 = ${this.id} OR CHR_ID2 = ${this.id});`, (err, res) =>{
@@ -485,14 +542,6 @@ class DRCharacter extends Character {
         })
 
         return super.removeFromTable(db, tableBaseName)
-    }
-
-    addSkill(skilSignifier : any) : boolean{
-        return true;
-    }
-
-    addTB(tbSignifier : any) : boolean{
-        return true;
     }
 }
 
@@ -507,10 +556,6 @@ class DRRelationship {
         this.char2 = char2;
         this.value = 0;
     }
-
-    /*findChr() : Character{
-        
-    }*/
 
     changeRelationship(db : mysql.Connection, tableNameBase : string, newValue : number): boolean{
         db.query(`UPDATE ${tableNameBase}_Relationships SET Value = ${newValue} WHERE (CHR_ID1 = ${this.char1.id} and CHR_ID2 = ${this.char2.id}) OR (CHR_ID1 = ${this.char2.id} and CHR_ID2 = ${this.char1.id});`, (err, res) =>{
@@ -776,11 +821,246 @@ class DRChrSkills{
 
 class DRTruthBullet{
     public id: number;
-    constructor(public name : string, public desc : string, public assignedChrs : Array<number>){
+    public trial : number;
+    constructor(public name : string, public desc : string, trial : number | null, public isUsed : boolean){
         this.id = -1;
         this.name = name;
         this.desc = desc;
-        this.assignedChrs = assignedChrs;
+        this.isUsed = isUsed;
+
+        if(trial == null){
+            this.trial = -1;
+        }else{
+            this.trial = trial;
+        }
+    }
+
+    static createTables(db : mysql.Connection, tableNameBase : string): boolean {
+        db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_TruthBullets ( 
+            TB_ID INT NOT NULL AUTO_INCREMENT,
+            Name varchar(255) NOT NULL,
+            Description varchar(1000),
+            Trial INT,
+            isUsed BOOLEAN,
+            PRIMARY KEY (TB_ID));`, (err, res) => {
+                if(err){
+                    console.log(err)
+                    throw err
+                }
+            })
+
+        DRChrTBs.createTables(db, tableNameBase)
+
+        return true
+    }
+
+    static getTB(db : mysql.Connection, tableBaseName : string, tb_name : string, trial : number | null): Promise<DRTruthBullet | null>{
+        return new Promise((resolve) =>{
+            let trialStr = ''
+            if(trial != null){
+                trialStr = `AND Trial = "${trial}"`
+            }
+
+            db.query(`SELECT * FROM ${tableBaseName}_TruthBullets WHERE Name = "${tb_name}" ${trialStr};`, (err, res) =>  {
+                if(err){
+                   return resolve(null)
+               } 
+               
+               let retTB = new DRTruthBullet(res[0].Name,
+                                            res[0].Description,
+                                            res[0].Trial,
+                                            res[0].isUsed)
+               retTB.id = res[0].TB_ID
+               
+               return resolve(retTB)
+           })
+        })
+    }
+
+    static getAllTBs(db : mysql.Connection, tableBaseName : string, trial : number | null, ): Promise<Array<DRTruthBullet> | null>{
+        return new Promise((resolve) =>{
+            let trialStr = ''
+            if(trial != null){
+                trialStr = `WHERE Trial = "${trial}"`
+            }
+
+            db.query(`SELECT * FROM ${tableBaseName}_TruthBullets ${trialStr};`, (err, res) =>  {
+                if(err){
+                    console.log(err)
+                    return resolve(null)
+               } 
+
+               let retArr = new Array<DRTruthBullet>
+
+               res.forEach((tb: { Name: string; Description: string; Trial: number | null; isUsed: boolean; TB_ID: number; }) =>{
+                let retTB = new DRTruthBullet(tb.Name, tb.Description, tb.Trial, tb.isUsed)
+                retTB.id = tb.TB_ID
+
+                retArr.push(retTB)
+               })
+
+               return resolve(retArr)
+           })
+        })
+    }
+
+    buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame): EmbedBuilder{
+        
+        return new EmbedBuilder()
+        .setColor(0x7852A9)
+        .setTitle(`**${this.name} (ID: ${this.id}) Summary**`)
+        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+        .setDescription(`**DM:** ${guild?.members.cache.get(activeGame.DM)}\n
+                        **Trial:** ${this.trial == -1 ? '?': this.trial}\n
+                        **Description:** ${this.desc}`)
+        .setThumbnail(String(guild?.iconURL()))
+        .setTimestamp()
+    }
+
+    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame, tbs : Array<DRTruthBullet> | null): EmbedBuilder | null{
+        if(tbs == null){
+            return null
+        }
+
+        let isDM = user.id === activeGame.DM
+
+        let embedBuilder = new EmbedBuilder()
+        .setColor(0x7852A9)
+        .setTitle(`**${activeGame.gameName} Truth Bullet Summary ${isDM ? '(DM View)': '(Used View)'}**`)
+        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+        .setThumbnail(String(guild?.iconURL()))
+        .setTimestamp()
+
+        let ctr = 0
+        let descStr = `**DM:** ${guild?.members.cache.get(activeGame.DM)}\n\n**Truth Bullets:**\n`
+        if(isDM){
+            tbs.forEach(tb => {
+                    descStr += `**Trial ${tb.trial == -1 ? '?': tb.trial}:** *${tb.name} (Used: ${tb.isUsed ? 'Yes' : 'No'})* \n`
+            });
+            ctr = tbs.length
+        }else{
+            tbs.forEach(tb => {
+                if(tb.isUsed){
+                    ctr++
+                    descStr += `**Trial ${tb.trial == -1 ? '?': tb.trial}:** *${tb.name}*\n`
+                }
+            });
+        }
+        descStr += `\n\n**Total Truth Bullets:** ${ctr}`
+
+        embedBuilder.setDescription(descStr)
+
+        return embedBuilder
+    }
+
+    addToTable(db : mysql.Connection, tableBaseName : string): boolean {
+
+        db.query(`INSERT INTO ${tableBaseName}_TruthBullets (Name, Description, Trial, isUsed)
+        VALUES ("${this.name}", "${this.desc}", "${this.trial}", ${this.isUsed});`, (err, res) =>  {
+            if(err){
+                console.log(err)
+                throw err
+            }
+
+            this.id = res.insertId
+        })
+
+        return true
+    }
+
+    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean{
+
+        let trialStr = ''
+        if(this.trial != null){
+            trialStr = `AND Trial = "${this.trial}"`
+        }
+
+        db.query(`DELETE FROM ${tableBaseName}_TruthBullets WHERE Name = '${this.name}' ${trialStr};`, (err, res) =>{
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return true
+    }
+
+    useTB(db : mysql.Connection, tableBaseName : string): boolean{
+        let trialStr = ''
+        if(this.trial != null){
+            trialStr = `WHERE Trial = "${this.trial}"`
+        }
+        
+        db.query(`UPDATE ${tableBaseName}_TruthBullets SET isUsed = NOT isUsed WHERE Name = "${this.name}" ${trialStr};`, (err, res) => {
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return true
+    }
+}
+
+class DRChrTBs{
+    
+    constructor(public chrId : number, public tbId : number){
+        this.chrId = chrId;
+        this.tbId = tbId;
+    }
+
+    static createTables(db : mysql.Connection, tableNameBase : string): boolean {
+        
+        db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_ChrTBs (
+            CHR_ID INT NOT NULL,
+            TB_ID INT NOT NULL,
+            FOREIGN KEY (CHR_ID) REFERENCES ${tableNameBase}_Characters(CHR_ID) ON DELETE CASCADE,
+            FOREIGN KEY (TB_ID) REFERENCES ${tableNameBase}_TruthBullets(TB_ID) ON DELETE CASCADE);`, (err, res) => {
+                if(err){
+                    console.log(err)
+                    throw err
+                }
+            })
+
+        return true
+    }
+
+    addToTable(db : mysql.Connection, tableBaseName : string): boolean {
+
+        db.query(`INSERT INTO ${tableBaseName}_ChrTBs (CHR_ID, TB_ID)
+        VALUES ("${this.chrId}", "${this.tbId}");`, (err, res) =>  {
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return true
+    }
+
+    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean {
+
+        db.query(`DELETE FROM ${tableBaseName}_ChrTBs WHERE CHR_ID = '${this.chrId}' AND TB_ID = '${this.tbId}';`, (err, res) =>{
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return true
+    }
+
+    //TODO: See if you can make a SQL query in future that can delete if exists and add if doesn't
+    ifExists(db : mysql.Connection, tableBaseName : string): Promise<boolean | null>{
+        return new Promise((resolve) =>{
+            db.query(`SELECT * FROM ${tableBaseName}_ChrTBs WHERE CHR_ID = '${this.chrId}' AND TB_ID = '${this.tbId}';`, (err, res) =>  {
+              if(err || res.length > 1){
+                   return resolve(null)
+               } 
+               
+               return resolve(res.length == 1)
+           })
+        })
     }
 }
 
@@ -890,4 +1170,4 @@ class ActiveGame{
 
 }
 
-export { Character, DRCharacter, DRRelationship, DRSkill, DRChrSkills, DRTruthBullet, ActiveGame}
+export { Character, DRCharacter, DRRelationship, DRSkill, DRChrSkills, DRTruthBullet, DRChrTBs, ActiveGame}

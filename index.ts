@@ -2,7 +2,7 @@ import DiscordJS, { Client, GatewayIntentBits, Events, EmbedBuilder } from 'disc
 import {UtilityFunctions}  from './utility'
 import dotenv from 'dotenv'
 import mysql from 'mysql'
-import { ActiveGame, Character, DRCharacter, DRChrSkills, DRRelationship, DRSkill } from './models'
+import { ActiveGame, Character, DRCharacter, DRChrSkills, DRChrTBs, DRRelationship, DRSkill, DRTruthBullet } from './models'
 
 var DrCharacter = require('./models.ts').Character
 
@@ -459,7 +459,7 @@ client.on('ready', () => {
 
     commands?.create({
         name: 'dr-assign-skill',
-        description: 'Assigns skill to list of skills. Unassigns skill if already assigned.',
+        description: 'Assigns skill to list to a character. Unassigns skill if already assigned.',
         options:[
             {
                 name: 'skill-name',
@@ -501,6 +501,149 @@ client.on('ready', () => {
             {
                 name: 'game-name',
                 description: 'Game for which the skills will be viewed. Defaults to currently active game.',
+                required: false,
+                type: 3
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'dr-add-tb',
+        description: 'Adds tb to list of truth bullets.',
+        options:[
+            {
+                name: 'tb-name',
+                description: 'Name of tb to be added.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'description',
+                description: 'Description of tb.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'trial',
+                description: 'Trial the tb is to be used for. Defaults to -1.',
+                required: false,
+                type: 10
+            },
+            {
+                name: 'game-name',
+                description: 'Game for which the truth bullet will be added. Defaults to currently active game.',
+                required: false,
+                type: 3
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'dr-remove-tb',
+        description: 'Removes tb to list of truth bullets.',
+        options:[
+            {
+                name: 'tb-name',
+                description: 'Name of truth bullet to be removed.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'trial',
+                description: 'Trial the tb is to be removed for. Defaults to -1.',
+                required: false,
+                type: 10
+            },
+            {
+                name: 'game-name',
+                description: 'Game for which the truth bullet will be removed. Defaults to currently active game.',
+                required: false,
+                type: 3
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'dr-use-tb',
+        description: 'Uses tb within specified trial (Sets it to active).',
+        options:[
+            {
+                name: 'tb-name',
+                description: 'Name of truth bullet to be used.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'trial',
+                description: 'Trial the tb is to be used for. Defaults to -1.',
+                required: false,
+                type: 10
+            },
+            {
+                name: 'game-name',
+                description: 'Game for which the truth bullet will be used. Defaults to currently active game.',
+                required: false,
+                type: 3
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'dr-assign-tb',
+        description: 'Assigns tb to a character. Unassigns tb if already assigned.',
+        options:[
+            {
+                name: 'tb-name',
+                description: 'Name of tb to be assigned/unassigned.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'char-name',
+                description: 'Name of character to which the tb will be assigned/unassigned.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'trial',
+                description: 'Trial for which truth bullet is present to be assigned. Defaults to finding the first tb.',
+                required: false,
+                type: 10
+            },
+            {
+                name: 'game-name',
+                description: 'Game for which the tb will be assigned/unassigned. Defaults to currently active game.',
+                required: false,
+                type: 3
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'dr-view-tbs',
+        description: 'View summary of all skills in current game or skills for a specific character.',
+        options:[
+            {
+                name: 'tb-name',
+                description: 'Name of skill to be viewed. Mutually exclusive with \'char-name\' option.',
+                required: false,
+                type: 3
+            },
+            {
+                name: 'char-name',
+                description: 'Name of character to be viewed. Mutually exclusive with \'tb-name\' option.',
+                required: false,
+                type: 3
+            },
+            {
+                name: 'trial',
+                description: 'Trial for which truth bullets should be received for. Defaults to all truth bullets.',
+                required: false,
+                type: 10
+            },
+            {
+                name: 'game-name',
+                description: 'Game for which the tbs will be viewed. Defaults to currently active game.',
                 required: false,
                 type: 3
             }
@@ -556,6 +699,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
             DRCharacter.createTable(gamedb, tableNameBase)
 
             DRSkill.createTables(gamedb, tableNameBase)
+
+            DRTruthBullet.createTables(gamedb, tableNameBase)
 
             DRRelationship.createTable(gamedb, tableNameBase)
 
@@ -642,7 +787,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                                     options.getNumber('nimble', true),
                                     options.getNumber('social', true),
                                     options.getNumber('intuition', true),
-                                    []);
+                                    );
         newChar.addToTable(gamedb, tableNameBase)
         newChar.generateRelations(gamedb, tableNameBase)  
 
@@ -920,7 +1065,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } else if(commandName === 'dr-view-skills'){
         if(activeGame?.gameType !== 'dr'){
             interaction.reply({
-                content: 'Cannot assign dr skill in non-dr game.'
+                content: 'Cannot view dr skill in non-dr game.'
             })
             return
         }
@@ -992,6 +1137,189 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 content: `All skills have been successfully viewed`
             })
         }
+    }else if(commandName === 'dr-add-tb'){
+        if(activeGame?.gameType !== 'dr'){
+            interaction.reply({
+                content: 'Cannot add dr tb in non-dr game.'
+            })
+            return
+        }
+
+        const tbName = options.getString('tb-name', true)
+
+        let newTB = new DRTruthBullet(tbName,
+                                    options.getString('description', true),
+                                    options.getNumber('trial'),
+                                    false)
+
+        newTB.addToTable(gamedb, tableNameBase)
+
+        interaction.reply({
+            content: 'The truth bullet ' + '**\"' + tbName + '\"** has been successfully created.'
+        })
+    } else if(commandName === 'dr-remove-tb'){ //can probably consolidate this and add skill into one command with how similar they are
+        if(activeGame?.gameType !== 'dr'){
+            interaction.reply({
+                content: 'Cannot remove dr tb in non-dr game.'
+            })
+            return
+        }
+
+        const tbName = options.getString('tb-name', true)
+
+        let tbdTB = new DRTruthBullet(tbName, '', options.getNumber('trial'), false)
+
+        tbdTB.removeFromTable(gamedb, tableNameBase)    
+
+        interaction.reply({
+            content: 'The skill ' + '**\"' + tbName + '\"** has been successfully removed.'
+        })
+    } else if(commandName === 'dr-assign-tb'){
+        if(activeGame?.gameType !== 'dr'){
+            interaction.reply({
+                content: 'Cannot assign dr tb in non-dr game.'
+            })
+            return
+        }
+
+        const chrName = options.getString('char-name', true)
+        const tbName = options.getString('tb-name', true)
+
+        const chr = await DRCharacter.getCharacter(gamedb, tableNameBase, chrName)
+        const tb = await DRTruthBullet.getTB(gamedb, tableNameBase, tbName, options.getNumber('trial'))
+
+        if(chr == null){
+            interaction.reply({
+                content: `Error finding character ${chrName}.`
+            })
+            return
+        } 
+        
+        if (tb == null){
+            interaction.reply({
+                content: `Error finding truth bullet ${tbName}.`
+            })
+            return
+        }
+
+        let newChrTB = new DRChrTBs(chr.id, tb.id)
+
+        let exists = await newChrTB.ifExists(gamedb, tableNameBase)
+
+        if(exists == null){
+            interaction.reply({
+                content: `Error checking if ChrTB exists.`
+            })
+        }else if(exists){
+            newChrTB.removeFromTable(gamedb, tableNameBase)
+
+            interaction.reply({
+                content: `Removed truth bullet **\"${tbName}\"** to character **\"${chrName}\"** successfully.`
+            })
+        }else{
+            newChrTB.addToTable(gamedb, tableNameBase)
+
+            interaction.reply({
+                content: `Added truth bullet **\"${tbName}\"** to character **\"${chrName}\"** successfully.`
+            })
+        }
+    } else if(commandName === 'dr-view-tbs'){
+        if(activeGame?.gameType !== 'dr'){
+            interaction.reply({
+                content: 'Cannot view dr tbs in non-dr game.'
+            })
+            return
+        }
+
+        const chrName = options.getString('char-name')
+        const tbName = options.getString('tb-name')
+        const trialNum = options.getNumber('trial')
+
+        if(chrName != null && tbName != null){
+            interaction.reply({
+                content: 'Must choose either Truth Bullet summary or Character Truth Bullet summary, not both.'
+            })
+            return
+        } else if(chrName != null){
+            const chr = await DRCharacter.getCharacter(gamedb, tableNameBase, chrName)
+
+            if(chr == null){
+                interaction.reply({
+                    content: `Error finding character ${chrName}.`
+                })
+                return
+            } 
+
+            const chrSkills = await chr.getAllChrTBs(gamedb, tableNameBase, trialNum)
+
+            const embedBuilder = chr.buildTBEmbed(interaction.user, interaction.guild, chrSkills)
+
+            if(embedBuilder == null){
+                interaction.reply({
+                    content: `Error building embed.`
+                })
+                return
+            }
+            
+            interaction.channel?.send({embeds : [embedBuilder] });
+
+            interaction.reply({
+                content: `**${chrName}'s** truth bullets has been successfully viewed.`
+            })
+        } else if(tbName != null){
+            const tb = await DRTruthBullet.getTB(gamedb, tableNameBase, tbName, trialNum)
+
+            if(tb == null){
+                interaction.reply({
+                    content: `Error finding truth bullet ${tbName}.`
+                })
+                return
+            } 
+            
+            interaction.channel?.send({embeds : [tb.buildViewEmbed(interaction.user, interaction.guild, activeGame)] });
+
+            interaction.reply({
+                content: `Truth Bullet **\"${tbName}\"** has been successfully viewed.`
+            })
+        } else{
+            const allTBs = await DRTruthBullet.getAllTBs(gamedb, tableNameBase, trialNum)
+
+            const embedBuilder = DRTruthBullet.buildSummaryEmbed(interaction.user, interaction.guild, activeGame, allTBs)
+
+            if(embedBuilder == null){
+                interaction.reply({
+                    content: `Error building embed.`
+                })
+                return
+            }
+            
+            interaction.channel?.send({embeds : [embedBuilder] });
+
+            interaction.reply({
+                content: `All truth bullets have been successfully viewed.`
+            })
+        } 
+    } else if(commandName === 'dr-use-tb'){
+        if(activeGame?.gameType !== 'dr'){
+            interaction.reply({
+                content: 'Cannot use dr tb in non-dr game.'
+            })
+            return
+        }
+
+        const tbName = options.getString('tb-name', true)
+
+        
+        let tbuTB = new DRTruthBullet(tbName,
+            '',
+            options.getNumber('trial'),
+            false)
+
+        tbuTB.useTB(gamedb, tableNameBase)
+
+        interaction.reply({
+            content: `Truth bullet **\"${tbName}\"** has been successfully usage toggled.`
+        })
     }
 })
 
