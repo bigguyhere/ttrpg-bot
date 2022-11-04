@@ -1075,9 +1075,9 @@ class ActiveGame{
         this.isActive = isActive;
     }
 
-    static createTable(db : mysql.Connection, dbName : string): boolean {
+    static createTable(db : mysql.Connection): boolean {
 
-        db.query(`CREATE TABLE IF NOT EXISTS ${dbName}.ActiveGames ( 
+        db.query(`CREATE TABLE IF NOT EXISTS ActiveGames ( 
             SERV_ID varchar(255) NOT NULL,
             GameName varchar(255) NOT NULL,
             GameType varchar(255),
@@ -1093,8 +1093,8 @@ class ActiveGame{
         return true
     }
 
-    private inactivizeGames(db : mysql.Connection, dbName : string): void{
-        db.query(`UPDATE ${dbName}.ActiveGames SET isActive = 0 WHERE isActive = 1 and SERV_ID = ${this.serverID};`, (err, res) => {
+    private inactivizeGames(db : mysql.Connection): void{
+        db.query(`UPDATE ActiveGames SET isActive = 0 WHERE isActive = 1 and SERV_ID = ${this.serverID};`, (err, res) => {
             if(err){
                 console.log(err)
                 throw err
@@ -1102,13 +1102,13 @@ class ActiveGame{
         })  
     }
 
-    addToTable(db : mysql.Connection, dbName : string): boolean{
+    addToTable(db : mysql.Connection): boolean{
 
         //Sets currently active game(s) to inactive
-        this.inactivizeGames(db, dbName)
+        this.inactivizeGames(db)
 
         //Inserts new game to the game table, set as the active game
-        db.query(`INSERT INTO ${dbName}.ActiveGames (SERV_ID, GameName, GameType, DM, isActive)
+        db.query(`INSERT INTO ActiveGames (SERV_ID, GameName, GameType, DM, isActive)
         VALUES (${this.serverID}, "${this.gameName}", "${this.gameType}", ${this.DM}, ${this.isActive});`, (err, res) =>  {
             if(err){
                 console.log(err)
@@ -1120,9 +1120,9 @@ class ActiveGame{
         return true
     }
 
-    setDM(db : mysql.Connection, dbName : string): boolean{
+    setDM(db : mysql.Connection): boolean{
 
-        db.query(`UPDATE ${dbName}.ActiveGames SET DM = '${this.DM}' WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
+        db.query(`UPDATE ActiveGames SET DM = '${this.DM}' WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err
@@ -1133,11 +1133,11 @@ class ActiveGame{
         return true
     }
 
-    changeGame(db : mysql.Connection, dbName : string): boolean{
+    changeGame(db : mysql.Connection): boolean{
 
-        this.inactivizeGames(db, dbName)
+        this.inactivizeGames(db)
 
-        db.query(`UPDATE ${dbName}.ActiveGames SET isActive = 1 WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
+        db.query(`UPDATE ActiveGames SET isActive = 1 WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err

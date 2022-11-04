@@ -6,9 +6,6 @@ import { ActiveGame, Character, DRCharacter, DRChrSkills, DRChrTBs, DRRelationsh
 
 var DrCharacter = require('./models.ts').Character
 
-const currentGameType = 'dr'
-const gamesDBName = 'GamesDB'
-
 dotenv.config()
 
 const client = new DiscordJS.Client({
@@ -19,16 +16,21 @@ const client = new DiscordJS.Client({
     ]
 })
 
+const gamesDBName = process.env.DATABASE
+console.log(gamesDBName)
+
 const gamedb = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'powerpufffluff',
+    host: process.env.HOST,
+    user: process.env.USER,
+    password: process.env.PASSWORD,
+    database: gamesDBName,
     charset : 'utf8mb4'
 })
 
 gamedb.connect( (err) => {
     if(err){
         console.log('Issue Connecting to MYSQL Database.')
+        console.log(err)
     }
     return
 })
@@ -658,7 +660,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return
     }
 
-    ActiveGame.createTable(gamedb, gamesDBName)
+    ActiveGame.createTable(gamedb)
 
     const guildID = '1032153970254282753'
 
@@ -669,7 +671,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     let activeGame = await ActiveGame.getCurrentGame(gamedb, 'GamesDB', '1032153970254282753', gameName)
             
-    const tableNameBase = `${gamesDBName}.${guildID}_${activeGame?.gameName == null? gameName : activeGame?.gameName}`;
+    const tableNameBase = `${guildID}_${activeGame?.gameName == null? gameName : activeGame?.gameName}`;
 
     if(commandName === 'create-game'){
 
@@ -682,7 +684,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         let newGame = new ActiveGame(guildID, String(gameName), gameType, DM, true)
 
-        newGame.addToTable(gamedb, gamesDBName)
+        newGame.addToTable(gamedb)
         
         let additionalStats = Character.parseColumns(String(options.getString('additional-stats')))
 
@@ -877,7 +879,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         let oldDM = guild?.members.cache.get(activeGame.DM)
 
         activeGame.DM = newDM.id
-        activeGame.setDM(gamedb, gamesDBName)
+        activeGame.setDM(gamedb)
 
         interaction.reply({
             content: `DM successfully changed to from ${oldDM} to ${newDM}`
@@ -886,7 +888,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         let newGame = new ActiveGame(guildID, String(gameName), '', userId, true)
 
-        newGame.changeGame(gamedb, gamesDBName)
+        newGame.changeGame(gamedb)
 
         interaction.reply({
             content: `Game successfully changed to **\"${gameName}\"**`
