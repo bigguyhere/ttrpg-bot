@@ -1088,7 +1088,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         interaction.reply({
             content: 'The skill ' + '**\"' + skillName + '\"** has been successfully created.'
         })
-    } else if(commandName === 'dr-remove-skill'){ //can probably consolidate this and add skill into one command with how similar they are
+    } else if(commandName === 'dr-rmv-skill'){ //can probably consolidate this and add skill into one command with how similar they are
         if(activeGame?.gameType !== 'dr'){
             interaction.reply({
                 content: 'Cannot remove dr skill in non-dr game.'
@@ -1249,7 +1249,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         interaction.reply({
             content: 'The truth bullet ' + '**\"' + tbName + '\"** has been successfully created.'
         })
-    } else if(commandName === 'dr-remove-tb'){ //can probably consolidate this and add skill into one command with how similar they are
+    } else if(commandName === 'dr-rmv-tb'){ //can probably consolidate this and add skill into one command with how similar they are
         if(activeGame?.gameType !== 'dr'){
             interaction.reply({
                 content: 'Cannot remove dr tb in non-dr game.'
