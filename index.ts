@@ -2,7 +2,7 @@ import DiscordJS, { Client, GatewayIntentBits, Events, EmbedBuilder } from 'disc
 import {UtilityFunctions}  from './utility'
 import dotenv from 'dotenv'
 import mysql from 'mysql'
-import { ActiveGame, Character, DRCharacter, DRChrSkills, DRChrTBs, DRRelationship, DRSkill, DRTruthBullet } from './models'
+import { ActiveGame, Character, DRCharacter, DRChrSkills, DRChrTBs, DRRelationship, DRSkill, DRTruthBullet, Inventory } from './models'
 
 var DrCharacter = require('./models.ts').Character
 
@@ -17,7 +17,6 @@ const client = new DiscordJS.Client({
 })
 
 const gamesDBName = process.env.DATABASE
-console.log(gamesDBName)
 
 const gamedb = mysql.createConnection({
     host: process.env.HOST,
@@ -29,8 +28,7 @@ const gamedb = mysql.createConnection({
 
 gamedb.connect( (err) => {
     if(err){
-        console.log('Issue Connecting to MYSQL Database.')
-        console.log(err)
+        console.log(`Issue Connecting to MYSQL Database. ${err}`)
     }
     return
 })
@@ -55,6 +53,7 @@ client.on('ready', () => {
         commands = client.application?.commands
     }
     
+    // Create Game Command
     commands?.create({
         name: 'create-game',
         description: 'Creates game',
@@ -86,6 +85,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Add DR Character Command
     commands?.create({
         name: 'dr-add-chr',
         description: 'Adds a character to the game.',
@@ -165,6 +165,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Remove Character Command
     commands?.create({
         name: 'rmv-chr',
         description: 'Removes character from the game',
@@ -184,6 +185,7 @@ client.on('ready', () => {
         ]
     })
 
+    // View Character Command
     commands?.create({
         name: 'view-chr',
         description: 'View a character of a specific name.',
@@ -203,6 +205,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Roll Command
     commands?.create({
         name: 'roll',
         description: 'Rolls dice.',
@@ -222,6 +225,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Change Game Command
     commands?.create({
         name: 'change-game',
         description: 'Changes active game on server.',
@@ -235,6 +239,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Change Stats Command
     commands?.create({
         name: 'change-stat',
         description: 'Changes stat of a character.',
@@ -266,6 +271,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Set DM Command
     commands?.create({
         name: 'set-dm',
         description: 'Changes active game on server.',
@@ -285,6 +291,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Add Character Command
     commands?.create({
         name: 'add-chr',
         description: 'Adds a character to the game.',
@@ -334,6 +341,7 @@ client.on('ready', () => {
         ]
     })
 
+    // View Summary Command
     commands?.create({
         name: 'view-summary',
         description: "View Summary of all characters in currently active game.",
@@ -347,6 +355,7 @@ client.on('ready', () => {
         ]
     })
 
+    // View Relationship Command
     commands?.create({
         name: 'dr-view-relationship',
         description: 'View relationship between two characters',
@@ -372,6 +381,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Change Relationship Command
     commands?.create({
         name: 'dr-change-relationship',
         description: 'View relationship between two characters',
@@ -403,6 +413,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Add Skill Commnad
     commands?.create({
         name: 'dr-add-skill',
         description: 'Adds skill to list of skills.',
@@ -440,8 +451,9 @@ client.on('ready', () => {
         ]
     })
 
+    // Remove Skill Command
     commands?.create({
-        name: 'dr-remove-skill',
+        name: 'dr-rmv-skill',
         description: 'Removes skill to list of skills.',
         options:[
             {
@@ -459,6 +471,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Assign Skill Command
     commands?.create({
         name: 'dr-assign-skill',
         description: 'Assigns skill to list to a character. Unassigns skill if already assigned.',
@@ -484,6 +497,7 @@ client.on('ready', () => {
         ]
     })
 
+    // View Skills Command
     commands?.create({
         name: 'dr-view-skills',
         description: 'View summary of all skills in current game or skills for a specific character.',
@@ -509,6 +523,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Add TB Command
     commands?.create({
         name: 'dr-add-tb',
         description: 'Adds tb to list of truth bullets.',
@@ -540,8 +555,9 @@ client.on('ready', () => {
         ]
     })
 
+    // Remove TB Command
     commands?.create({
-        name: 'dr-remove-tb',
+        name: 'dr-rmv-tb',
         description: 'Removes tb to list of truth bullets.',
         options:[
             {
@@ -565,6 +581,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Use TB Command
     commands?.create({
         name: 'dr-use-tb',
         description: 'Uses tb within specified trial (Sets it to active).',
@@ -590,6 +607,7 @@ client.on('ready', () => {
         ]
     })
 
+    // Assign TBs Command
     commands?.create({
         name: 'dr-assign-tb',
         description: 'Assigns tb to a character. Unassigns tb if already assigned.',
@@ -621,6 +639,7 @@ client.on('ready', () => {
         ]
     })
 
+    // View TBs Command
     commands?.create({
         name: 'dr-view-tbs',
         description: 'View summary of all skills in current game or skills for a specific character.',
@@ -652,6 +671,76 @@ client.on('ready', () => {
         ]
     })
 
+    // Modify Inventory Command
+    commands?.create({
+        name: 'modify-inv',
+        description: 'Adds/Removes specific item(s) to a character\'s inventory or updates it\'s quantity.',
+        options:[
+            {
+                name: 'char-name',
+                description: 'Name of character whose inventory item should be added/removed.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'item-name',
+                description: 'Name of the item to be added/removed to the character\'s inventory.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'quantity',
+                description: 'Positive/Negative quantity of the item to be added/removed to the char\'s inventory. Defauls to 1.',
+                required: false,
+                type: 10
+            },
+            {
+                name: 'description',
+                description: 'Description of item.',
+                required: false,
+                type: 3
+            },
+            {
+                name: 'weight',
+                description: 'Weight of singular item.',
+                required: false,
+                type: 10
+            },
+            {
+                name: 'game-name',
+                description: 'Game for which the item should be added to the char\'s inventory. Defaults to currently active game.',
+                required: false,
+                type: 3
+            }
+        ]
+    })
+
+    // View Inventory Command
+    commands?.create({
+        name: 'view-inv',
+        description: 'View an inventory or item of a character of a specific name.',
+        options: [
+            {
+                name: 'char-name',
+                description: 'Name of character in game.',
+                required: true,
+                type: 3
+            },
+            {
+                name: 'item-name',
+                description: 'Name of the item to be viewed from the character\'s inventory.',
+                required: false,
+                type: 3
+            },
+            {
+                name: 'game-name',
+                description: 'Game for which character\'s inventory should be viewed resides. Defaults to currently active game.',
+                required: false,
+                type: 3
+            }
+        ]
+    })
+
     console.log('Bot has completed setup.')
 })
 
@@ -669,7 +758,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const gameName = options.getString('game-name')?.trim().replace(/ /g, '_')
 
-    let activeGame = await ActiveGame.getCurrentGame(gamedb, 'GamesDB', '1032153970254282753', gameName)
+    let activeGame = await ActiveGame.getCurrentGame(gamedb, 'GamesDB', guildID, gameName)
             
     const tableNameBase = `${guildID}_${activeGame?.gameName == null? gameName : activeGame?.gameName}`;
 
@@ -696,8 +785,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
 
         Character.createTable(gamedb, tableNameBase, additionalStats)
+        Inventory.createTable(gamedb, tableNameBase)
 
-        if(gameType === 'dr'){
+        if(gameType === 'dr'){ // Danganronpa TTRPG Game
             DRCharacter.createTable(gamedb, tableNameBase)
 
             DRSkill.createTables(gamedb, tableNameBase)
@@ -706,12 +796,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
             DRRelationship.createTable(gamedb, tableNameBase)
 
-        } else if(gameType === 'pk'){
+        } else if(gameType === 'pkm'){ // Pokemon TTRPG Game
             interaction.reply({
                 content: 'PokeTTRPG has not been implemented yet.'
             })
             return
-        } else if(gameType === 'dnd'){
+        } else if(gameType === 'dnd'){ // Dungeons and Dragons Game
             interaction.reply({
                 content: 'DnD has not been implemented yet.'
             })
@@ -1322,6 +1412,135 @@ client.on(Events.InteractionCreate, async (interaction) => {
         interaction.reply({
             content: `Truth bullet **\"${tbName}\"** has been successfully usage toggled.`
         })
+    } else if(commandName === 'modify-inv'){
+        const chrName = options.getString('char-name', true)
+
+        const chr = await DRCharacter.getCharacter(gamedb, tableNameBase, chrName)
+
+        if(chr == null){
+            interaction.reply({
+                content: `Error finding character ${chrName}.`
+            })
+            return
+        } 
+
+        const item = options.getString('item-name', true)
+        const quant = options.getNumber('quantity')
+        const desc = options.getString('description')
+        const weight = options.getNumber('weight')
+
+        const inv = await Inventory.getItem(gamedb, tableNameBase, chr.id, item)
+
+        if(inv == null){
+            interaction.reply({
+                content: `Error retrieving item ${item} in inventory for ${chrName}.`
+            })
+            return
+        } 
+
+        //If doesn't exist, then add new item to inventory
+        //If does exist, change quantity (Remove if quantity results in less than 0)
+
+        if(inv == false || inv == true){
+            let newChrInv = new Inventory(chr.id, item, quant, desc, weight)
+
+            if(newChrInv.quantity <= 0){
+                interaction.reply({
+                    content: `Error: Cannot add item ${item} with nonpositive quantity (${quant}).`
+                })
+                return
+            }
+
+            newChrInv.addToTable(gamedb, tableNameBase)
+
+            interaction.reply({
+                content: `Character **${chrName}'s** inventory has been successfully updated to add **${newChrInv.quantity}** of **\"${item}\"**.`
+            })
+        } else{
+            const newQuant = inv.quantity + (quant == null ? 1: quant);
+
+            if(newQuant <= 0){
+                inv.removeFromTable(gamedb, tableNameBase)
+
+                interaction.reply({
+                    content: `Character **${chrName}'s** inventory has been successfully updated to remove item **\"${item}\"**.`
+                })
+            }else{
+                inv.updateItem(gamedb, tableNameBase, newQuant, weight, desc)
+
+                interaction.reply({
+                    content: `Character **${chrName}\'s** inventory has been successfully updated to possess **${newQuant}** of **\"${item}\"**.`
+                })
+            }
+        }
+    } else if(commandName == 'view-inv'){
+        const chrName = options.getString('char-name', true)
+
+        const chr = await Character.getCharacter(gamedb, tableNameBase, chrName)
+
+        if(chr == null){
+            interaction.reply({
+                content: `Error finding character ${chrName}.`
+            })
+            return
+        } 
+
+        const itemName = options.getString('item-name')
+
+        if(itemName == null){
+            const chrItems = await chr.getAllChrItems(gamedb, tableNameBase)
+
+            const embedBuilder = chr.buildInventoryEmbed(interaction.user, interaction.guild, chrItems)
+    
+            if(embedBuilder == null){
+                interaction.reply({
+                    content: `Error building embed.`
+                })
+                return
+            }
+            
+            interaction.channel?.send({embeds : [embedBuilder] });
+    
+            interaction.reply({
+                content: `**${chrName}'s** inventory has been successfully viewed.`
+            })
+        }else{
+            if(activeGame == null){
+                interaction.reply({
+                    content: 'Issue retrieving active game.'
+                })
+                return
+            }
+
+            const item = await Inventory.getItem(gamedb, tableNameBase, chr.id, itemName)
+
+            if(item == null){
+                interaction.reply({
+                    content: `Error retrieving item.`
+                })
+                return
+            } else if(item == false || item == true){
+                interaction.reply({
+                    content: `Item does not exist.`
+                })
+                return
+            }
+
+            const embedBuilder = item.buildViewEmbed(interaction.user, interaction.guild, activeGame)
+    
+            if(embedBuilder == null){
+                interaction.reply({
+                    content: `Error building embed.`
+                })
+                return
+            }
+            
+            interaction.channel?.send({embeds : [embedBuilder] });
+    
+            interaction.reply({
+                content: `**${chrName}'s** item **${itemName}** has been successfully viewed.`
+            })
+        }
     }
 })
 

@@ -1,9 +1,9 @@
 import DiscordJS, { Embed, EmbedBuilder, GuildEmoji, TextBasedChannelMixin } from 'discord.js';
 import mysql from 'mysql'
 
-interface Model{
-
-}
+/*interface Model{
+    static createTable()
+}*/
 
 class Character {
     public id: number;
@@ -187,6 +187,28 @@ class Character {
         })
     }
 
+    getAllChrItems(db : mysql.Connection, tableBaseName : string): Promise<Array<Inventory> | null>{
+        return new Promise((resolve) =>{
+
+            db.query(`SELECT * FROM ${tableBaseName}_Inventories as Inventories WHERE Inventories.CHR_ID = ${this.id};`, (err, res) =>  {
+                if(err){
+                    console.log(err)
+                    return resolve(null)
+                } 
+
+               let retArr = new Array<Inventory>
+
+               res.forEach((item: { CHR_ID: number; ItemName: string; Quantity: number | null; Description: string | null; Weight: number | null; }) =>{
+                let retItem = new Inventory(item.CHR_ID, item.ItemName, item.Quantity, item.Description, item.Weight)
+
+                retArr.push(retItem)
+               })
+
+               return resolve(retArr)
+           })
+        })
+    }
+
     buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{
 
         let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
@@ -241,6 +263,43 @@ class Character {
 
             descStr += `\n${guild?.members.cache.get(char.owner)}: ${char.name} ${emoteStr}`
         });
+
+        embedBuilder.setDescription(descStr)
+
+        return embedBuilder
+    }
+
+    buildInventoryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, items : Array<Inventory> | null): EmbedBuilder | null{
+        
+        if(items == null){
+            return null
+        }
+
+        let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
+        const owner = guild?.members.cache.get(this.owner)
+
+        if(thumbnail == undefined){
+            thumbnail = String(owner?.displayAvatarURL())
+        }
+
+        let embedBuilder = new EmbedBuilder()
+        .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+        .setTitle(`**${this.name}'s Inventory**`)
+        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+        .setThumbnail(thumbnail)
+        .setTimestamp()
+
+        let totalWeight = 0;
+        let descStr = `**Item Name:** Amnt *(Weight)*\n`
+        items.forEach(item => {
+            let itemWeight = (item.weight == null ? 0 : item.quantity * item.weight)
+            descStr += `\n**${item.itemName}:** x${item.quantity} ${(itemWeight == 0 ? '' : `*(${itemWeight})*`)}`
+            totalWeight += itemWeight
+        });
+
+        if(totalWeight != 0){
+            descStr += `\n\n**Total Weight:** ${totalWeight}`
+        }
 
         embedBuilder.setDescription(descStr)
 
@@ -438,7 +497,6 @@ class DRCharacter extends Character {
         .setThumbnail(thumbnail)
         .setTimestamp()
 
-        let ctr = 0
         let descStr = `**Truth Bullets:**\n`
         tbs.forEach(tb => {
             descStr += `\n**Trial ${tb.trial == -1 ? '?' : tb.trial}:** *${tb.name}*`
@@ -1170,4 +1228,118 @@ class ActiveGame{
 
 }
 
-export { Character, DRCharacter, DRRelationship, DRSkill, DRChrSkills, DRTruthBullet, DRChrTBs, ActiveGame}
+class Inventory{
+
+    public quantity : number;
+    constructor(public chrId : number, public itemName : string, quantity : number | null, public desc : string | null, public weight : number | null){
+        this.chrId = chrId;
+        this.itemName = itemName;
+        this.desc = desc
+        this.weight = weight
+
+        if(quantity == null){
+            this.quantity = 1;
+        }else{
+            this.quantity = quantity;
+        }
+    }
+
+    static createTable(db : mysql.Connection, tableNameBase : string): boolean {
+        
+        db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_Inventories (
+            CHR_ID INT NOT NULL,
+            ItemName varchar(255) NOT NULL,
+            Quantity INT NOT NULL,
+            Description varchar(1000),
+            Weight INT,
+            PRIMARY KEY (CHR_ID, ItemName),
+            FOREIGN KEY (CHR_ID) REFERENCES ${tableNameBase}_Characters(CHR_ID) ON DELETE CASCADE);`, (err, res) => {
+                if(err){
+                    console.log(err)
+                    throw err
+                }
+            })
+
+        return true
+    }
+
+    
+
+    addToTable(db : mysql.Connection, tableBaseName : string): boolean {
+        let desc = this.desc == null ? "null" : `"${this.desc}"`
+        let weight = this.weight == null ? "null" : `"${this.weight}"`
+
+        db.query(`INSERT INTO ${tableBaseName}_Inventories (CHR_ID, ItemName, Quantity, Description, Weight)
+        VALUES ("${this.chrId}", "${this.itemName}", "${this.quantity}", ${desc}, ${weight});`, (err, res) =>  {
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return true
+    }
+
+    static getItem(db : mysql.Connection, tableBaseName : string, char_id : number, item_name : string): Promise<Inventory | boolean | null>{      
+        return new Promise((resolve) =>{
+            db.query(`SELECT * FROM ${tableBaseName}_Inventories WHERE CHR_ID = '${char_id}' AND ItemName = '${item_name}';`, (err, res) =>  {
+               if(err){
+                   console.log(err)
+                   return resolve(null)
+               } 
+
+               if(res.length != 1){
+                   return resolve(false)
+               }
+               
+               let retInv = new Inventory(res[0].CHR_ID, 
+                                            res[0].ItemName, 
+                                            res[0].Quantity,
+                                            res[0].Description,
+                                            res[0].Weight)
+               
+               return resolve(retInv)
+           })
+        })
+    }
+
+    buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame): EmbedBuilder{
+        
+        return new EmbedBuilder()
+        .setColor(0x7852A9)
+        .setTitle(`**${this.itemName} (Character ID: ${this.chrId}) Summary**`)
+        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+        .setDescription(`**DM:** ${guild?.members.cache.get(activeGame.DM)}
+                        ${ this.weight == null ? '' : `\n**Weight:** ${this.weight}`}
+                        **Quantity:** ${this.quantity}
+                        ${ this.desc == null ? '' : `**Description:** ${this.desc}`}`)
+        .setThumbnail(String(guild?.iconURL()))
+        .setTimestamp()
+    }
+
+    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean {
+
+        db.query(`DELETE FROM ${tableBaseName}_Inventories WHERE CHR_ID = '${this.chrId}' AND ItemName = '${this.itemName}';`, (err, res) =>{
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return true
+    }
+
+    updateItem(db : mysql.Connection, tableBaseName : string, newQuantity : number, newWeight : number | null, newDesc : string | null): boolean{
+        db.query(`UPDATE ${tableBaseName}_Inventories SET Quantity = '${newQuantity}' ${newWeight == null ? `, Weight = ${newWeight}`: ''} ${newDesc == null ? `, Description = ${newDesc}`: ''}
+            WHERE CHR_ID = '${this.chrId}' AND ItemName = '${this.itemName}';`, (err, res) => {
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })  
+
+        return true
+    }
+}
+
+export { Character, DRCharacter, DRRelationship, DRSkill, DRChrSkills, DRTruthBullet, DRChrTBs, ActiveGame, Inventory}
