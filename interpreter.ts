@@ -10,19 +10,25 @@ import { Inventory } from "./models/inventory"
 import { UtilityFunctions }  from './utility'
 
 module CommandInterpreter{
-    export async function interpret(interaction: ChatInputCommandInteraction<CacheType>, gamedb: Connection, guildID: string, client: Client<boolean>) : Promise<void> {
+    export async function interpret(interaction: ChatInputCommandInteraction<CacheType>,
+                                            gamedb: Connection,
+                                            guildID: string,
+                                            client: Client<boolean>) : Promise<void> {
         interaction.reply({
             content: await interpretHelper(interaction, gamedb, guildID, client)
         })
     }
 
-    export async function interpretHelper(interaction: ChatInputCommandInteraction<CacheType>, gamedb: Connection, guildID: string, client: Client<boolean>) : Promise<string> {
+    export async function interpretHelper(interaction: ChatInputCommandInteraction<CacheType>, 
+                                            gamedb: Connection,
+                                            guildID: string,
+                                            client: Client<boolean>) : Promise<string> {
         ActiveGame.createTable(gamedb)
     
         const { commandName, options } = interaction
         const userId = interaction.user.id
     
-        const gameName = options.getString('game-name')?.trim().replace(/ /g, '_')
+        const gameName = UtilityFunctions.formatString(options.getString('game-name'), / /g, '_')
     
         let activeGame = await ActiveGame.getCurrentGame(gamedb, 'GamesDB', guildID, gameName)
                 
@@ -30,16 +36,17 @@ module CommandInterpreter{
 
         if(commandName === 'create-game'){
 
-            const gameType = options.getString('game-type')
+            const gameType = UtilityFunctions.formatString(options.getString('game-type'), /'/g, '')
             let DM = options.getUser('dm-name')?.id
     
             DM ??= userId
     
-            const newGame = new ActiveGame(guildID, String(gameName), gameType, DM, true)
+            const newGame = new ActiveGame(guildID, gameName, gameType, DM, true)
     
             newGame.addToTable(gamedb)
             
-            let additionalStats = Character.parseColumns(String(options.getString('additional-stats')))
+            let additionalStats = Character.parseColumns(
+                UtilityFunctions.formatString(options.getString('additional-stats'), /'/g, ''))
             
             if(additionalStats == undefined){
                 return 'Issue parsing additional columns.'
@@ -64,9 +71,9 @@ module CommandInterpreter{
             return `The game **\"${gameName}\"** has been successfully created.`
         } else if(commandName === 'add-chr'){
     
-            const charName = options.getString('chr-name', true)
+            const charName = UtilityFunctions.formatString(options.getString('chr-name', true), /'/g, '')
             const chrUser = options.getUser('chr-owner')
-            const stats = options.getString('additional-stats')
+            const stats = UtilityFunctions.formatString(options.getString('additional-stats'), /'/g, '')
             const chrId = chrUser == null ? userId : String(chrUser.id)
 
             let additionalStats = Character.parseColumns(stats)
@@ -75,8 +82,10 @@ module CommandInterpreter{
             }
     
             let newChar = new Character(charName, 
-                                        UtilityFunctions.getEmojiID(options.getString('emote')),
-                                        options.getString('pronouns'),
+                                        UtilityFunctions.getEmojiID(
+                                            UtilityFunctions.formatString(
+                                                options.getString('emote'), /'/g, '')),
+                                        UtilityFunctions.formatString(options.getString('pronouns'), /'/g, ''),
                                         chrId,
                                         options.getNumber('health'),
                                         0,
@@ -91,15 +100,17 @@ module CommandInterpreter{
                 return 'Cannot add dr character to non-dr game.'
             }
     
-            const charName = options.getString('chr-name', true)
+            const charName = UtilityFunctions.formatString(options.getString('chr-name', true), /'/g, '')
             const chrUser = options.getUser('chr-owner')
             const chrId = chrUser == null ? userId : String(chrUser.id)
     
             let newChar = new DRCharacter(charName, 
-                                        UtilityFunctions.getEmojiID(options.getString('emote')),
-                                        options.getString('pronouns'),
+                                        UtilityFunctions.getEmojiID(
+                                            UtilityFunctions.formatString(
+                                                options.getString('emote'), /'/g, '')),
+                                        UtilityFunctions.formatString(options.getString('pronouns'), /'/g, ''),
                                         chrId,
-                                        options.getString('ult-talent'),
+                                        UtilityFunctions.formatString(options.getString('ult-talent'), /'/g, ''),
                                         0,
                                         0,
                                         options.getNumber('brains', true),
@@ -113,7 +124,7 @@ module CommandInterpreter{
     
             return `The character **\"${charName}\"** has been successfully created.`
         } else if(commandName === 'rmv-chr'){
-            const charName = options.getString('chr-name', true)
+            const charName = UtilityFunctions.formatString(options.getString('chr-name', true), /'/g, '')
             const tbdChar = activeGame?.gameType === 'dr' 
                 ? await DRCharacter.getCharacter(gamedb, tableNameBase, charName)
                 : new Character(charName, null, null, '', -1, -1, [])
@@ -122,7 +133,7 @@ module CommandInterpreter{
     
             return `The character **\"${charName}\"** has been successfully deleted.`
         } else if(commandName === 'view-chr'){
-            const charName = options.getString('chr-name', true)
+            const charName = UtilityFunctions.formatString(options.getString('chr-name', true), /'/g, '')
             const user = interaction.user
             const guild = interaction.guild
             const char = activeGame?.gameType === 'dr'
@@ -137,8 +148,8 @@ module CommandInterpreter{
     
             return `The character **\"${charName}\"** has been successfully viewed.`
         } else if(commandName === 'roll'){
-            const query = options.getString('query', true)
-            let identifier = options.getString('identifier')
+            const query = UtilityFunctions.formatString(options.getString('query', true), /'/g, '')
+            let identifier = UtilityFunctions.formatString(options.getString('identifier'), /'/g, '')
 
             identifier ??= 'Result'
             identifier += ': '
@@ -147,9 +158,9 @@ module CommandInterpreter{
             
             interaction.reply({content: `${interaction.user} :game_die:\n**${identifier}** ${result?.[0]}\n**Total:** ${result?.[1]}`})
         } else if(commandName === 'change-stat'){
-            const charName = options.getString('chr-name', true)
-            const statName = options.getString('stat-name', true)
-            const statValue = options.getString('stat-value', true)
+            const charName = UtilityFunctions.formatString(options.getString('chr-name', true), /'/g, '')
+            const statName = UtilityFunctions.formatString(options.getString('stat-name', true), /'/g, '')
+            const statValue = UtilityFunctions.formatString(options.getString('stat-value', true), /'/g, '')
             
             let tbdChar = new Character(charName, null, null, '', -1, -1, []);
             if(!tbdChar.updateStat(gamedb, tableNameBase, statName, statValue)){
@@ -193,8 +204,8 @@ module CommandInterpreter{
     
             return `The characters in **\"${activeGame.gameName}\"** has been successfully viewed.`
         } else if(commandName === 'dr-view-relationship'){
-            const charName1 = options.getString('character-1', true)
-            const charName2 = options.getString('character-2', true)
+            const charName1 = UtilityFunctions.formatString(options.getString('character-1', true), /'/g, '')
+            const charName2 = UtilityFunctions.formatString(options.getString('character-2', true), /'/g, '')
     
             let char1 = await DRCharacter.getCharacter(gamedb, tableNameBase, charName1)
             let char2 = await DRCharacter.getCharacter(gamedb, tableNameBase, charName2)
@@ -215,8 +226,8 @@ module CommandInterpreter{
     
             return `${charName1} and ${charName2}'s relationship has been successfully viewed`
         } else if(commandName === 'dr-change-relationship'){
-            const charName1 = options.getString('character-1', true)
-            const charName2 = options.getString('character-2', true)
+            const charName1 = UtilityFunctions.formatString(options.getString('character-1', true), /'/g, '')
+            const charName2 = UtilityFunctions.formatString(options.getString('character-2', true), /'/g, '')
             const value = options.getNumber('value', true)
     
             let char1 = await DRCharacter.getCharacter(gamedb, tableNameBase, charName1)
@@ -238,11 +249,11 @@ module CommandInterpreter{
                 return 'Cannot add dr skill in non-dr game.'
             }
     
-            const skillName = options.getString('skill-name', true)
+            const skillName = UtilityFunctions.formatString(options.getString('skill-name', true), /'/g, '')
     
             let newSkill = new DRSkill(skillName,
-                                        options.getString('prereqs'),
-                                        options.getString('description', true),
+                                        UtilityFunctions.formatString(options.getString('prereqs'), /'/g, ''),
+                                        UtilityFunctions.formatString(options.getString('description', true), /'/g, ''),
                                         options.getNumber('sp-cost', true))
     
             newSkill.addToTable(gamedb, tableNameBase)
@@ -253,7 +264,7 @@ module CommandInterpreter{
                 return 'Cannot add dr skill in non-dr game.'
             }
     
-            const skillName = options.getString('skill-name', true)
+            const skillName = UtilityFunctions.formatString(options.getString('skill-name', true), /'/g, '')
     
             let tbdSkill = new DRSkill(skillName, '', '', -1)
     
@@ -265,8 +276,8 @@ module CommandInterpreter{
                 return 'Cannot add dr skill in non-dr game.'
             }
     
-            const chrName = options.getString('char-name', true)
-            const skillName = options.getString('skill-name', true)
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true), /'/g, '')
+            const skillName = UtilityFunctions.formatString(options.getString('skill-name', true), /'/g, '')
     
             const chr = await DRCharacter.getCharacter(gamedb, tableNameBase, chrName)
             const skill = await DRSkill.getSkill(gamedb, tableNameBase, skillName)
@@ -299,8 +310,8 @@ module CommandInterpreter{
                 return 'Cannot view dr skill in non-dr game.'
             }
     
-            const chrName = options.getString('char-name')
-            const skillName = options.getString('skill-name')
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true), /'/g, '')
+            const skillName = UtilityFunctions.formatString(options.getString('skill-name', true), /'/g, '')
     
             if(chrName != null && skillName != null){
                 return 'Must choose either Skill summary or Character Skill summary, not both.'
@@ -348,10 +359,10 @@ module CommandInterpreter{
                 return 'Cannot add dr tb in non-dr game.'
             }
     
-            const tbName = options.getString('tb-name', true)
-    
+            const tbName = UtilityFunctions.formatString(options.getString('tb-name', true), /'/g, '')
+
             new DRTruthBullet(tbName,
-                                options.getString('description', true),
+                                UtilityFunctions.formatString(options.getString('description', true), /'/g, ''),
                                 options.getNumber('trial'),
                                 false).addToTable(gamedb, tableNameBase)
     
@@ -361,7 +372,7 @@ module CommandInterpreter{
                 return 'Cannot remove dr tb in non-dr game.'
             }
     
-            const tbName = options.getString('tb-name', true)
+            const tbName = UtilityFunctions.formatString(options.getString('tb-name', true), /'/g, '')
     
             new DRTruthBullet(tbName, '', options.getNumber('trial'), false).removeFromTable(gamedb, tableNameBase)    
     
@@ -371,8 +382,8 @@ module CommandInterpreter{
                 return 'Cannot assign dr tb in non-dr game.'
             }
     
-            const chrName = options.getString('char-name', true)
-            const tbName = options.getString('tb-name', true)
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true), /'/g, '')
+            const tbName = UtilityFunctions.formatString(options.getString('tb-name', true), /'/g, '')
     
             const chr = await DRCharacter.getCharacter(gamedb, tableNameBase, chrName)
             const tb = await DRTruthBullet.getTB(gamedb, tableNameBase, tbName, options.getNumber('trial'))
@@ -405,8 +416,8 @@ module CommandInterpreter{
                 return 'Cannot view dr tbs in non-dr game.'
             }
     
-            const chrName = options.getString('char-name')
-            const tbName = options.getString('tb-name')
+            const chrName = UtilityFunctions.formatString(options.getString('char-name'), /'/g, '')
+            const tbName = UtilityFunctions.formatString(options.getString('tb-name'), /'/g, '')
             const trialNum = options.getNumber('trial')
     
             if(chrName != null && tbName != null){
@@ -455,7 +466,7 @@ module CommandInterpreter{
                 return 'Cannot use dr tb in non-dr game.'
             }
     
-            const tbName = options.getString('tb-name', true)
+            const tbName = UtilityFunctions.formatString(options.getString('tb-name', true), /'/g, '')
     
             new DRTruthBullet(tbName,
                 '',
@@ -464,16 +475,16 @@ module CommandInterpreter{
     
             return `Truth bullet **\"${tbName}\"** has been successfully usage toggled.`
         } else if(commandName === 'modify-inv'){
-            const chrName = options.getString('char-name', true)
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true), /'/g, '')
     
             const chr = await DRCharacter.getCharacter(gamedb, tableNameBase, chrName)
             if(chr == null){
                 return `Error finding character ${chrName}.`
             } 
     
-            const item = options.getString('item-name', true)
+            const item = UtilityFunctions.formatString(options.getString('item-name', true), /'/g, '')
             const quant = options.getNumber('quantity')
-            const desc = options.getString('description')
+            const desc = UtilityFunctions.formatString(options.getString('description'), /'/g, '')
             const weight = options.getNumber('weight')
     
             const inv = await Inventory.getItem(gamedb, tableNameBase, chr.id, item)
@@ -512,14 +523,14 @@ module CommandInterpreter{
                 }
             }
         } else if(commandName == 'view-inv'){
-            const chrName = options.getString('char-name', true)
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true), /'/g, '')
     
             const chr = await Character.getCharacter(gamedb, tableNameBase, chrName)
             if(chr == null){
                 return `Error finding character ${chrName}.`
             } 
     
-            const itemName = options.getString('item-name')
+            const itemName = UtilityFunctions.formatString(options.getString('item-name'), /'/g, '')
     
             if(itemName == null){
                 const chrItems = await chr.getAllChrItems(gamedb, tableNameBase)

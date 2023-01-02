@@ -94,6 +94,14 @@ module UtilityFunctions{
 
     }
 
+    export function formatString(baseStr : string | null, findPattern : string | RegExp, replacerChr : string): string{
+        if(baseStr == null){
+            return 'null'
+        }
+
+        return baseStr.trim().replace(findPattern, replacerChr)
+    }
+
 }
 
 export{UtilityFunctions}
