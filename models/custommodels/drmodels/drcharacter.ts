@@ -1,0 +1,300 @@
+import DiscordJS, { EmbedBuilder } from 'discord.js';
+import mysql from 'mysql'
+import { Character } from '../../character';
+import { DRSkill } from './drskill';
+import { DRTruthBullet } from './drtruthbullet';
+
+export class DRCharacter extends Character {
+    public spTotal : number;
+    public spUsed : number;
+
+    constructor(
+            name: string,
+            emote : string | null,
+            prounouns: string | null,
+            owner : string,
+            public talent : string | null,
+            public hope : number,
+            public despair : number,
+            public brains : number,
+            public brawn : number,
+            public nimble : number, 
+            public social : number, 
+            public intuition : number) {
+            
+            super(name, emote, prounouns, owner, brawn + 5, 0, []);
+
+            this.talent = talent;
+            this.hope = hope
+            this.despair = despair;
+            this.brains = brains;
+            this.brawn = brawn;
+            this.nimble = nimble;
+            this.social = social;
+            this.intuition = intuition;
+            this.spTotal = 15;
+            this.spUsed = 0;
+    }
+
+    static createTable(db : mysql.Connection, tableNameBase : string): boolean {
+        db.query(`ALTER TABLE ${tableNameBase}_Characters 
+            ADD Talent varchar(255),
+            ADD Hope TINYINT NOT NULL,
+            ADD Despair TINYINT NOT NULL,
+            ADD Brains TINYINT NOT NULL,
+            ADD Brawn TINYINT NOT NULL,
+            ADD Nimble TINYINT NOT NULL,
+            ADD Social TINYINT NOT NULL,
+            ADD Intuition TINYINT NOT NULL,
+            ADD SPTotal TINYINT NOT NULL,
+            ADD SPUsed TINYINT NOT NULL`, (err, res) => {
+                if(err){
+                    console.log(err)
+                    throw err
+                }
+            })
+
+        return true
+    }
+
+    /*
+        TODO: Rewrite this method to just call it's parent's addToTable method with the additional 
+      dr columns as additional cols (Will allow for less commands)
+    */
+    addToTable(db : mysql.Connection, tableBaseName : string): boolean{
+        
+        let talent
+        if(this.talent != null){
+            talent = `"${this.talent}"` 
+        }else{
+            talent = "null"
+        }
+
+        db.query(`INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, 
+            DmgTaken, Talent, Hope, Despair, Brains, Brawn, Nimble, Social, Intuition, SPTotal, SPUsed)
+        VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health},
+                ${this.dmgTaken}, ${talent}, ${this.hope}, ${this.despair}, ${this.brains}, ${this.brawn}, ${this.nimble}, ${this.social},
+                ${this.intuition}, ${this.spTotal}, ${this.spUsed});`, (err, res) =>  {
+            if(err){
+                console.log(err)
+                throw err
+            }
+            this.id = res.insertId
+        })
+
+        return true
+    }
+
+    static getCharacter(db : mysql.Connection, tableBaseName : string, char_name : string): Promise<DRCharacter | null>{
+        return new Promise((resolve) =>{
+            db.query(`SELECT * FROM ${tableBaseName}_Characters WHERE Name = "${char_name}";`, (err, res) =>  {
+                if(err || res.length != 1){
+                    return resolve(null)
+                } 
+                
+                let retChr = new DRCharacter(res[0].Name, 
+                                            res[0].Emote, 
+                                            res[0].Pronouns,
+                                            res[0].Owner,
+                                            res[0].Talent,
+                                            res[0].Hope,
+                                            res[0].Despair,
+                                            res[0].Brains,
+                                            res[0].Brawn,
+                                            res[0].Nimble,
+                                            res[0].Social,
+                                            res[0].Intuition
+                                            )
+                retChr.id = res[0].CHR_ID
+                
+                return resolve(retChr)
+            })
+        })
+    }
+
+    buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{
+
+        const owner = guild?.members.cache.get(this.owner)
+
+        return new EmbedBuilder()
+        .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+        .setTitle(`**${this.name}**`)
+        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+        .setDescription(`${this.talent == null ? '' : this.talent + '\n'}${this.prounouns}`)
+        .setThumbnail(String(owner?.displayAvatarURL()))
+        .addFields(
+            { name: '**Owner:**', value: String(owner) },
+            { name: '\u200B', value: '\u200B' },
+            { name: 'Health', value: String(this.getCurrentHealth()) , inline: true},
+            { name: 'Hope', value: String(this.hope), inline: true},
+            { name: 'Despair', value: String(this.despair), inline: true},
+            { name: 'Brains', value: String(this.brains), inline: true },
+            { name: 'Brawn', value: String(this.brawn), inline: true },
+            { name: 'Nimble', value: String(this.nimble), inline: true },
+            { name: 'Social', value: String(this.social), inline: true },
+            { name: 'Intuition', value: String(this.intuition), inline: true },
+            { name: 'SP Used', value: String(this.spUsed), inline: true }
+        )
+        .setTimestamp()
+    }
+
+    buildSkillEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, skills : Array<DRSkill> | null): EmbedBuilder | null{
+        
+        if(skills == null){
+            return null
+        }
+
+        let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
+        const owner = guild?.members.cache.get(this.owner)
+
+        if(thumbnail == undefined){
+            thumbnail = String(owner?.displayAvatarURL())
+        }
+
+        let embedBuilder = new EmbedBuilder()
+        .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+        .setTitle(`**${this.name}'s Skills**`)
+        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+        .setThumbnail(thumbnail)
+        .setTimestamp()
+
+        let spUsed = 0
+        let descStr = `**Skills:**\n***(Cost) - Name:*** *Prereqs*\n`
+        skills.forEach(skill => {
+            spUsed += skill.spCost
+            descStr += `\n**(${skill.spCost}) - ${skill.name}:** ${skill.prereqs}`
+        });
+
+        descStr += `\n\n**SP Total:** ${this.spTotal}\n**SP Total:** ${spUsed} ${spUsed > this.spTotal ? 
+            '\n**THIS CHARACTER HAS EXCEEDED THEIR SP TOTAL**': ''}` //TODO: Pronoun per character
+
+        embedBuilder.setDescription(descStr)
+
+        return embedBuilder
+    }
+
+    buildTBEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, tbs : Array<DRTruthBullet> | null): EmbedBuilder | null{
+        
+        if(tbs == null){
+            return null
+        }
+
+        let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
+        const owner = guild?.members.cache.get(this.owner)
+
+        if(thumbnail == undefined){
+            thumbnail = String(owner?.displayAvatarURL())
+        }
+
+        let embedBuilder = new EmbedBuilder()
+        .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+        .setTitle(`**${this.name}'s Truth Bullets**`)
+        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+        .setThumbnail(thumbnail)
+        .setTimestamp()
+
+        let descStr = `**Truth Bullets:**\n`
+        tbs.forEach(tb => {
+            descStr += `\n**Trial ${tb.trial == -1 ? '?' : tb.trial}:** *${tb.name}*`
+        });
+        descStr += `\n\n**Total Truth Bullets:** ${tbs.length}`
+
+        embedBuilder.setDescription(descStr)
+
+        return embedBuilder
+    }
+
+    async generateRelations(db : mysql.Connection, tableNameBase : string): Promise<boolean>{
+        let allChars = await Character.getAllCharacters(db, tableNameBase)
+        let queryStr = `INSERT INTO ${tableNameBase}_Relationships (CHR_ID1, CHR_ID2, VALUE)\nVALUES `
+
+        if(allChars == undefined){
+            return false
+        }
+
+        if(allChars.length < 2){
+            return true
+        }
+
+        for(let charInd = 0; charInd < allChars.length - 2; ++charInd){
+            let char = allChars[charInd]
+
+            if(this.id != char.id){
+                queryStr += `(${this.id}, ${char.id}, 0),`
+            }
+        }
+
+        queryStr += `(${this.id}, ${allChars[allChars.length - 2].id}, 0);`
+
+        db.query(queryStr, (err, res) =>{
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return true
+    }
+
+    getAllChrSkills(db : mysql.Connection, tableBaseName : string): Promise<Array<DRSkill> | null>{
+        return new Promise((resolve) =>{
+            db.query(`SELECT * FROM ${tableBaseName}_Skills as Skills JOIN ${tableBaseName}_ChrSkills as ChrSkills 
+                            WHERE ChrSkills.CHR_ID = ${this.id} AND ChrSkills.SKL_ID = Skills.SKL_ID;`, (err, res) =>  {
+                if(err){
+                    console.log(err)
+                    return resolve(null)
+                } 
+
+                let retArr = new Array<DRSkill>
+
+                res.forEach((skill: { Name: string; Prereqs: string | null; Description: string; SPCost: number; SKL_ID: number; }) =>{
+                let retSkill = new DRSkill(skill.Name, skill.Prereqs, skill.Description, skill.SPCost)
+                retSkill.id = skill.SKL_ID
+
+                retArr.push(retSkill)
+                })
+
+                return resolve(retArr)
+            })
+        })
+    }
+
+    getAllChrTBs(db : mysql.Connection, tableBaseName : string, trial : number | null): Promise<Array<DRTruthBullet> | null>{
+        return new Promise((resolve) =>{
+            let trialStr = ''
+            if(trial != null){
+                trialStr = `AND TBs.Trial = "${trial}"`
+            }
+            db.query(`SELECT * FROM ${tableBaseName}_TruthBullets as TBs JOIN ${tableBaseName}_ChrTBs as ChrTBs 
+                            WHERE ChrTBs.CHR_ID = ${this.id} AND ChrTBs.TB_ID = TBs.TB_ID ${trialStr};`, (err, res) =>  {
+                if(err){
+                    console.log(err)
+                    return resolve(null)
+                } 
+
+                let retArr = new Array<DRTruthBullet>
+
+                res.forEach((tb: { Name: string; Description: string; Trial: number | null; isUsed: boolean; TB_ID: number; }) =>{
+                let retTB = new DRTruthBullet(tb.Name, tb.Description, tb.Trial, tb.isUsed)
+                retTB.id = tb.TB_ID
+
+                retArr.push(retTB)
+                })
+
+                return resolve(retArr)
+            })
+        })
+    }
+
+    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean{
+
+        db.query(`DELETE FROM ${tableBaseName}_Relationships WHERE (CHR_ID1 = ${this.id} OR CHR_ID2 = ${this.id});`, (err, res) =>{
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return super.removeFromTable(db, tableBaseName)
+    }
+}

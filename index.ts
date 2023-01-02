@@ -16,6 +16,7 @@ const client = new DiscordJS.Client({
 })
 
 const gamesDBName = process.env.DATABASE
+const guildID = '1032153970254282753'
 
 const gamedb = mysql.createConnection({
     host: process.env.HOST,
@@ -41,8 +42,6 @@ client.on('ready', () => {
         }
     })
 
-    const guildID = '1032153970254282753'
-
     const guild = client.guilds.cache.get(guildID)
     
     SetupFunctions.commandSetup(guild, client);
@@ -51,11 +50,11 @@ client.on('ready', () => {
 })
 
 client.on(Events.InteractionCreate, async (interaction) => {
-    
-    const guildID = '1032153970254282753'
+    if(!interaction.isChatInputCommand()){
+        return
+    }
 
-    CommandInterpreter.interpreter(interaction, gamedb, guildID, client)
-
+    CommandInterpreter.interpret(interaction, gamedb, guildID, client)
 })
 
 client.login(process.env.TOKEN)
