@@ -10,6 +10,7 @@ export class Character {
     constructor(public name: string, public emote: string | null, prounouns: string | null, public owner: string, health: number | null, public dmgTaken : number, public otherStats : Array<[string, string]>) {
         this.id = -1;
         this.name = name;
+        this.emote = emote;
         this.owner = owner;
         this.dmgTaken = dmgTaken;
         this.otherStats = otherStats

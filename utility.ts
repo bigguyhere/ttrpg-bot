@@ -94,12 +94,12 @@ module UtilityFunctions{
 
     }
 
-    export function formatString(baseStr : string | null, findPattern : string | RegExp, replacerChr : string): string{
-        if(baseStr == null){
-            return 'null'
-        }
+    export function formatString(baseStr : string | null, findPattern : string | RegExp = /'/g, replacerChr : string = ''): string {
+        return baseStr == null ? 'null' : baseStr.trim().replace(findPattern, replacerChr)
+    }
 
-        return baseStr.trim().replace(findPattern, replacerChr)
+    export function formatNullString(baseStr : string | null, findPattern : string | RegExp = /'/g, replacerChr : string = ''): string | null{       
+        return baseStr == null ? null : baseStr.trim().replace(findPattern, replacerChr)
     }
 
 }
