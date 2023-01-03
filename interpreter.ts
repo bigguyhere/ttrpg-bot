@@ -1,12 +1,8 @@
 import { Client, CacheType, ChatInputCommandInteraction} from "discord.js"
 import { Connection } from "mysql"
-import { CustomHandler } from "./custom_handler"
+import { DetermineInterpreter } from "./interpreters/custom_interpreter"
 import { ActiveGame } from "./models/activegame"
 import { Character } from "./models/character"
-import { DRCharacter } from "./models/custommodels/drmodels/drcharacter"
-import { DRRelationship } from "./models/custommodels/drmodels/drrelationship"
-import { DRSkill } from "./models/custommodels/drmodels/drskill"
-import { DRTruthBullet } from "./models/custommodels/drmodels/drtruthbullet"
 import { Inventory } from "./models/inventory"
 import { UtilityFunctions }  from './utility'
 
@@ -28,16 +24,17 @@ module CommandInterpreter{
     
         const { commandName, options } = interaction
         const userId = interaction.user.id
-    
-        const gameName = UtilityFunctions.formatString(options.getString('game-name'), / /g, '_')
-    
-        let activeGame = await ActiveGame.getCurrentGame(gamedb, 'GamesDB', guildID, gameName)
-                
+
+        const gameName = UtilityFunctions.formatNullString(options.getString('game-name'), / /g, '_')
+        
+        const activeGame = await ActiveGame.getCurrentGame(gamedb, 'GamesDB', guildID, gameName)
         const tableNameBase = `${guildID}_${activeGame?.gameName == null? gameName : activeGame?.gameName}`;
+        const customInterp = DetermineInterpreter.determine(activeGame?.gameType, gamedb, tableNameBase)
 
         if(commandName === 'create-game'){
 
             const gameType = UtilityFunctions.formatNullString(options.getString('game-type'))
+
             let DM = options.getUser('dm-name')?.id
     
             DM ??= userId
@@ -53,7 +50,7 @@ module CommandInterpreter{
                 return 'Issue parsing additional columns.'
             }
 
-            CustomHandler.initializeTables(gameType, gamedb, tableNameBase)
+            customInterp?.initializeTables()
     
             Character.createTable(gamedb, tableNameBase, additionalStats)
             Inventory.createTable(gamedb, tableNameBase)
@@ -85,9 +82,7 @@ module CommandInterpreter{
             return `The character **\"${charName}\"** has been successfully created.`
         }else if(commandName === 'rmv-chr'){
             const charName = UtilityFunctions.formatString(options.getString('chr-name', true))
-            const tbdChar = activeGame?.gameType === 'dr' 
-                ? await DRCharacter.getCharacter(gamedb, tableNameBase, charName)
-                : new Character(charName, null, null, '', -1, -1, [])
+            const tbdChar = await customInterp?.getCharacter(charName)
     
             tbdChar?.removeFromTable(gamedb, tableNameBase)    
     
@@ -96,9 +91,7 @@ module CommandInterpreter{
             const charName = UtilityFunctions.formatString(options.getString('chr-name', true))
             const user = interaction.user
             const guild = interaction.guild
-            const char = activeGame?.gameType === 'dr'
-                ? await DRCharacter.getCharacter(gamedb, tableNameBase, charName)
-                : await Character.getCharacter(gamedb, tableNameBase, charName)
+            const char = await customInterp?.getCharacter(charName)
     
             if(char == null){
                 return `Finding character **\"${charName}\"** was unsuccessful.`
@@ -209,7 +202,7 @@ module CommandInterpreter{
         }else if(commandName === 'modify-inv'){
             const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
 
-            const chr = await DRCharacter.getCharacter(gamedb, tableNameBase, chrName)
+            const chr = await customInterp?.getCharacter(chrName)
             if(chr == null){
                 return `Error finding character ${chrName}.`
             } 
@@ -256,7 +249,8 @@ module CommandInterpreter{
             }
         }
 
-        return CustomHandler.determineInterpreter(activeGame?.gameType, commandName, options, activeGame, interaction, gamedb, tableNameBase)
+        const retVal = customInterp?.interpret(commandName, options, activeGame, interaction) 
+        return retVal == undefined ? 'Command Not Found.' : retVal
     }
     
 }

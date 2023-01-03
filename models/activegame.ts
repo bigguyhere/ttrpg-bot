@@ -3,7 +3,7 @@ import mysql from 'mysql'
 export class ActiveGame{
 
 
-    constructor(public serverID : string | null, public gameName : string | undefined, public gameType : string | null, public DM : string, public isActive : boolean){
+    constructor(public serverID : string | null, public gameName : string | null, public gameType : string | null, public DM : string, public isActive : boolean){
         this.serverID = serverID;
         this.gameName = gameName;
         this.gameType = gameType;
@@ -84,11 +84,11 @@ export class ActiveGame{
         return true
     }
 
-    static getCurrentGame(db : mysql.Connection, dbName : string, serverID : string | null, gameName : string | undefined) : Promise<ActiveGame | null>{
+    static getCurrentGame(db : mysql.Connection, dbName : string, serverID : string | null, gameName : string | null) : Promise<ActiveGame | null>{
         return new Promise((resolve) =>{
             let queryParam
 
-            if(gameName == undefined){
+            if(gameName == null){
                 queryParam = 'isActive = 1'
             }else{
                 queryParam = `GameName = '${gameName}'`
