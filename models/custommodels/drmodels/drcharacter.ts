@@ -61,28 +61,33 @@ export class DRCharacter extends Character {
         TODO: Rewrite this method to just call it's parent's addToTable method with the additional 
       dr columns as additional cols (Will allow for less commands)
     */
-    addToTable(db : mysql.Connection, tableBaseName : string): boolean{
-        
-        let talent
-        if(this.talent != null){
-            talent = `"${this.talent}"` 
-        }else{
-            talent = "null"
-        }
-
-        db.query(`INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, 
-            DmgTaken, Talent, Hope, Despair, Brains, Brawn, Nimble, Social, Intuition, SPTotal, SPUsed)
-        VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health},
-                ${this.dmgTaken}, ${talent}, ${this.hope}, ${this.despair}, ${this.brains}, ${this.brawn}, ${this.nimble}, ${this.social},
-                ${this.intuition}, ${this.spTotal}, ${this.spUsed});`, (err, res) =>  {
-            if(err){
-                console.log(err)
-                throw err
+    addToTable(db : mysql.Connection, tableBaseName : string): Promise<boolean>{
+        return new Promise((resolve) =>{
+            let talent
+            if(this.talent != null){
+                talent = `"${this.talent}"` 
+            }else{
+                talent = "null"
             }
-            this.id = res.insertId
-        })
 
-        return true
+            db.query(`INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, 
+                DmgTaken, Talent, Hope, Despair, Brains, Brawn, Nimble, Social, Intuition, SPTotal, SPUsed)
+            VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health},
+                    ${this.dmgTaken}, ${talent}, ${this.hope}, ${this.despair}, ${this.brains}, ${this.brawn}, ${this.nimble}, ${this.social},
+                    ${this.intuition}, ${this.spTotal}, ${this.spUsed});`, (err, res) =>  {
+                if(err){
+                    if(err.errno == 1062){ // Duplicate Character
+                        return resolve(false)
+                    }
+                    console.log(err)
+                    throw err
+                }
+                
+                this.id = res.insertId
+
+                return resolve(true)
+            })
+        })
     }
 
     static getCharacter(db : mysql.Connection, tableBaseName : string, char_name : string): Promise<DRCharacter | null>{

@@ -1,4 +1,4 @@
-import { Client, Guild, GuildApplicationCommandManager } from "discord.js"
+import { Client, Guild } from "discord.js"
 
 module SetupFunctions{
     export function commandSetup(guild: Guild | undefined, client: Client<boolean>) : void {

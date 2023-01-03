@@ -37,7 +37,7 @@ export class Character {
     static createTable(db : mysql.Connection, tableNameBase : string, additionalStats : Array<[string, string]>): boolean {
         let queryStr = `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Characters ( 
             CHR_ID INT NOT NULL AUTO_INCREMENT,
-            Name varchar(255) NOT NULL,
+            Name varchar(255) NOT NULL UNIQUE,
             Emote varchar(255),
             Pronouns varchar(255) NOT NULL,
             Owner varchar(255),
@@ -48,7 +48,9 @@ export class Character {
                 queryStr += `${stat[0]} ${stat[1]},\n`
             })
 
-            queryStr += 'PRIMARY KEY (CHR_ID));'
+            queryStr += '\nPRIMARY KEY (CHR_ID));'
+
+            console.log(queryStr)
         
         db.query(queryStr, (err, res) =>  {
             if(err){
@@ -60,27 +62,31 @@ export class Character {
         return true
     }
 
-    addToTable(db : mysql.Connection, tableBaseName : string): boolean{
-        let queryStr = `INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, DmgTaken`
-        let valuesStr = `VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health}, ${this.dmgTaken}`
+    addToTable(db : mysql.Connection, tableBaseName : string): Promise<boolean>{
+        return new Promise((resolve) =>{
+            let queryStr = `INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, DmgTaken`
+            let valuesStr = `VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health}, ${this.dmgTaken}`
 
-        this.otherStats.forEach(stat =>{
-            queryStr += `, ${stat[0]}`
-            valuesStr += `, "${stat[1]}"`
+            this.otherStats.forEach(stat =>{
+                queryStr += `, ${stat[0]}`
+                valuesStr += `, "${stat[1]}"`
+            })
+
+            queryStr += ')'
+            valuesStr += ');'
+            
+            db.query(`${queryStr}\n${valuesStr}`, (err, res) =>  {
+                if(err){
+                    if(err.errno == 1062){ // Duplicate Character
+                        return resolve(false)
+                    }
+                    console.log(err)
+                    throw err
+                }
+                
+                return resolve(true)
+            })
         })
-
-        queryStr += ')'
-        valuesStr += ');'
-        
-        db.query(`${queryStr}\n${valuesStr}`, (err, res) =>  {
-            if(err){
-                console.log(err)
-                throw err
-            }
-
-        })
-
-        return true
     }
 
     updateStat(db : mysql.Connection, tableBaseName : string, statName : string, statValue : string): boolean{

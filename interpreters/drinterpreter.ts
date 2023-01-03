@@ -1,4 +1,4 @@
-import { CacheType, ChatInputCommandInteraction, Client, CommandInteractionOptionResolver } from "discord.js";
+import { CacheType, ChatInputCommandInteraction, CommandInteractionOptionResolver } from "discord.js";
 import { Connection } from "mysql";
 import { ActiveGame } from "../models/activegame";
 import { DRCharacter } from "../models/custommodels/drmodels/drcharacter";
@@ -8,7 +8,7 @@ import { DRChrTBs, DRTruthBullet } from "../models/custommodels/drmodels/drtruth
 import { UtilityFunctions } from "../utility";
 import { CustomInterpreter } from "./custom_interpreter";
 
-export class DRInterpreter<CharT> extends CustomInterpreter{
+export class DRInterpreter extends CustomInterpreter{
     constructor (gamedb : Connection,
             tableNameBase: string){
            super(gamedb, tableNameBase)
@@ -60,7 +60,10 @@ export class DRInterpreter<CharT> extends CustomInterpreter{
                                         options.getNumber('social', true),
                                         options.getNumber('intuition', true),
                                         );
-            newChar.addToTable(this.gamedb, this.tableNameBase)
+            
+            if(!newChar.addToTable(this.gamedb, this.tableNameBase)){
+                return `Error: Duplicate character ${charName}`
+            }
             newChar.generateRelations(this.gamedb, this.tableNameBase)  
     
             return `The character **\"${charName}\"** has been successfully created.`
