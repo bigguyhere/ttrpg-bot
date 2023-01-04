@@ -54,7 +54,7 @@ module CommandInterpreter{
     
             DM ??= userId
     
-            const newGame = new ActiveGame(guildID, gameName, gameType, DM, true)
+            const newGame = new ActiveGame(guildID, gameName, gameType, DM, true, '')
     
             newGame.addToTable(gamedb)
             
@@ -167,7 +167,7 @@ module CommandInterpreter{
         } 
         // Changes currently active game to a different game
         else if(commandName === 'change-game'){
-            new ActiveGame(guildID, String(gameName), '', userId, true).changeGame(gamedb)
+            new ActiveGame(guildID, String(gameName), '', userId, true, '').changeGame(gamedb)
     
             return `Game successfully changed to **\"${gameName}\"**`
         } 
@@ -284,6 +284,41 @@ module CommandInterpreter{
                             **${newQuant}** of **\"${item}\"**.`
                 }
             }
+        }
+
+        else if(commandName === 'init'){
+            const action = options.getString('action', true)
+            const startConds = ['b', 'begin', 's', 'start']
+            const endConds =['e', 'end']
+
+            if(action in startConds){
+                let roll = options.getString('roll')
+                roll ??= '1d20'
+
+
+            } else if(action in endConds){
+
+            }else{
+                return 'Error: Invalid action.'
+            }
+        }
+
+        else if(commandName === 'init-add'){
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
+
+            const chr = await customInterp?.getCharacter(chrName)
+            if(chr == null){
+                return `Error finding character ${chrName}.`
+            } 
+        }
+
+        else if(commandName === 'init-rmv'){
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
+
+            const chr = await customInterp?.getCharacter(chrName)
+            if(chr == null){
+                return `Error finding character ${chrName}.`
+            } 
         }
 
         // Calls custom interpreter if command is not within base commands

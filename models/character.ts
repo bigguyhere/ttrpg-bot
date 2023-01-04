@@ -1,6 +1,6 @@
 import mysql from 'mysql'
 import DiscordJS, { EmbedBuilder } from 'discord.js';
-import {Inventory} from './inventory'
+import { Inventory } from './inventory'
 import { ActiveGame } from './activegame';
 
 export class Character {
@@ -83,7 +83,7 @@ export class Character {
                     console.log(err)
                     throw err
                 }
-                
+
                 return resolve(true)
             })
         })

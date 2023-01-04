@@ -1,14 +1,24 @@
 import mysql from 'mysql'
 
 export class ActiveGame{
+    public round : number
+    public turn : number
+    public activeInitID : number
 
-
-    constructor(public serverID : string | null, public gameName : string | null, public gameType : string | null, public DM : string, public isActive : boolean){
+    constructor(public serverID : string | null,
+                public gameName : string | null,
+                public gameType : string | null,
+                public DM : string,
+                public isActive : boolean,
+                public defaultROll : string){
         this.serverID = serverID;
         this.gameName = gameName;
         this.gameType = gameType;
         this.DM = DM;
         this.isActive = isActive;
+        this.round = 0
+        this.turn = 0
+        this.activeInitID = -1
     }
 
     public static createTable(db : mysql.Connection): boolean {
@@ -99,7 +109,7 @@ export class ActiveGame{
                     return resolve(null)
                 } 
                 
-                return resolve(new ActiveGame(res[0].SERV_ID, res[0].GameName, res[0].GameType, res[0].DM, res[0].isActive))
+                return resolve(new ActiveGame(res[0].SERV_ID, res[0].GameName, res[0].GameType, res[0].DM, res[0].isActive, ''))
             })
         })
     }
