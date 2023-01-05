@@ -1,24 +1,25 @@
 import mysql from 'mysql'
 
 export class ActiveGame{
-    public round : number
-    public turn : number
-    public activeInitID : number
 
     constructor(public serverID : string | null,
                 public gameName : string | null,
                 public gameType : string | null,
                 public DM : string,
                 public isActive : boolean,
-                public defaultROll : string){
+                public defaultRoll : string,
+                public round : number,
+                public turn : number,
+                public messageID : string | null){
         this.serverID = serverID;
         this.gameName = gameName;
         this.gameType = gameType;
         this.DM = DM;
         this.isActive = isActive;
-        this.round = 0
-        this.turn = 0
-        this.activeInitID = -1
+        this.defaultRoll = defaultRoll
+        this.round = round
+        this.turn = turn
+        this.messageID = messageID
     }
 
     public static createTable(db : mysql.Connection): boolean {
@@ -29,6 +30,10 @@ export class ActiveGame{
             GameType varchar(255),
             DM varchar(255) NOT NULL,
             isActive BOOLEAN,
+            DefaultRoll varchar(50),
+            Round INT,
+            Turn INT,
+            MessageID varchar(255),
             PRIMARY KEY (SERV_ID, GameName));`, (err, res) =>  {
             if(err){
                 console.log(err)
@@ -54,8 +59,9 @@ export class ActiveGame{
         this.inactivizeGames(db)
 
         //Inserts new game to the game table, set as the active game
-        db.query(`INSERT INTO ActiveGames (SERV_ID, GameName, GameType, DM, isActive)
-        VALUES (${this.serverID}, "${this.gameName}", "${this.gameType}", ${this.DM}, ${this.isActive});`, (err, res) =>  {
+        db.query(`INSERT INTO ActiveGames (SERV_ID, GameName, GameType, DM, isActive, Round, Turn, MessageID)
+        VALUES (${this.serverID}, "${this.gameName}", "${this.gameType}", ${this.DM}, ${this.isActive}, 
+                "${this.round}", "${this.turn}", ${this.messageID});`, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err
@@ -68,7 +74,38 @@ export class ActiveGame{
 
     setDM(db : mysql.Connection): boolean{
 
-        db.query(`UPDATE ActiveGames SET DM = '${this.DM}' WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
+        db.query(`UPDATE ActiveGames SET DM = '${this.DM}' 
+                    WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
+            if(err){
+                console.log(err)
+                throw err
+            }
+            
+        })
+
+        return true
+    }
+
+    setMessageID(db : mysql.Connection, newID : string | null): boolean{
+
+        this.messageID = newID
+        db.query(`UPDATE ActiveGames SET MessageID = '${newID}' 
+                    WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
+            if(err){
+                console.log(err)
+                throw err
+            }
+            
+        })
+
+        return true
+    }
+
+    updateInitiative(db : mysql.Connection, newRound: boolean): boolean{
+
+        let roundStr = newRound ? `Round = ${this.round + 1}, ` : ''
+        db.query(`UPDATE ActiveGames SET ${roundStr} Turn = ${this.turn + 1} 
+                    WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err
@@ -109,7 +146,7 @@ export class ActiveGame{
                     return resolve(null)
                 } 
                 
-                return resolve(new ActiveGame(res[0].SERV_ID, res[0].GameName, res[0].GameType, res[0].DM, res[0].isActive, ''))
+                return resolve(new ActiveGame(res[0].SERV_ID, res[0].GameName, res[0].GameType, res[0].DM, res[0].isActive, res[0].DefaultRoll, res[0].Round, res[0].Turn, res[0].MessageID))
             })
         })
     }

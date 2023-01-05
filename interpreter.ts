@@ -3,6 +3,7 @@ import { Connection } from "mysql"
 import { DetermineInterpreter } from "./interpreters/select_interpreter"
 import { ActiveGame } from "./models/activegame"
 import { Character } from "./models/character"
+import { Initiative } from "./models/initiative"
 import { Inventory } from "./models/inventory"
 import { UtilityFunctions }  from './utility'
 
@@ -54,7 +55,7 @@ module CommandInterpreter{
     
             DM ??= userId
     
-            const newGame = new ActiveGame(guildID, gameName, gameType, DM, true, '')
+            const newGame = new ActiveGame(guildID, gameName, gameType, DM, true, '', 0, 0, '')
     
             newGame.addToTable(gamedb)
             
@@ -167,7 +168,7 @@ module CommandInterpreter{
         } 
         // Changes currently active game to a different game
         else if(commandName === 'change-game'){
-            new ActiveGame(guildID, String(gameName), '', userId, true, '').changeGame(gamedb)
+            new ActiveGame(guildID, String(gameName), '', userId, true, '', 0, 0, '').changeGame(gamedb)
     
             return `Game successfully changed to **\"${gameName}\"**`
         } 
@@ -290,26 +291,59 @@ module CommandInterpreter{
             const action = options.getString('action', true)
             const startConds = ['b', 'begin', 's', 'start']
             const endConds =['e', 'end']
+            const nextConds =['n', 'next']
+
+            if(activeGame == null){
+                return 'Issue retrieving active game.'
+            }
 
             if(action in startConds){
                 let roll = options.getString('roll')
                 roll ??= '1d20'
 
+                Initiative.createTable(gamedb, tableNameBase)
+                const msg = await interaction.channel?.send(
+                    await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
 
+                if(msg == undefined){
+                    return 'Error sending initiative message.'
+                }
+
+                activeGame.setMessageID(gamedb, msg.id)
             } else if(action in endConds){
-
-            }else{
+                Initiative.dropTable(gamedb, tableNameBase)
+                activeGame.setMessageID(gamedb, null)
+            } else if(action in nextConds){
+                Initiative.nextTurn(gamedb, tableNameBase, activeGame)
+            }
+            else{
                 return 'Error: Invalid action.'
             }
         }
 
         else if(commandName === 'init-add'){
+            if(activeGame == null){
+                return 'Issue retrieving active game.'
+            }
+
             const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
 
             const chr = await customInterp?.getCharacter(chrName)
             if(chr == null){
                 return `Error finding character ${chrName}.`
             } 
+
+            const query = options.getString('roll')
+
+            const result = UtilityFunctions.parseRoll(query == null ? activeGame.defaultRoll : query)
+
+            if(result == undefined){
+                return 'Error parsing roll.'
+            }
+
+            new Initiative(chrName, result[1], false).addToTable(gamedb, tableNameBase)
+
+            return `**\"${chrName}\"** successfully added to initiative.`
         }
 
         else if(commandName === 'init-rmv'){
@@ -319,6 +353,10 @@ module CommandInterpreter{
             if(chr == null){
                 return `Error finding character ${chrName}.`
             } 
+
+            new Initiative(chrName, -1, false).removeFromTable(gamedb, tableNameBase)
+
+            return `**\"${chrName}\"** successfully removed from initiative.`
         }
 
         // Calls custom interpreter if command is not within base commands

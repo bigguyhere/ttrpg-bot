@@ -316,7 +316,7 @@ module SetupFunctions{
                 },
                 {
                     name: 'roll',
-                    description: 'Die used as default die for rolling initative using \'begin\' action. Defaults to 1d20.',
+                    description: 'Dice (XdY) used as default die for rolling initative using \'begin\' action. Defaults to 1d20.',
                     required: false,
                     type: 3
                 }
@@ -334,20 +334,13 @@ module SetupFunctions{
                     type: 3
                 },
                 {
-                    name: 'roll',
+                    name: 'query',
                     description: 'Overrides default die roll. Defaults to 1d20.',
-                    required: false,
-                    type: 3
-                },
-                {
-                    name: 'modifier',
-                    description: 'Modifier for dice roll (Can be + or -). Defaults to 0.',
                     required: false,
                     type: 3
                 }
             ]
         })
-
         
         commands?.create({
             name: 'init-rmv',
