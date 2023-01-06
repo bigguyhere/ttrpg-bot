@@ -2,6 +2,8 @@
 
 }*/
 
+import { ChannelType, Client, Message, TextBasedChannel } from "discord.js"
+
 //ToDo -> Refactor to convert into postfix to all for paranthesis, multiplication, and division
 module UtilityFunctions{
     export function parseRoll(query: string): [string, number] | undefined{
@@ -100,6 +102,15 @@ module UtilityFunctions{
 
     export function formatNullString(baseStr : string | null, findPattern : string | RegExp = /'/g, replacerChr : string = ''): string | null{       
         return baseStr == null ? null : baseStr.trim().replace(findPattern, replacerChr)
+    }
+
+    export async function getMessage(client: Client, guildID: string, channelID: string, msgID: string): Promise<Message<true> | Message<false>>{
+        const guild = client.guilds.cache.get(guildID)
+    
+        const channel = guild?.channels.cache.find(
+            channel => channel.id === channelID
+            && channel.type === ChannelType.GuildText) as TextBasedChannel
+        return await channel.messages.fetch(msgID)
     }
 
 }

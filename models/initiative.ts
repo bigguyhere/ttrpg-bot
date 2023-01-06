@@ -42,7 +42,7 @@ export class Initiative {
 
     static getAllInitChrs(db : mysql.Connection, tableBaseName : string): Promise<Array<Initiative> | null>{
         return new Promise((resolve) =>{
-            db.query(`SELECT * FROM ${tableBaseName}_Initiative SORT BY Roll;`, (err, res) =>  {
+            db.query(`SELECT * FROM ${tableBaseName}_Initiative ORDER BY Roll DESC;`, (err, res) =>  {
                 if(err){
                     console.log(err)
                     return resolve(null)
@@ -73,7 +73,7 @@ export class Initiative {
 
         for(let i = 0; i < initChrs.length; ++i){
             if(initChrs[i].isTurn){
-                const j = (i == initChrs.length) ? 0 : i + 1
+                const j = (i == initChrs.length - 1) ? 0 : i + 1
                 return [new Initiative(initChrs[i].name, initChrs[i].rollValue, initChrs[i].isTurn),
                                 new Initiative(initChrs[j].name, initChrs[j].rollValue, initChrs[j].isTurn),
                                 !(j == (i + 1))]
@@ -83,64 +83,81 @@ export class Initiative {
         return null
     }
 
-    static updateInitChars(db : mysql.Connection, tableNameBase : string, activeChrs :[Initiative, Initiative, boolean]){
-        db.query(`UPDATE ${tableNameBase}_Initiative SET isTurn = '${!activeChrs[0].isTurn}' WHERE Name = '${activeChrs[0].name}';
-                \nUPDATE ${tableNameBase}_Initiative SET isTurn = '${!activeChrs[1].isTurn}' WHERE Name = '${activeChrs[1].name}';`
+    static updateInitChars(db : mysql.Connection, tableNameBase : string, activeChrs :[Initiative, Initiative, boolean]): Initiative{
+        db.query(`UPDATE ${tableNameBase}_Initiative SET isTurn = ${!activeChrs[0].isTurn} WHERE Name = '${activeChrs[0].name}';
+                UPDATE ${tableNameBase}_Initiative SET isTurn = ${!activeChrs[1].isTurn} WHERE Name = '${activeChrs[1].name}';`
         , (err, res) => {
             if(err){
                 console.log(err)
                 throw err
             }
         })  
+
+        activeChrs[0].isTurn = !activeChrs[0].isTurn
+        activeChrs[1].isTurn = !activeChrs[1].isTurn
+
+        return activeChrs[1]
     }
 
-    static updateInitChar(db : mysql.Connection, tableNameBase : string, activeChr: Initiative){
-        db.query(`UPDATE ${tableNameBase}_Initiative SET isTurn = '${!activeChr.isTurn}' WHERE Name = '${activeChr.name}';`
+    static updateInitChar(db : mysql.Connection, tableNameBase : string, activeChr: Initiative): Initiative{
+        db.query(`UPDATE ${tableNameBase}_Initiative SET isTurn = ${!activeChr.isTurn} WHERE Name = '${activeChr.name}';`
         , (err, res) => {
             if(err){
                 console.log(err)
                 throw err
             }
         })  
+
+        activeChr.isTurn = !activeChr.isTurn
+
+        return activeChr
     }
 
-    static async nextTurn(db : mysql.Connection, tableNameBase : string, activeGame : ActiveGame): Promise<boolean>{
+    static async nextTurn(db : mysql.Connection, tableNameBase : string, activeGame : ActiveGame): Promise<Initiative | undefined>{
         let initChrs = await this.getAllInitChrs(db, tableNameBase)
 
         if(initChrs == null){
-            return false
+            return undefined
         }
 
         if(activeGame.turn == 0){
-            Initiative.startInit(db, tableNameBase, initChrs)
-            return activeGame.updateInitiative(db, true)
+            activeGame.updateInit(db, activeGame.channelID,
+                                        activeGame.messageID,
+                                        activeGame.defaultRoll,
+                                        ++activeGame.round,
+                                        ++activeGame.turn)
+            return Initiative.startInit(db, tableNameBase, initChrs)
         }
 
         let activeChrs = this.getActiveChrs(initChrs)
 
         if(activeChrs != null){
-            this.updateInitChars(db, tableNameBase, activeChrs)
+            activeGame.updateInit(db, activeGame.channelID,
+                activeGame.messageID,
+                activeGame.defaultRoll,
+                activeChrs[2] ? ++activeGame.round : activeGame.round,
+                ++activeGame.turn)
             
-            return activeGame.updateInitiative(db, activeChrs[2])
+            return this.updateInitChars(db, tableNameBase, activeChrs)
         }
 
-        return false
+        return undefined
     }
 
-    static startInit(db : mysql.Connection, tableNameBase : string, initChrs: Array<Initiative>) : boolean{
+    static startInit(db : mysql.Connection, tableNameBase : string, initChrs: Array<Initiative>) : Initiative | undefined{
         let maxChr = Initiative.getMaxChr(initChrs)
 
         if(maxChr == null){
-            return false
+            return undefined
         }
 
-        Initiative.updateInitChar(db, tableNameBase, maxChr)
+        return Initiative.updateInitChar(db, tableNameBase, maxChr)
 
-        return true
     }
 
     public static async buildInitMsg(db : mysql.Connection, tableNameBase : string, activeGame : ActiveGame): Promise<string>{
-        let retStr = `\`\`\` Round: ${activeGame.round} (Turn: ${activeGame.turn})\n`
+        let retStr = `\`\`\`md\nRound: ${activeGame.round} (Turn: ${activeGame.turn})\n`
+        retStr += '-'.repeat(retStr.length) + '\n'
         const allInitChrs = await Initiative.getAllInitChrs(db, tableNameBase)
 
         if(allInitChrs != null){
@@ -154,7 +171,7 @@ export class Initiative {
 
     public async addToTable(db : mysql.Connection, tableNameBase : string): Promise<boolean> {
         db.query(`INSERT INTO ${tableNameBase}_Initiative (Name, Roll, isTurn)
-        VALUES (${this.name}, "${this.rollValue}", "${this.isTurn}");`, (err, res) =>  {
+        VALUES ("${this.name}", ${this.rollValue}, ${this.isTurn});`, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err

@@ -49,8 +49,6 @@ export class Character {
             })
 
             queryStr += '\nPRIMARY KEY (CHR_ID));'
-
-            console.log(queryStr)
         
         db.query(queryStr, (err, res) =>  {
             if(err){

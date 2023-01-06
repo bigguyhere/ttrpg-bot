@@ -23,7 +23,8 @@ const gamedb = mysql.createConnection({
     user: process.env.USER,
     password: process.env.PASSWORD,
     database: gamesDBName,
-    charset : 'utf8mb4'
+    charset : 'utf8mb4',
+    multipleStatements: true
 })
 
 gamedb.connect( (err) => {

@@ -1,4 +1,4 @@
-import { Client, CacheType, ChatInputCommandInteraction} from "discord.js"
+import { Client, CacheType, ChatInputCommandInteraction, ChannelType, TextBasedChannel} from "discord.js"
 import { Connection } from "mysql"
 import { DetermineInterpreter } from "./interpreters/select_interpreter"
 import { ActiveGame } from "./models/activegame"
@@ -55,7 +55,7 @@ module CommandInterpreter{
     
             DM ??= userId
     
-            const newGame = new ActiveGame(guildID, gameName, gameType, DM, true, '', 0, 0, '')
+            const newGame = new ActiveGame(guildID, gameName, gameType, DM, true, '', 0, 0, null, null)
     
             newGame.addToTable(gamedb)
             
@@ -168,7 +168,7 @@ module CommandInterpreter{
         } 
         // Changes currently active game to a different game
         else if(commandName === 'change-game'){
-            new ActiveGame(guildID, String(gameName), '', userId, true, '', 0, 0, '').changeGame(gamedb)
+            new ActiveGame(guildID, String(gameName), '', userId, true, '', 0, 0, null, null).changeGame(gamedb)
     
             return `Game successfully changed to **\"${gameName}\"**`
         } 
@@ -297,7 +297,12 @@ module CommandInterpreter{
                 return 'Issue retrieving active game.'
             }
 
-            if(action in startConds){
+            if(startConds.includes(action)){
+                if(activeGame.messageID != null){
+                    return 'Cannot start initiative as there is already one in progress.'
+                    + ' Please end other initiative before starting a new one.'
+                }
+
                 let roll = options.getString('roll')
                 roll ??= '1d20'
 
@@ -305,16 +310,51 @@ module CommandInterpreter{
                 const msg = await interaction.channel?.send(
                     await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
 
+                msg?.pin()
+
                 if(msg == undefined){
                     return 'Error sending initiative message.'
                 }
 
-                activeGame.setMessageID(gamedb, msg.id)
-            } else if(action in endConds){
+                activeGame.updateInit(gamedb, msg.channel.id, msg.id, roll, 0, 0)
+
+                return '**Initative Begins !**'
+            } else if(endConds.includes(action)){
+                if(activeGame.messageID == null){
+                    return 'Cannot start initiative as there is none in progress.'
+                }
+                
                 Initiative.dropTable(gamedb, tableNameBase)
-                activeGame.setMessageID(gamedb, null)
-            } else if(action in nextConds){
-                Initiative.nextTurn(gamedb, tableNameBase, activeGame)
+
+                if(activeGame.channelID != null && activeGame.messageID != null){
+                    let message = await UtilityFunctions.getMessage(client, 
+                                                                    guildID, 
+                                                                    activeGame.channelID, 
+                                                                    activeGame.messageID)
+                    message.unpin()
+
+                    activeGame.updateInit(gamedb, null, null, '1d20', 0, 0)
+                
+                    return `**Initative Summary**\n*Rounds:* ${activeGame.round}\n*Turns:* ${activeGame.turn}\n${message.content}`
+                }  
+
+                return 'Error Finding ChannelID and/or MessageID'
+            } else if(nextConds.includes(action)){
+                if(activeGame.messageID == null){
+                    return 'Error: No initative in progress.'
+                }
+
+                let nextInit = await Initiative.nextTurn(gamedb, tableNameBase, activeGame)
+
+                if(activeGame.channelID != null && activeGame.messageID != null){
+                    let message = await UtilityFunctions.getMessage(client, 
+                                                                    guildID, 
+                                                                    activeGame.channelID, 
+                                                                    activeGame.messageID)
+                    message.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
+                }  
+
+                return `**${nextInit?.name}'s** Turn`
             }
             else{
                 return 'Error: Invalid action.'
@@ -326,12 +366,16 @@ module CommandInterpreter{
                 return 'Issue retrieving active game.'
             }
 
-            const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
+            if(activeGame.messageID == null){
+                return 'Cannot add character to initiative as there is none in progress.'
+            }
 
-            const chr = await customInterp?.getCharacter(chrName)
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
+            
+            /*const chr = await customInterp?.getCharacter(chrName)
             if(chr == null){
                 return `Error finding character ${chrName}.`
-            } 
+            }*/
 
             const query = options.getString('roll')
 
@@ -343,20 +387,48 @@ module CommandInterpreter{
 
             new Initiative(chrName, result[1], false).addToTable(gamedb, tableNameBase)
 
-            return `**\"${chrName}\"** successfully added to initiative.`
+            if(activeGame.channelID != null && activeGame.messageID != null){
+                let message = await UtilityFunctions.getMessage(client, 
+                                                                guildID, 
+                                                                activeGame.channelID, 
+                                                                activeGame.messageID)
+                message.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
+                
+                return `**\"${chrName}\"** successfully added to initiative.`
+            }   
+
+            return 'Issue adding character to initiative.'
         }
 
         else if(commandName === 'init-rmv'){
+            if(activeGame == null){
+                return 'Issue retrieving active game.'
+            }
+
+            if(activeGame.messageID == null){
+                return 'Cannot remove character from initiative as there is none in progress.'
+            }
+
             const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
 
-            const chr = await customInterp?.getCharacter(chrName)
+            /*const chr = await customInterp?.getCharacter(chrName)
             if(chr == null){
                 return `Error finding character ${chrName}.`
-            } 
+            } */
 
             new Initiative(chrName, -1, false).removeFromTable(gamedb, tableNameBase)
 
-            return `**\"${chrName}\"** successfully removed from initiative.`
+            if(activeGame.channelID != null && activeGame.messageID != null){
+                let message = await UtilityFunctions.getMessage(client, 
+                                                                guildID, 
+                                                                activeGame.channelID, 
+                                                                activeGame.messageID)
+                message.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
+
+                return `**\"${chrName}\"** successfully removed from initiative.`
+            }   
+
+            return 'Issue removing character from initiative.'
         }
 
         // Calls custom interpreter if command is not within base commands
