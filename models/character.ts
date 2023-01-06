@@ -2,6 +2,7 @@ import mysql from 'mysql'
 import DiscordJS, { EmbedBuilder } from 'discord.js';
 import { Inventory } from './inventory'
 import { ActiveGame } from './activegame';
+import { UtilityFunctions } from '../utility';
 
 export class Character {
     public id: number;
@@ -262,14 +263,7 @@ export class Character {
 
         let descStr = `**DM:** ${guild?.members.cache.get(activeGame.DM)}\n`
         chars.forEach(char => {
-            let emoteStr
-            if(char.emote?.length != 2){
-                let emote = guild?.emojis.cache.get(String(char.emote))
-                emoteStr = emote == undefined ? '' : `<:${emote.name}:${emote.id}>`
-            }else{
-                emoteStr = char.emote
-            }
-
+            let emoteStr = UtilityFunctions.getEmoteDisplay(guild, char.emote)
             descStr += `\n${guild?.members.cache.get(char.owner)}: ${char.name} ${emoteStr}`
         });
 

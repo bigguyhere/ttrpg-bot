@@ -306,11 +306,11 @@ module SetupFunctions{
 
         commands?.create({
             name: 'init',
-            description: 'Starts or ends initiative.',
+            description: 'Starts, ends, or proceeds through initiative.',
             options: [
                 {
                     name: 'action',
-                    description: 'Choose \'begin\' (b) or \'end\' (e) to start/end initiative respectively.',
+                    description: 'Choose \'begin\' (b), \'end\' (e), or \'next\' (n) to start/end/continue initiative respectively.',
                     required: true,
                     type: 3
                 },
@@ -325,13 +325,25 @@ module SetupFunctions{
 
         commands?.create({
             name: 'init-add',
-            description: 'Starts or ends initiative.',
+            description: 'Adds character to initiative.',
             options: [
                 {
                     name: 'char-name',
                     description: 'Name of character to be added to initiative.',
                     required: true,
                     type: 3
+                },
+                {
+                    name: 'emote',
+                    description: 'Emote to be displayed upon your turn.',
+                    required: false,
+                    type: 3
+                },
+                {
+                    name: 'hp',
+                    description: 'Health of the character to be added to initiative.',
+                    required: false,
+                    type: 10
                 },
                 {
                     name: 'query',
@@ -344,7 +356,7 @@ module SetupFunctions{
         
         commands?.create({
             name: 'init-rmv',
-            description: 'Starts or ends initiative.',
+            description: 'Removes character from initiative.',
             options: [
                 {
                     name: 'char-name',

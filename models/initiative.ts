@@ -2,22 +2,28 @@ import mysql from 'mysql'
 import { ActiveGame } from './activegame'
 
 export class Initiative {
-    public initID: number
     constructor(public name: string,
                 public rollValue: number,
-                public isTurn : boolean,){
-        this.initID = -1
+                public isTurn : boolean,
+                public HP : number | null,
+                public user: string,
+                public emote: string | null){
         this.name = name
         this.rollValue = rollValue
         this.isTurn = isTurn
+        this.user = user,
+        this.emote = emote
     }
 
     public static createTable(db : mysql.Connection, tableNameBase : string): boolean {
 
         db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_Initiative ( 
             Name varchar(255) NOT NULL,
-            Roll INT NOT NULL,
+            Roll SMALLINT NOT NULL,
+            HP SMALLINT,
             isTurn BOOLEAN,
+            User varchar(255) NOT NULL,
+            Emote varchar(255),
             PRIMARY KEY (Name));`, (err, res) =>  {
             if(err){
                 console.log(err)
@@ -40,6 +46,35 @@ export class Initiative {
         return true
     }
 
+    public async addToTable(db : mysql.Connection, tableNameBase : string): Promise<boolean> {
+        return new Promise((resolve) =>{
+            db.query(`INSERT INTO ${tableNameBase}_Initiative (Name, Roll, HP, isTurn, User, Emote)
+            VALUES ("${this.name}", ${this.rollValue}, ${this.HP}, ${this.isTurn}, "${this.user}", ${this.emote});`, (err, res) =>  {
+                if(err){
+                    if(err.errno == 1062){ // Duplicate Character
+                        return resolve(false)
+                    }
+                    console.log(err)
+                    throw err
+                }
+
+                return resolve(true)
+            })
+         })
+    }
+
+    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean{
+
+        db.query(`DELETE FROM ${tableBaseName}_Initiative WHERE Name = '${this.name}'`, (err, res) =>  {
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })
+
+        return true
+    }
+
     static getAllInitChrs(db : mysql.Connection, tableBaseName : string): Promise<Array<Initiative> | null>{
         return new Promise((resolve) =>{
             db.query(`SELECT * FROM ${tableBaseName}_Initiative ORDER BY Roll DESC;`, (err, res) =>  {
@@ -50,8 +85,8 @@ export class Initiative {
 
                 let retArr = new Array<Initiative>
 
-                res.forEach((init: { Name: string; Roll: number; isTurn: boolean }) =>{
-                    let retInit = new Initiative(init.Name, init.Roll, init.isTurn)
+                res.forEach((init: { Name: string; Roll: number; isTurn: boolean; HP: number; User: string; Emote: string | null }) =>{
+                    let retInit = new Initiative(init.Name, init.Roll, init.isTurn, init.HP, init.User, init.Emote)
     
                     retArr.push(retInit)
                 })
@@ -74,13 +109,29 @@ export class Initiative {
         for(let i = 0; i < initChrs.length; ++i){
             if(initChrs[i].isTurn){
                 const j = (i == initChrs.length - 1) ? 0 : i + 1
-                return [new Initiative(initChrs[i].name, initChrs[i].rollValue, initChrs[i].isTurn),
-                                new Initiative(initChrs[j].name, initChrs[j].rollValue, initChrs[j].isTurn),
-                                !(j == (i + 1))]
+                return [new Initiative(initChrs[i].name, initChrs[i].rollValue, 
+                                initChrs[i].isTurn, initChrs[i].HP, initChrs[i].user, initChrs[i].emote),
+                        new Initiative(initChrs[j].name, initChrs[j].rollValue, 
+                                initChrs[j].isTurn, initChrs[j].HP, initChrs[j].user, initChrs[j].emote),
+                        !(j == (i + 1))]
             }
         }
 
         return null
+    }
+
+    static updateInitChar(db : mysql.Connection, tableNameBase : string, activeChr: Initiative): Initiative{
+        db.query(`UPDATE ${tableNameBase}_Initiative SET isTurn = ${!activeChr.isTurn} WHERE Name = '${activeChr.name}';`
+        , (err, res) => {
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })  
+
+        activeChr.isTurn = !activeChr.isTurn
+
+        return activeChr
     }
 
     static updateInitChars(db : mysql.Connection, tableNameBase : string, activeChrs :[Initiative, Initiative, boolean]): Initiative{
@@ -99,25 +150,21 @@ export class Initiative {
         return activeChrs[1]
     }
 
-    static updateInitChar(db : mysql.Connection, tableNameBase : string, activeChr: Initiative): Initiative{
-        db.query(`UPDATE ${tableNameBase}_Initiative SET isTurn = ${!activeChr.isTurn} WHERE Name = '${activeChr.name}';`
-        , (err, res) => {
-            if(err){
-                console.log(err)
-                throw err
-            }
-        })  
-
-        activeChr.isTurn = !activeChr.isTurn
-
-        return activeChr
-    }
-
     static async nextTurn(db : mysql.Connection, tableNameBase : string, activeGame : ActiveGame): Promise<Initiative | undefined>{
         let initChrs = await this.getAllInitChrs(db, tableNameBase)
 
-        if(initChrs == null){
+        if(initChrs == null || initChrs.length == 0){
             return undefined
+        }
+
+        if(initChrs.length == 1){
+            activeGame.updateInit(db, activeGame.channelID,
+                                        activeGame.messageID,
+                                        activeGame.defaultRoll,
+                                        ++activeGame.round,
+                                        ++activeGame.turn)
+            initChrs[0].isTurn = false
+            return Initiative.updateInitChar(db, tableNameBase, initChrs[0])
         }
 
         if(activeGame.turn == 0){
@@ -168,31 +215,4 @@ export class Initiative {
 
         return retStr + '```'
     }
-
-    public async addToTable(db : mysql.Connection, tableNameBase : string): Promise<boolean> {
-        db.query(`INSERT INTO ${tableNameBase}_Initiative (Name, Roll, isTurn)
-        VALUES ("${this.name}", ${this.rollValue}, ${this.isTurn});`, (err, res) =>  {
-            if(err){
-                console.log(err)
-                throw err
-            }
-            
-        })
-
-        return true
-    }
-
-    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean{
-
-        db.query(`DELETE FROM ${tableBaseName}_Initiative WHERE Name = '${this.name}'`, (err, res) =>  {
-            if(err){
-                console.log(err)
-                throw err
-            }
-        })
-
-        return true
-    }
-
-
 }

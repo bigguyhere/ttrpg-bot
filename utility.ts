@@ -2,7 +2,7 @@
 
 }*/
 
-import { ChannelType, Client, Message, TextBasedChannel } from "discord.js"
+import { ChannelType, Client, Guild, Message, TextBasedChannel } from "discord.js"
 
 //ToDo -> Refactor to convert into postfix to all for paranthesis, multiplication, and division
 module UtilityFunctions{
@@ -96,6 +96,18 @@ module UtilityFunctions{
 
     }
 
+    export function getEmoteDisplay(guild : Guild | undefined | null, emote :string | null): string{
+        let emoteStr
+        if(emote?.length != 2){
+            let newEmote = guild?.emojis.cache.get(String(emote))
+            emoteStr = newEmote == undefined ? '' : `<:${newEmote.name}:${newEmote.id}>`
+        }else{
+            emoteStr = emote
+        }
+
+        return emoteStr
+    }
+
     export function formatString(baseStr : string | null, findPattern : string | RegExp = /'/g, replacerChr : string = ''): string {
         return baseStr == null ? 'null' : baseStr.trim().replace(findPattern, replacerChr)
     }
@@ -104,13 +116,13 @@ module UtilityFunctions{
         return baseStr == null ? null : baseStr.trim().replace(findPattern, replacerChr)
     }
 
-    export async function getMessage(client: Client, guildID: string, channelID: string, msgID: string): Promise<Message<true> | Message<false>>{
+    export async function getMessage(client: Client, guildID: string, channelID: string, msgID: string): Promise<Message<true> | Message<false> | undefined>{
         const guild = client.guilds.cache.get(guildID)
     
         const channel = guild?.channels.cache.find(
             channel => channel.id === channelID
             && channel.type === ChannelType.GuildText) as TextBasedChannel
-        return await channel.messages.fetch(msgID)
+        return await channel.messages.fetch(msgID).catch( (e) => {return undefined})
     }
 
 }

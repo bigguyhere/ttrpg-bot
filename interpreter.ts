@@ -288,10 +288,10 @@ module CommandInterpreter{
         }
 
         else if(commandName === 'init'){
-            const action = options.getString('action', true)
-            const startConds = ['b', 'begin', 's', 'start']
-            const endConds =['e', 'end']
-            const nextConds =['n', 'next']
+            const action = options.getString('action', true).toUpperCase()
+            const startConds = ['B', 'BEGIN', 'S', 'START']
+            const endConds =['E', 'END']
+            const nextConds =['N', 'NEXT']
 
             if(activeGame == null){
                 return 'Issue retrieving active game.'
@@ -331,11 +331,12 @@ module CommandInterpreter{
                                                                     guildID, 
                                                                     activeGame.channelID, 
                                                                     activeGame.messageID)
-                    message.unpin()
+                    message?.unpin()
 
                     activeGame.updateInit(gamedb, null, null, '1d20', 0, 0)
                 
-                    return `**Initative Summary**\n*Rounds:* ${activeGame.round}\n*Turns:* ${activeGame.turn}\n${message.content}`
+                    return `**Initative Summary**\n*Rounds:* ${activeGame.round}\n*Turns:* ${activeGame.turn}`
+                            + `\n${message?.content == undefined ? '' : message.content }`
                 }  
 
                 return 'Error Finding ChannelID and/or MessageID'
@@ -346,15 +347,23 @@ module CommandInterpreter{
 
                 let nextInit = await Initiative.nextTurn(gamedb, tableNameBase, activeGame)
 
+                if(nextInit == undefined){
+                    return 'Issue proceeding to next turn.'
+                }
+
                 if(activeGame.channelID != null && activeGame.messageID != null){
                     let message = await UtilityFunctions.getMessage(client, 
                                                                     guildID, 
                                                                     activeGame.channelID, 
                                                                     activeGame.messageID)
-                    message.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
+                    message?.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
                 }  
+                
+                const guild = client.guilds.cache.get(guildID)
+                const displayUser = guild?.members.cache.get(String(nextInit?.user))
 
-                return `**${nextInit?.name}'s** Turn`
+                return `${nextInit?.emote == undefined ? '' : UtilityFunctions.getEmoteDisplay(interaction.guild, nextInit.emote)}`
+                          + `${displayUser} (Round ${activeGame.round}, Turn ${activeGame.turn}) **${nextInit?.name}'s** Turn!`
             }
             else{
                 return 'Error: Invalid action.'
@@ -371,13 +380,16 @@ module CommandInterpreter{
             }
 
             const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
-            
+            const emote = UtilityFunctions.getEmojiID(
+                            UtilityFunctions.formatString(options.getString('emote'))
+                        )
+            const hp = options.getNumber('HP')
             /*const chr = await customInterp?.getCharacter(chrName)
             if(chr == null){
                 return `Error finding character ${chrName}.`
             }*/
 
-            const query = options.getString('roll')
+            const query = options.getString('query')
 
             const result = UtilityFunctions.parseRoll(query == null ? activeGame.defaultRoll : query)
 
@@ -385,16 +397,18 @@ module CommandInterpreter{
                 return 'Error parsing roll.'
             }
 
-            new Initiative(chrName, result[1], false).addToTable(gamedb, tableNameBase)
+            if(!(await new Initiative(chrName, result[1], false, hp, userId, emote).addToTable(gamedb, tableNameBase))){
+                return 'Error: Character is already in initiative.'
+            }
 
             if(activeGame.channelID != null && activeGame.messageID != null){
                 let message = await UtilityFunctions.getMessage(client, 
                                                                 guildID, 
                                                                 activeGame.channelID, 
                                                                 activeGame.messageID)
-                message.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
+                message?.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
                 
-                return `**\"${chrName}\"** successfully added to initiative.`
+                return `Character **\"${chrName}\"** added to initiative: ${result[0]} = __*${result[1]}*__`
             }   
 
             return 'Issue adding character to initiative.'
@@ -416,14 +430,14 @@ module CommandInterpreter{
                 return `Error finding character ${chrName}.`
             } */
 
-            new Initiative(chrName, -1, false).removeFromTable(gamedb, tableNameBase)
+            new Initiative(chrName, -1, false, 0, userId, '').removeFromTable(gamedb, tableNameBase)
 
             if(activeGame.channelID != null && activeGame.messageID != null){
                 let message = await UtilityFunctions.getMessage(client, 
                                                                 guildID, 
                                                                 activeGame.channelID, 
                                                                 activeGame.messageID)
-                message.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
+                message?.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
 
                 return `**\"${chrName}\"** successfully removed from initiative.`
             }   
