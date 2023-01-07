@@ -5,6 +5,7 @@ export class Initiative {
     constructor(public name: string,
                 public rollValue: number,
                 public isTurn : boolean,
+                public Dmg : number,
                 public HP : number | null,
                 public user: string,
                 public emote: string | null){
@@ -13,6 +14,8 @@ export class Initiative {
         this.isTurn = isTurn
         this.user = user,
         this.emote = emote
+        this.HP = HP
+        this.Dmg = Dmg
     }
 
     public static createTable(db : mysql.Connection, tableNameBase : string): boolean {
@@ -21,6 +24,7 @@ export class Initiative {
             Name varchar(255) NOT NULL,
             Roll SMALLINT NOT NULL,
             HP SMALLINT,
+            Dmg SMALLINT NOT NULL,
             isTurn BOOLEAN,
             User varchar(255) NOT NULL,
             Emote varchar(255),
@@ -48,8 +52,8 @@ export class Initiative {
 
     public async addToTable(db : mysql.Connection, tableNameBase : string): Promise<boolean> {
         return new Promise((resolve) =>{
-            db.query(`INSERT INTO ${tableNameBase}_Initiative (Name, Roll, HP, isTurn, User, Emote)
-            VALUES ("${this.name}", ${this.rollValue}, ${this.HP}, ${this.isTurn}, "${this.user}", ${this.emote});`, (err, res) =>  {
+            db.query(`INSERT INTO ${tableNameBase}_Initiative (Name, Roll, HP, Dmg, isTurn, User, Emote)
+            VALUES ("${this.name}", ${this.rollValue}, ${this.HP}, ${this.Dmg}, ${this.isTurn}, "${this.user}", "${this.emote}");`, (err, res) =>  {
                 if(err){
                     if(err.errno == 1062){ // Duplicate Character
                         return resolve(false)
@@ -75,6 +79,17 @@ export class Initiative {
         return true
     }
 
+    updateDMG(db : mysql.Connection, tableBaseName : string, value : number): boolean{
+        db.query(`UPDATE ${tableBaseName}_Initiative SET Dmg = Dmg+${value} WHERE Name = '${this.name}';`, (err, res) => {
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })  
+
+        return true
+    }
+
     static getAllInitChrs(db : mysql.Connection, tableBaseName : string): Promise<Array<Initiative> | null>{
         return new Promise((resolve) =>{
             db.query(`SELECT * FROM ${tableBaseName}_Initiative ORDER BY Roll DESC;`, (err, res) =>  {
@@ -85,13 +100,27 @@ export class Initiative {
 
                 let retArr = new Array<Initiative>
 
-                res.forEach((init: { Name: string; Roll: number; isTurn: boolean; HP: number; User: string; Emote: string | null }) =>{
-                    let retInit = new Initiative(init.Name, init.Roll, init.isTurn, init.HP, init.User, init.Emote)
+                res.forEach((init: { Name: string; Roll: number; isTurn: boolean; HP: number; Dmg: number; User: string; Emote: string | null }) =>{
+                    let retInit = new Initiative(init.Name, init.Roll, init.isTurn, init.Dmg, init.HP, init.User, init.Emote)
     
                     retArr.push(retInit)
                 })
                 
                 return resolve(retArr)
+            })
+        })
+    }
+
+    static getInitChr(db : mysql.Connection, tableBaseName : string, chrName : string): Promise<Initiative | null>{
+        return new Promise((resolve) =>{
+            db.query(`SELECT * FROM ${tableBaseName}_Initiative WHERE Name = '${chrName}'`, (err, res) =>  {
+                if(err || res.length != 1){
+                    console.log(err)
+                    return resolve(null)
+                } 
+
+                return resolve(new Initiative(res[0].Name, res[0].Roll, res[0].isTurn, res[0].Dmg,
+                                                 res[0].HP, res[0].User, res[0].Emote))
             })
         })
     }
@@ -109,10 +138,10 @@ export class Initiative {
         for(let i = 0; i < initChrs.length; ++i){
             if(initChrs[i].isTurn){
                 const j = (i == initChrs.length - 1) ? 0 : i + 1
-                return [new Initiative(initChrs[i].name, initChrs[i].rollValue, 
-                                initChrs[i].isTurn, initChrs[i].HP, initChrs[i].user, initChrs[i].emote),
-                        new Initiative(initChrs[j].name, initChrs[j].rollValue, 
-                                initChrs[j].isTurn, initChrs[j].HP, initChrs[j].user, initChrs[j].emote),
+                return [new Initiative(initChrs[i].name, initChrs[i].rollValue, initChrs[i].isTurn,
+                                initChrs[i].Dmg, initChrs[i].HP, initChrs[i].user, initChrs[i].emote),
+                        new Initiative(initChrs[j].name, initChrs[j].rollValue, initChrs[j].isTurn,
+                                initChrs[j].Dmg, initChrs[j].HP, initChrs[j].user, initChrs[j].emote),
                         !(j == (i + 1))]
             }
         }
@@ -162,7 +191,8 @@ export class Initiative {
                                         activeGame.messageID,
                                         activeGame.defaultRoll,
                                         ++activeGame.round,
-                                        ++activeGame.turn)
+                                        ++activeGame.turn,
+                                        activeGame.hideHP)
             initChrs[0].isTurn = false
             return Initiative.updateInitChar(db, tableNameBase, initChrs[0])
         }
@@ -172,7 +202,8 @@ export class Initiative {
                                         activeGame.messageID,
                                         activeGame.defaultRoll,
                                         ++activeGame.round,
-                                        ++activeGame.turn)
+                                        ++activeGame.turn,
+                                        activeGame.hideHP)
             return Initiative.startInit(db, tableNameBase, initChrs)
         }
 
@@ -183,7 +214,8 @@ export class Initiative {
                 activeGame.messageID,
                 activeGame.defaultRoll,
                 activeChrs[2] ? ++activeGame.round : activeGame.round,
-                ++activeGame.turn)
+                ++activeGame.turn,
+                activeGame.hideHP)
             
             return this.updateInitChars(db, tableNameBase, activeChrs)
         }
@@ -209,7 +241,9 @@ export class Initiative {
 
         if(allInitChrs != null){
             allInitChrs.forEach(initChr => {
-                retStr += `${initChr.isTurn ? '#' : ' '} ${initChr.rollValue}: ${initChr.name}\n`
+                retStr += `${initChr.isTurn ? '#' : ' '} ${initChr.rollValue}: ${initChr.name}`
+                retStr += initChr.HP == null || activeGame.hideHP ? '' : ` <${initChr.HP-initChr.Dmg}/${initChr.HP} HP>`
+                retStr += '\n'
             });
         }
 

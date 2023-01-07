@@ -10,6 +10,7 @@ export class ActiveGame{
                 public defaultRoll : string,
                 public round : number,
                 public turn : number,
+                public hideHP : boolean,
                 public channelID : string | null,
                 public messageID : string | null){
         this.serverID = serverID;
@@ -20,6 +21,7 @@ export class ActiveGame{
         this.defaultRoll = defaultRoll
         this.round = round
         this.turn = turn
+        this.hideHP = hideHP
         this.channelID = channelID
         this.messageID = messageID
     }
@@ -35,6 +37,7 @@ export class ActiveGame{
             DefaultRoll varchar(50),
             Round INT,
             Turn INT,
+            HideHP BOOLEAN,
             MessageID varchar(255),
             ChannelID varchar(255),
             PRIMARY KEY (SERV_ID, GameName));`, (err, res) =>  {
@@ -62,9 +65,9 @@ export class ActiveGame{
         this.inactivizeGames(db)
 
         //Inserts new game to the game table, set as the active game
-        db.query(`INSERT INTO ActiveGames (SERV_ID, GameName, GameType, DM, isActive, Round, Turn, MessageID, ChannelID)
+        db.query(`INSERT INTO ActiveGames (SERV_ID, GameName, GameType, DM, isActive, Round, Turn, HideHP, MessageID, ChannelID)
         VALUES (${this.serverID}, "${this.gameName}", "${this.gameType}", ${this.DM}, ${this.isActive}, 
-                ${this.round}, ${this.turn}, ${this.messageID}, ${this.channelID});`, (err, res) =>  {
+                ${this.round}, ${this.turn}, ${this.hideHP}, ${this.messageID}, ${this.channelID});`, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err
@@ -94,7 +97,8 @@ export class ActiveGame{
                 newMsgID : string | null,
                 newRoll: string,
                 newRound: number,
-                newTurn: number): boolean{
+                newTurn: number,
+                newHideHP: boolean): boolean{
 
         this.channelID = newChnnlID
         this.messageID = newMsgID
@@ -103,7 +107,8 @@ export class ActiveGame{
                                             ChannelID = ${newChnnlID},
                                             DefaultRoll = '${newRoll}',
                                             Round = ${newRound},
-                                            Turn = ${newTurn}
+                                            Turn = ${newTurn},
+                                            HideHP = ${newHideHP}
                     WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
             if(err){
                 console.log(err)
@@ -153,6 +158,7 @@ export class ActiveGame{
                                             res[0].DefaultRoll,
                                             res[0].Round,
                                             res[0].Turn,
+                                            res[0].HideHP,
                                             res[0].ChannelID,
                                             res[0].MessageID))
             })

@@ -88,6 +88,17 @@ export class Character {
         })
     }
 
+    updateDMG(db : mysql.Connection, tableBaseName : string, value : number): boolean{
+        db.query(`UPDATE ${tableBaseName}_Characters SET DmgTaken = DmgTaken+${value} WHERE Name = '${this.name}';`, (err, res) => {
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })  
+
+        return true
+    }
+
     updateStat(db : mysql.Connection, tableBaseName : string, statName : string, statValue : string): boolean{
         if(statName.toUpperCase() === 'NAME'){
             return false

@@ -55,7 +55,7 @@ module CommandInterpreter{
     
             DM ??= userId
     
-            const newGame = new ActiveGame(guildID, gameName, gameType, DM, true, '', 0, 0, null, null)
+            const newGame = new ActiveGame(guildID, gameName, gameType, DM, true, '', 0, 0, false, null, null)
     
             newGame.addToTable(gamedb)
             
@@ -168,7 +168,7 @@ module CommandInterpreter{
         } 
         // Changes currently active game to a different game
         else if(commandName === 'change-game'){
-            new ActiveGame(guildID, String(gameName), '', userId, true, '', 0, 0, null, null).changeGame(gamedb)
+            new ActiveGame(guildID, String(gameName), '', userId, true, '', 0, 0, false, null, null).changeGame(gamedb)
     
             return `Game successfully changed to **\"${gameName}\"**`
         } 
@@ -289,6 +289,8 @@ module CommandInterpreter{
 
         else if(commandName === 'init'){
             const action = options.getString('action', true).toUpperCase()
+            let hideHP = options.getBoolean('hide-hp')
+            hideHP ??= false
             const startConds = ['B', 'BEGIN', 'S', 'START']
             const endConds =['E', 'END']
             const nextConds =['N', 'NEXT']
@@ -316,7 +318,7 @@ module CommandInterpreter{
                     return 'Error sending initiative message.'
                 }
 
-                activeGame.updateInit(gamedb, msg.channel.id, msg.id, roll, 0, 0)
+                activeGame.updateInit(gamedb, msg.channel.id, msg.id, roll, 0, 0, hideHP)
 
                 return '**Initative Begins !**'
             } else if(endConds.includes(action)){
@@ -333,7 +335,7 @@ module CommandInterpreter{
                                                                     activeGame.messageID)
                     message?.unpin()
 
-                    activeGame.updateInit(gamedb, null, null, '1d20', 0, 0)
+                    activeGame.updateInit(gamedb, null, null, '1d20', 0, 0, hideHP)
                 
                     return `**Initative Summary**\n*Rounds:* ${activeGame.round}\n*Turns:* ${activeGame.turn}`
                             + `\n${message?.content == undefined ? '' : message.content }`
@@ -351,7 +353,7 @@ module CommandInterpreter{
                     return 'Issue proceeding to next turn.'
                 }
 
-                if(activeGame.channelID != null && activeGame.messageID != null){
+                if(activeGame.channelID != null){
                     let message = await UtilityFunctions.getMessage(client, 
                                                                     guildID, 
                                                                     activeGame.channelID, 
@@ -379,39 +381,56 @@ module CommandInterpreter{
                 return 'Cannot add character to initiative as there is none in progress.'
             }
 
-            const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
-            const emote = UtilityFunctions.getEmojiID(
+            let chrName = UtilityFunctions.formatString(options.getString('char-name', true))
+            let emote = UtilityFunctions.getEmojiID(
                             UtilityFunctions.formatString(options.getString('emote'))
                         )
-            const hp = options.getNumber('HP')
-            /*const chr = await customInterp?.getCharacter(chrName)
-            if(chr == null){
-                return `Error finding character ${chrName}.`
-            }*/
+            let hp = options.getNumber('hp')
 
-            const query = options.getString('query')
-
-            const result = UtilityFunctions.parseRoll(query == null ? activeGame.defaultRoll : query)
-
-            if(result == undefined){
-                return 'Error parsing roll.'
+            const chr = await customInterp?.getCharacter(chrName)
+            let dmg = 0
+            if(hp == null && chr != null){
+                hp = chr.health
+                dmg = chr.dmgTaken
             }
 
-            if(!(await new Initiative(chrName, result[1], false, hp, userId, emote).addToTable(gamedb, tableNameBase))){
-                return 'Error: Character is already in initiative.'
+            if(emote == null && chr != null){
+                emote = chr.emote
             }
 
-            if(activeGame.channelID != null && activeGame.messageID != null){
-                let message = await UtilityFunctions.getMessage(client, 
-                                                                guildID, 
-                                                                activeGame.channelID, 
-                                                                activeGame.messageID)
-                message?.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
-                
-                return `Character **\"${chrName}\"** added to initiative: ${result[0]} = __*${result[1]}*__`
-            }   
+            let quantity = options.getNumber('quantity')
 
-            return 'Issue adding character to initiative.'
+            quantity ??= 1
+
+            let replyStr = ''
+
+            for(let chrInd = 0; chrInd < quantity; ++chrInd){
+                let name = quantity == 1 ? chrName : `${chrName} ${chrInd + 1}` //TODO: Figure out a better way to do this
+                const query = options.getString('query')
+
+                const result = UtilityFunctions.parseRoll(query == null ? activeGame.defaultRoll : query)
+    
+                if(result == undefined){
+                    return 'Error parsing roll.'
+                }
+    
+                if(!(await new Initiative(name, result[1], false, dmg, hp, userId, emote).addToTable(gamedb, tableNameBase))){
+                    return 'Error: Character is already in initiative.'
+                }
+    
+                if(activeGame.channelID != null){
+                    let message = await UtilityFunctions.getMessage(client, 
+                                                                    guildID, 
+                                                                    activeGame.channelID, 
+                                                                    activeGame.messageID)
+                    message?.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
+                    
+                    replyStr += `Character **\"${name}\"** added to initiative: ${result[0]} = __*${result[1]}*__\n`
+                }  
+            } 
+
+            return replyStr
+            //return 'Issue adding character(s) to initiative.'
         }
 
         else if(commandName === 'init-rmv'){
@@ -430,9 +449,9 @@ module CommandInterpreter{
                 return `Error finding character ${chrName}.`
             } */
 
-            new Initiative(chrName, -1, false, 0, userId, '').removeFromTable(gamedb, tableNameBase)
+            new Initiative(chrName, -1, false, 0, 0, userId, '').removeFromTable(gamedb, tableNameBase)
 
-            if(activeGame.channelID != null && activeGame.messageID != null){
+            if(activeGame.channelID != null){
                 let message = await UtilityFunctions.getMessage(client, 
                                                                 guildID, 
                                                                 activeGame.channelID, 
@@ -443,6 +462,46 @@ module CommandInterpreter{
             }   
 
             return 'Issue removing character from initiative.'
+        }
+
+        else if(commandName === 'hp'){
+
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
+            const value = options.getNumber('value', true)
+            let initOnly = options.getBoolean('init-only')
+
+            initOnly ??= false
+
+            const chr = await customInterp?.getCharacter(chrName)
+            let replyStr = ''
+            const isChrFindable = !initOnly && chr != null && chr != undefined
+
+            if(isChrFindable){
+                chr.updateDMG(gamedb, tableNameBase, value)
+                replyStr += 'Character '
+            }
+
+            const initChr = await Initiative.getInitChr(gamedb, tableNameBase, chrName)
+
+            if(initChr != null && initChr.HP != null){
+                if(activeGame == null){
+                    return 'Issue retrieving active game.'
+                }
+
+                initChr.updateDMG(gamedb, tableNameBase, value)
+                replyStr += isChrFindable ? '& ' : ''
+                replyStr += 'Initiative '
+
+                if(activeGame.channelID != null && activeGame.messageID != null){
+                    let message = await UtilityFunctions.getMessage(client, 
+                                                                    guildID, 
+                                                                    activeGame.channelID, 
+                                                                    activeGame.messageID)
+                    message?.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
+                }
+            }
+
+            return replyStr === '' ? 'Error: Character & Initiative not found' : `${replyStr}for **\"${chrName}\"** updated.` 
         }
 
         // Calls custom interpreter if command is not within base commands

@@ -319,13 +319,19 @@ module SetupFunctions{
                     description: 'Dice (XdY) used as default die for rolling initative using \'begin\' action. Defaults to 1d20.',
                     required: false,
                     type: 3
+                },
+                {
+                    name: 'hide-hp',
+                    description: 'True to hide HP values from initiative when using \'begin\'. Cannot be changed. Defaults to false.',
+                    required: false,
+                    type: 5
                 }
             ]
         })
 
         commands?.create({
             name: 'init-add',
-            description: 'Adds character to initiative.',
+            description: 'Adds character to initiative. Will autofill if character already exists.',
             options: [
                 {
                     name: 'char-name',
@@ -350,6 +356,12 @@ module SetupFunctions{
                     description: 'Overrides default die roll. Defaults to 1d20.',
                     required: false,
                     type: 3
+                },
+                {
+                    name: 'quantity',
+                    description: 'Quantity of characters to be added. Defaults to 1.',
+                    required: false,
+                    type: 10
                 }
             ]
         })
@@ -363,6 +375,31 @@ module SetupFunctions{
                     description: 'Name of character to be removed from initiative.',
                     required: true,
                     type: 3
+                }
+            ]
+        })
+
+        commands?.create({
+            name: 'hp',
+            description: 'Changes Character and/or Initative HP',
+            options: [
+                {
+                    name: 'char-name',
+                    description: 'Name of character who will be taking damage.',
+                    required: true,
+                    type: 3
+                },
+                {
+                    name: 'value',
+                    description: 'Positive value for damage taken.',
+                    required: true,
+                    type: 10
+                },
+                {
+                    name: 'init-only',
+                    description: 'True if only want to change initative health for a character. Defaults to false.',
+                    required: false,
+                    type: 5
                 }
             ]
         })

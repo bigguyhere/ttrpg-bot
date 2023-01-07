@@ -1,5 +1,5 @@
 import { Connection } from "mysql"
-import { CustomInterpreter } from "./custom_interpreter"
+import { BaseInterpreter, CustomInterpreter } from "./custom_interpreter"
 import { DRInterpreter } from "./drinterpreter"
 
 export class DetermineInterpreter{
@@ -16,6 +16,6 @@ export class DetermineInterpreter{
                 return new DRInterpreter(gamedb, tableNameBase)
         }
 
-        return null
+        return new BaseInterpreter(gamedb, tableNameBase)
     }
 }

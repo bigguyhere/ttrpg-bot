@@ -49,3 +49,12 @@ export abstract class CustomInterpreter{
             activeGame: ActiveGame | null,
             interaction: ChatInputCommandInteraction<CacheType>) : Promise<string> 
 }
+
+export class BaseInterpreter extends CustomInterpreter{
+    initializeTables(): void {
+    }
+    async interpret(commandName: string, options: Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">, activeGame: ActiveGame | null, interaction: ChatInputCommandInteraction<CacheType>): Promise<string> {
+        return "Method not implemented."
+    }
+
+}
