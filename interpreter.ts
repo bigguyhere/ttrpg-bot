@@ -59,17 +59,16 @@ module CommandInterpreter{
     
             newGame.addToTable(gamedb)
             
-            let additionalStats = Character.parseColumns(
+            let additionalStats = UtilityFunctions.parseColumns(
                 UtilityFunctions.formatNullString(options.getString('additional-stats')))
             
             if(additionalStats == undefined){
                 return 'Issue parsing additional columns.'
             }
-
-            customInterp?.initializeTables()
     
             Character.createTable(gamedb, tableNameBase, additionalStats)
             Inventory.createTable(gamedb, tableNameBase)
+            DetermineInterpreter.select(gameType, gamedb, tableNameBase)?.initializeTables()
 
             return `The game **\"${gameName}\"** has been successfully created.`
         } 
@@ -81,7 +80,7 @@ module CommandInterpreter{
             const stats = UtilityFunctions.formatNullString(options.getString('additional-stats'))
             const chrId = chrUser == null ? userId : String(chrUser.id)
 
-            let additionalStats = Character.parseColumns(stats)
+            let additionalStats = UtilityFunctions.parseColumns(stats)
             if(additionalStats == undefined){
                 return 'Issue parsing additional columns.'
             }
@@ -94,6 +93,7 @@ module CommandInterpreter{
                                         chrId,
                                         options.getNumber('health'),
                                         0,
+                                        UtilityFunctions.formatNullString(options.getString('status')),
                                         additionalStats);
                                         
             if(!(await newChar.addToTable(gamedb, tableNameBase))){
@@ -142,7 +142,7 @@ module CommandInterpreter{
             const statName = UtilityFunctions.formatString(options.getString('stat-name', true))
             const statValue = UtilityFunctions.formatString(options.getString('stat-value', true))
             
-            let tbdChar = new Character(charName, null, null, '', -1, -1, []);
+            let tbdChar = new Character(charName, null, null, '', -1, -1, '', []);
             if(!tbdChar.updateStat(gamedb, tableNameBase, statName, statValue)){
                 return 'Cannot update the Name column of a character. ' +
                         'Instead please remove the character and replace them with a new one.'
@@ -323,14 +323,13 @@ module CommandInterpreter{
                 return '**Initative Begins !**'
             } else if(endConds.includes(action)){
                 if(activeGame.messageID == null){
-                    return 'Cannot start initiative as there is none in progress.'
+                    return 'Cannot end initiative as there is none in progress.'
                 }
                 
                 Initiative.dropTable(gamedb, tableNameBase)
 
                 if(activeGame.channelID != null && activeGame.messageID != null){
-                    let message = await UtilityFunctions.getMessage(client, 
-                                                                    guildID, 
+                    let message = await UtilityFunctions.getMessage(interaction.guild,
                                                                     activeGame.channelID, 
                                                                     activeGame.messageID)
                     message?.unpin()
@@ -354,8 +353,7 @@ module CommandInterpreter{
                 }
 
                 if(activeGame.channelID != null){
-                    let message = await UtilityFunctions.getMessage(client, 
-                                                                    guildID, 
+                    let message = await UtilityFunctions.getMessage(interaction.guild,
                                                                     activeGame.channelID, 
                                                                     activeGame.messageID)
                     message?.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
@@ -417,17 +415,16 @@ module CommandInterpreter{
                 if(!(await new Initiative(name, result[1], false, dmg, hp, userId, emote).addToTable(gamedb, tableNameBase))){
                     return 'Error: Character is already in initiative.'
                 }
-    
-                if(activeGame.channelID != null){
-                    let message = await UtilityFunctions.getMessage(client, 
-                                                                    guildID, 
-                                                                    activeGame.channelID, 
-                                                                    activeGame.messageID)
-                    message?.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
-                    
-                    replyStr += `Character **\"${name}\"** added to initiative: ${result[0]} = __*${result[1]}*__\n`
-                }  
+
+                replyStr += `Character **\"${name}\"** added to initiative: ${result[0]} = __*${result[1]}*__\n`
             } 
+
+            if(activeGame.channelID != null){
+                let message = await UtilityFunctions.getMessage(interaction.guild,
+                                                                activeGame.channelID, 
+                                                                activeGame.messageID)
+                message?.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
+            }  
 
             return replyStr
             //return 'Issue adding character(s) to initiative.'
@@ -444,16 +441,20 @@ module CommandInterpreter{
 
             const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
 
-            /*const chr = await customInterp?.getCharacter(chrName)
-            if(chr == null){
-                return `Error finding character ${chrName}.`
-            } */
+            const initChr = await Initiative.getInitChr(gamedb, tableNameBase, chrName)
 
-            new Initiative(chrName, -1, false, 0, 0, userId, '').removeFromTable(gamedb, tableNameBase)
+            if(initChr == null){
+                return 'Issue finding initiative character.'
+            }
+
+            if(initChr?.isTurn){
+                return 'Cannot remove character on their turn.'
+            }
+
+            initChr.removeFromTable(gamedb, tableNameBase)
 
             if(activeGame.channelID != null){
-                let message = await UtilityFunctions.getMessage(client, 
-                                                                guildID, 
+                let message = await UtilityFunctions.getMessage(interaction.guild, 
                                                                 activeGame.channelID, 
                                                                 activeGame.messageID)
                 message?.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
@@ -493,8 +494,7 @@ module CommandInterpreter{
                 replyStr += 'Initiative '
 
                 if(activeGame.channelID != null && activeGame.messageID != null){
-                    let message = await UtilityFunctions.getMessage(client, 
-                                                                    guildID, 
+                    let message = await UtilityFunctions.getMessage(interaction.guild,
                                                                     activeGame.channelID, 
                                                                     activeGame.messageID)
                     message?.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))

@@ -14,12 +14,14 @@ export class Character {
                 public owner: string, 
                 health: number | null, 
                 public dmgTaken : number, 
+                public status : string | null,
                 public otherStats : Array<[string, string]>) {
         this.id = -1;
         this.name = name;
         this.emote = emote;
         this.owner = owner;
         this.dmgTaken = dmgTaken;
+        this.status = status;
         this.otherStats = otherStats
 
         if(prounouns === null){
@@ -43,7 +45,8 @@ export class Character {
             Pronouns varchar(255) NOT NULL,
             Owner varchar(255),
             Health SMALLINT,
-            DmgTaken SMALLINT,`
+            DmgTaken SMALLINT,
+            Status varchar(255),`
 
             additionalStats.forEach(stat =>{
                 queryStr += `${stat[0]} ${stat[1]},\n`
@@ -63,8 +66,8 @@ export class Character {
 
     addToTable(db : mysql.Connection, tableBaseName : string): Promise<boolean>{
         return new Promise((resolve) =>{
-            let queryStr = `INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, DmgTaken`
-            let valuesStr = `VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health}, ${this.dmgTaken}`
+            let queryStr = `INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, DmgTaken, Status`
+            let valuesStr = `VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health}, ${this.dmgTaken}, "${this.status}"`
 
             this.otherStats.forEach(stat =>{
                 queryStr += `, ${stat[0]}`
@@ -114,34 +117,6 @@ export class Character {
         return true
     }
 
-    static parseColumns(columns : string | null): Array<[string,string]> | undefined{
-        if(columns == null || columns === 'null'){
-            return []
-        }
-        
-        let retArr = new Array<[string, string]>
-
-        let colsArr = columns.split(',')
-
-        colsArr.forEach(col =>{
-            col = col.trim()
-
-            let statData = col.split('|')
-
-            if(statData.length == 1){
-                statData.push('varchar(255)')
-            } 
-
-            if(statData.length != 2){
-                return undefined
-            }
-
-            retArr.push([statData[0].trim().replace(/ /g, '_'), statData[1]])
-        })
-
-        return retArr
-    }
-
     removeFromTable(db : mysql.Connection, tableBaseName : string): boolean{
 
         db.query(`DELETE FROM ${tableBaseName}_Characters WHERE Name='${this.name}'`, (err, res) =>  {
@@ -154,7 +129,7 @@ export class Character {
         return true
     }
 
-    static getCharacter(db : mysql.Connection, tableBaseName : string, char_name : string): Promise<Character | null>{
+    static getCharacter(db : mysql.Connection, tableBaseName : string, char_name : string | number): Promise<Character | null>{
         return new Promise((resolve) =>{
             db.query(`SELECT * FROM ${tableBaseName}_Characters WHERE Name = "${char_name}";`, (err, res) =>  {
                 if(err || res.length != 1){
@@ -169,7 +144,7 @@ export class Character {
                 } 
 
                 let stats = new Array<[string, string]>
-                let baseStats = ['CHR_ID', 'Name', 'Emote', 'Pronouns', 'Owner', 'Health', 'DmgTaken']
+                let baseStats = ['CHR_ID', 'Name', 'Emote', 'Pronouns', 'Owner', 'Health', 'DmgTaken', 'Status']
 
                 ress.forEach((stat: { Field: string; Type: string; }) => {
                     if(!baseStats.includes(stat.Field)){
@@ -177,7 +152,7 @@ export class Character {
                     }
                 });
 
-                let retChr = new Character(res[0].Name, res[0].Emote, res[0].Pronouns, res[0].Owner, res[0].Health, res[0].DmgTaken, stats)
+                let retChr = new Character(res[0].Name, res[0].Emote, res[0].Pronouns, res[0].Owner, res[0].Health, res[0].DmgTaken, res[0].Status, stats)
                 retChr.id = res[0].CHR_ID
 
                 return resolve(retChr)
@@ -196,8 +171,8 @@ export class Character {
 
                 let retArr = new Array<Character>
 
-                res.forEach((char: { CHR_ID: number; Name: string; Emote: string | null; Pronouns: string | null; Owner: string; Health: number | null; DmgTaken: number; }) =>{
-                let retChr = new Character(char.Name, char.Emote, char.Pronouns, char.Owner, char.Health, char.DmgTaken, [])
+                res.forEach((char: { CHR_ID: number; Name: string; Emote: string | null; Pronouns: string | null; Owner: string; Health: number | null; DmgTaken: number; Status: string | null}) =>{
+                let retChr = new Character(char.Name, char.Emote, char.Pronouns, char.Owner, char.Health, char.DmgTaken, char.Status, [])
                 retChr.id = char.CHR_ID
 
                 retArr.push(retChr)
@@ -249,6 +224,7 @@ export class Character {
             { name: '**Owner:**', value: String(owner) },
             { name: '\u200B', value: '\u200B' },
             { name: '**Health**', value: String(this.getCurrentHealth()) , inline: true},
+            { name: '**Status**', value: String(this.status) , inline: true},
         )
         .setTimestamp()
 

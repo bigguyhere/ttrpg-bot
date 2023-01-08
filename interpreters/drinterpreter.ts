@@ -5,6 +5,8 @@ import { DRCharacter } from "../models/custommodels/drmodels/drcharacter";
 import { DRRelationship } from "../models/custommodels/drmodels/drrelationship";
 import { DRChrSkills, DRSkill } from "../models/custommodels/drmodels/drskill";
 import { DRChrTBs, DRTruthBullet } from "../models/custommodels/drmodels/drtruthbullet";
+import { DRVote } from "../models/custommodels/drmodels/drvote";
+import { Initiative } from "../models/initiative";
 import { UtilityFunctions } from "../utility";
 import { CustomInterpreter } from "./custom_interpreter";
 
@@ -313,6 +315,189 @@ export class DRInterpreter extends CustomInterpreter{
                 false).useTB(this.gamedb, this.tableNameBase)
 
             return `Truth bullet **\"${tbName}\"** has been successfully usage toggled.`
+        } else if(commandName === 'dr-begin-trial'){
+
+            if(activeGame == null){
+                return 'Issue retrieving active game.'
+            }
+
+            if(activeGame.messageID != null){
+                return 'Cannot start trial as there is already one in progress.'
+                + ' Please end other trial before starting a new one.'
+            }
+
+            const blackened = UtilityFunctions.formatString(options.getString('blackened', true))
+            const vicitms = UtilityFunctions.parseMultStr(
+                    UtilityFunctions.formatString(options.getString('victims', true)))
+
+            if(vicitms == undefined){
+                return 'Issue parsing victims.'
+            }
+
+            const killer = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, blackened)
+                
+            if(killer == null){
+                return `Error finding character ${killer}.`
+            }
+
+            killer.updateStat(this.gamedb, this.tableNameBase, 'Status', 'Blackened')
+
+            vicitms.forEach(async victim => {
+                const chr = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, victim)
+                
+                if(chr == null){
+                    return `Error finding character ${victim}}.`
+                }
+                
+                chr.updateStat(this.gamedb, this.tableNameBase, 'Status', 'Victim')
+
+            })
+
+            Initiative.createTable(this.gamedb, this.tableNameBase)
+                const msg = await interaction.channel?.send(
+                    await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
+
+            msg?.pin()
+
+            if(msg == undefined){
+                return 'Error sending trial message.'
+            }
+
+            activeGame.updateInit(this.gamedb, msg.channel.id, msg.id, '2d6', 0, 0, true)
+
+            return '**The Class Trial Begins !**'
+        } else if (commandName === 'dr-end-trial'){
+
+            if(activeGame?.messageID == null){
+                return 'Cannot end trial as there is none in progress.'
+            }
+
+            let chrs = await DRCharacter.getAllCharacters(this.gamedb, this.tableNameBase, true)
+
+            if(chrs == null){
+                return 'Issue getting characters.'
+            }
+
+            const chrName1 = UtilityFunctions.formatString(options.getString('cs-char1'))
+            const chrName2 = UtilityFunctions.formatString(options.getString('cs-char2'))
+
+            chrs.forEach(chr => {
+                const hope = chr.name === chrName1 || chr.name === chrName2 ? 4 : 1
+                chr.updateHD(this.gamedb, this.tableNameBase, hope, 1)
+            });
+
+            DRVote.createTable(this.gamedb, this.tableNameBase)
+            DRVote.generateVotes(this.gamedb, this.tableNameBase, chrs)
+
+            return 'The Trial Concludes ! Vote for the blackened using the **/dr-vote** command !'
+        } else if(commandName === 'dr-vote'){
+            const voterName = UtilityFunctions.formatString(options.getString('voter-chr', true))
+            const voteName = UtilityFunctions.formatString(options.getString('vote', true))
+
+            const voter = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, voterName)
+            const vote = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, voteName)
+
+            if(voter == null){
+                return `Error finding character ${voter}.`
+            }
+
+            if(vote == null){
+                return `Error finding character ${vote}.`
+            }
+
+            const voterStatus = voter.status?.toUpperCase()
+            if(voterStatus === 'VICTIM' || voterStatus === 'DEAD'){
+                return `Apologies, Character **${voterName}** Cannot vote while dead.`
+            }
+
+            new DRVote(voter, vote).updateVote(this.gamedb, this.tableNameBase)
+
+            const remainingVotes = await DRVote.countRemainingVotes(this.gamedb, this.tableNameBase)
+
+            if(remainingVotes == 0){
+                if(activeGame == null){
+                    return 'Issue retrieving active game.'
+                }
+
+                let results = await DRVote.getResults(this.gamedb, this.tableNameBase)
+                
+                Initiative.dropTable(this.gamedb, this.tableNameBase)
+                DRVote.dropTable(this.gamedb, this.tableNameBase)
+    
+                if(activeGame.channelID != null && activeGame.messageID != null){
+                    let message = await UtilityFunctions.getMessage(interaction.guild, 
+                                                                    activeGame.channelID, 
+                                                                    activeGame.messageID)
+                    message?.unpin()
+    
+                    activeGame.updateInit(this.gamedb, null, null, '2d6', 0, 0, true)
+
+                    const embedBuilder = DRVote.buildSummaryEmbed(interaction.guild, results)
+
+                    if(embedBuilder == undefined){
+                        return `Issue finding Character.`
+                    }
+
+                    message?.channel.send({embeds : [embedBuilder] })
+                }
+                const blackened = results[0]
+                if(blackened[0] == null){
+                    return 'Issue finding name of blackened.'
+                }
+                const nameStr = blackened[0].talent == null ? blackened[0].name : `The ${blackened[0].talent}: ${blackened[0].name}`
+
+                DRCharacter.setToDead(this.gamedb, this.tableNameBase, blackened[0].status !== 'Blackened')
+                
+                return `All votes counted ! The blackened was chosen to be **${nameStr}** with **${blackened[1]}** votes !`
+            }
+
+            return `A character has voted. **${remainingVotes}** votes remain.`
+        } else if(commandName === 'dr-add-trial'){
+
+                if(activeGame == null){
+                    return 'Issue retrieving active game.'
+                }
+    
+                if(activeGame.messageID == null){
+                    return 'Cannot add character to trial as there is none in progress.'
+                }
+    
+                let chrName = UtilityFunctions.formatString(options.getString('char-name', true))
+                let emote = UtilityFunctions.getEmojiID(
+                                UtilityFunctions.formatString(options.getString('emote'))
+                            )
+    
+                const chr = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, chrName)
+    
+                if(emote == null && chr != null){
+                    emote = chr.emote
+                }
+                const query = options.getString('query')
+
+                const result = UtilityFunctions.parseRoll(query == null 
+                                                        ? `${activeGame.defaultRoll}${
+                                                                                        chr == null 
+                                                                                        ? '' 
+                                                                                        : ` + ${chr.brains}`}` 
+                                                        : query)
+    
+                if(result == undefined){
+                    return 'Error parsing roll.'
+                }
+    
+                if(!(await new Initiative(chrName, result[1], false, 0, 0, userId, emote).addToTable(this.gamedb, this.tableNameBase))){
+                    return 'Error: Character is already in initiative.'
+                }
+    
+                if(activeGame.channelID != null){
+                    let message = await UtilityFunctions.getMessage(interaction.guild,
+                                                                    activeGame.channelID, 
+                                                                    activeGame.messageID)
+                    message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
+                }  
+    
+                return `Character **\"${chrName}\"** added to trial: ${result[0]} = __*${result[1]}*__\n`
+                //return 'Issue adding character(s) to initiative.'
         }
         
         return 'Error: Unknown DR Command.'

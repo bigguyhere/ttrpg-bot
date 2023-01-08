@@ -38,7 +38,7 @@ export class Initiative {
         return true
     }
 
-    public static dropTable(db : mysql.Connection, tableNameBase : string): boolean {
+    public static dropTable(db : mysql.Connection, tableNameBase : string) {
 
         db.query(`DROP TABLE IF EXISTS ${tableNameBase}_Initiative;`, (err, res) =>  {
             if(err){
@@ -47,7 +47,6 @@ export class Initiative {
             }
         })
 
-        return true
     }
 
     public async addToTable(db : mysql.Connection, tableNameBase : string): Promise<boolean> {

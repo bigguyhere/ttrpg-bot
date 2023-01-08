@@ -206,6 +206,12 @@ module SetupFunctions{
                     type: 10
                 },
                 {
+                    name: 'status',
+                    description: 'Status of a character (i.e. Scared, Burned).',
+                    required: false,
+                    type: 3
+                },
+                {
                     name: 'additional-stats',
                     description: 'Additional stats to be added. Format in "[Stat-Name-1]|[Value-1],[Stat-Name-2]|[Value-2],...".',
                     required: false,
@@ -341,13 +347,13 @@ module SetupFunctions{
                 },
                 {
                     name: 'emote',
-                    description: 'Emote to be displayed upon your turn.',
+                    description: 'Emote to be displayed upon your turn. Can autofill.',
                     required: false,
                     type: 3
                 },
                 {
                     name: 'hp',
-                    description: 'Health of the character to be added to initiative.',
+                    description: 'Health of the character to be added to initiative. Can autofill.',
                     required: false,
                     type: 10
                 },
@@ -373,6 +379,19 @@ module SetupFunctions{
                 {
                     name: 'char-name',
                     description: 'Name of character to be removed from initiative.',
+                    required: true,
+                    type: 3
+                }
+            ]
+        })
+
+        commands?.create({
+            name: 'init-active',
+            description: 'Changes active character in initiative.',
+            options: [
+                {
+                    name: 'char-name',
+                    description: 'Name of character to make their turn.',
                     required: true,
                     type: 3
                 }

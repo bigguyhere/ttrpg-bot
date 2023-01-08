@@ -116,13 +116,47 @@ module UtilityFunctions{
         return baseStr == null ? null : baseStr.trim().replace(findPattern, replacerChr)
     }
 
-    export async function getMessage(client: Client, guildID: string, channelID: string, msgID: string): Promise<Message<true> | Message<false> | undefined>{
-        const guild = client.guilds.cache.get(guildID)
-    
+    export async function getMessage(guild : Guild | null, channelID: string, msgID: string): Promise<Message<true> | Message<false> | undefined>{
         const channel = guild?.channels.cache.find(
             channel => channel.id === channelID
             && channel.type === ChannelType.GuildText) as TextBasedChannel
         return await channel.messages.fetch(msgID).catch( (e) => {return undefined})
+    }
+
+    export function parseColumns(columns : string | null): Array<[string,string]> | undefined{
+        if(columns == null || columns === 'null'){
+            return []
+        }
+        
+        let retArr = new Array<[string, string]>
+
+        let colsArr = columns.split(',')
+
+        colsArr.forEach(col =>{
+            col = col.trim()
+
+            let statData = col.split('|')
+
+            if(statData.length == 1){
+                statData.push('varchar(255)')
+            } 
+
+            if(statData.length != 2){
+                return undefined
+            }
+
+            retArr.push([statData[0].trim().replace(/ /g, '_'), statData[1]])
+        })
+
+        return retArr
+    }
+
+    export function parseMultStr(multStr : string | null): Array<string> | undefined{
+        if(multStr == null || multStr === 'null'){
+            return []
+        }
+        
+        return multStr.split('|')
     }
 
 }

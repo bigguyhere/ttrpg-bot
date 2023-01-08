@@ -1,4 +1,5 @@
 import { ApplicationCommand, ApplicationCommandManager, GuildApplicationCommandManager, GuildResolvable } from "discord.js";
+import { createPool } from "mysql";
 
 module CustomSetup{
     export function setup(commands: GuildApplicationCommandManager |
@@ -9,7 +10,7 @@ module CustomSetup{
         // Add DR Character Command
         commands?.create({
             name: 'dr-add-chr',
-            description: 'Adds a character to the game.',
+            description: 'Adds a DR character to a DR game.',
             options: [
                 {
                     name: 'chr-name',
@@ -115,7 +116,7 @@ module CustomSetup{
         // Change Relationship Command
         commands?.create({
             name: 'dr-change-relationship',
-            description: 'View relationship between two characters',
+            description: 'Change relationship between two characters',
             options: [
                 {
                     name: 'character-1',
@@ -396,6 +397,158 @@ module CustomSetup{
                 {
                     name: 'game-name',
                     description: 'Game for which the tbs will be viewed. Defaults to currently active game.',
+                    required: false,
+                    type: 3
+                }
+            ]
+        })
+
+        commands?.create({
+            name: 'dr-begin-trial',
+            description: 'Begins class trial.',
+            options: [
+                {
+                    name: 'blackened',
+                    description: 'Name of character who is the blackened.',
+                    required: true,
+                    type: 3
+                },
+                {
+                    name: 'victims',
+                    description: 'Names of the victim(s) who are murdered. Multiple format: Victim1|Victim2|VictimN',
+                    required: true,
+                    type: 3
+                },
+                {
+                    name: 'initial-topic',
+                    description: 'Initial topic of discussion for the trial.',
+                    required: false,
+                    type: 3
+                }
+            ]
+            
+        })
+
+        commands?.create({
+            name: 'dr-end-trial',
+            description: 'Ends class trial.',
+            options: [
+                {
+                    name: 'cs-char1',
+                    description: 'First character doing the case summary.',
+                    required: false,
+                    type: 3
+                },
+                {
+                    name: 'cs-char2',
+                    description: 'Second character doing the case summary.',
+                    required: false,
+                    type: 3
+                }
+            ]
+        })
+
+        commands?.create({
+            name: 'dr-add-trial',
+            description: 'Adds character to trial. Will autofill if character already exists.',
+            options: [
+                {
+                    name: 'char-name',
+                    description: 'Name of character to be added to initiative.',
+                    required: true,
+                    type: 3
+                },
+                {
+                    name: 'emote',
+                    description: 'Emote to be displayed upon your turn. Can autofill.',
+                    required: false,
+                    type: 3
+                },
+                {
+                    name: 'query',
+                    description: 'Overrides default die roll. Defaults to 2d6 + Brains.',
+                    required: false,
+                    type: 3
+                }
+            ]
+        })
+
+        commands?.create({
+            name: 'dr-vote',
+            description: 'Vote for who the blackened is during a class trial.',
+            options: [
+                {
+                    name: 'voter-chr',
+                    description: 'Name of the character who is voting',
+                    required: true,
+                    type: 3
+                },
+                {
+                    name: 'vote',
+                    description: 'Name of character who is being voted as the blackened.',
+                    required: true,
+                    type: 3
+                }
+            ]
+        })
+
+        commands?.create({
+            name: 'dr-topic',
+            description: 'Generates a new topic for discussion during a trial',
+            options: [
+                {
+                    name: 'new-topic',
+                    description: 'New topic of discussion for trial.',
+                    required: true,
+                    type: 3
+                },
+                {
+                    name: 'char-name',
+                    description: 'Character who is changing topic of discussion.',
+                    required: false,
+                    type: 3
+                }
+            ]
+        })
+
+        commands?.create({
+            name: 'dr-hangman',
+            description: 'Initiates the Hangman\'s Gambit minigame.',
+            options: [
+                {
+                    name: 'player',
+                    description: 'Name of user who will receive the scrambled word DM.',
+                    required: true,
+                    type: 6
+                },
+                {
+                    name: 'word',
+                    description: 'Word that will be scrambled.',
+                    required: true,
+                    type: 3
+                }
+            ]
+        })
+
+        commands?.create({
+            name: 'dr-interrupt',
+            description: 'Facilitates interruptions (consent/counter/rebuttal) during a trial.',
+            options: [
+                {
+                    name: 'char-name',
+                    description: 'Character who is interrupting the non-stop debate.',
+                    required: true,
+                    type: 3
+                },
+                {
+                    name: 'tb-name',
+                    description: 'Name of the truth bullet used to interrupt.',
+                    required: true,
+                    type: 3
+                },
+                {
+                    name: 'type',
+                    description: 'Type of interruption (counter/consent/rebuttal).',
                     required: false,
                     type: 3
                 }

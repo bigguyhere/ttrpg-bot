@@ -22,7 +22,7 @@ export class DRCharacter extends Character {
             public social : number, 
             public intuition : number) {
             
-            super(name, emote, prounouns, owner, brawn + 5, 0, []);
+            super(name, emote, prounouns, owner, brawn + 5, 0, 'Alive', []);
 
             this.talent = talent;
             this.hope = hope
@@ -71,10 +71,10 @@ export class DRCharacter extends Character {
             }
 
             db.query(`INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, 
-                DmgTaken, Talent, Hope, Despair, Brains, Brawn, Nimble, Social, Intuition, SPTotal, SPUsed)
-            VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health},
-                    ${this.dmgTaken}, ${talent}, ${this.hope}, ${this.despair}, ${this.brains}, ${this.brawn}, ${this.nimble}, ${this.social},
-                    ${this.intuition}, ${this.spTotal}, ${this.spUsed});`, (err, res) =>  {
+                DmgTaken, Status, Talent, Hope, Despair, Brains, Brawn, Nimble, Social, Intuition, SPTotal, SPUsed)
+                VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health},
+                    ${this.dmgTaken}, "${this.status}", ${talent}, ${this.hope}, ${this.despair}, ${this.brains}, ${this.brawn}, 
+                    ${this.nimble}, ${this.social}, ${this.intuition}, ${this.spTotal}, ${this.spUsed});`, (err, res) =>  {
                 if(err){
                     if(err.errno == 1062){ // Duplicate Character
                         return resolve(false)
@@ -90,10 +90,11 @@ export class DRCharacter extends Character {
         })
     }
 
-    static getCharacter(db : mysql.Connection, tableBaseName : string, char_name : string): Promise<DRCharacter | null>{
+    static getCharacter(db : mysql.Connection, tableBaseName : string, char_name: string): Promise<DRCharacter | null>{
         return new Promise((resolve) =>{
             db.query(`SELECT * FROM ${tableBaseName}_Characters WHERE Name = "${char_name}";`, (err, res) =>  {
                 if(err || res.length != 1){
+                    console.log(err)
                     return resolve(null)
                 } 
                 
@@ -111,10 +112,77 @@ export class DRCharacter extends Character {
                                             res[0].Intuition
                                             )
                 retChr.id = res[0].CHR_ID
+                retChr.status = res[0].Status
+                retChr.health = res[0].Health
+                retChr.dmgTaken = res[0].DmgTaken
                 
                 return resolve(retChr)
             })
         })
+    }
+
+    static getAllCharacters(db : mysql.Connection, tableBaseName : string, onlyAlive : boolean = false): Promise<Array<DRCharacter> | null>{
+        return new Promise((resolve) =>{
+            let condStr = onlyAlive ? ' WHERE Status != \'Victim\' AND Status != \'Dead\';' : ''
+            db.query(`SELECT * FROM ${tableBaseName}_Characters${condStr};`, (err, res) =>  {
+                if(err){
+                    console.log(err)
+                    return resolve(null)
+                } 
+
+                let retArr = new Array<DRCharacter>
+
+                res.forEach((char: { Name: string; Emote: string | null; Pronouns: string | null; 
+                    Owner: string; Talent: string | null; Hope: number; Despair: number; Brains: number; 
+                    Brawn: number; Nimble: number; Social: number; Intuition: number; CHR_ID: number; }) =>{
+                let retChr = new DRCharacter(char.Name, 
+                                            char.Emote, 
+                                            char.Pronouns,
+                                            char.Owner,
+                                            char.Talent,
+                                            char.Hope,
+                                            char.Despair,
+                                            char.Brains,
+                                            char.Brawn,
+                                            char.Nimble,
+                                            char.Social,
+                                            char.Intuition)
+                retChr.id = char.CHR_ID
+                retChr.status = res[0].Status
+                retChr.health = res[0].Health
+                retChr.dmgTaken = res[0].DmgTaken
+
+                retArr.push(retChr)
+                })
+
+                return resolve(retArr)
+            })
+        })
+    }
+
+    static setToDead(db : mysql.Connection, tableBaseName : string, blackenedWon: boolean){
+        const queryStr = blackenedWon 
+        ? `UPDATE ${tableBaseName}_Characters SET Status = 'Dead' WHERE Status != 'Blackened';
+           UPDATE ${tableBaseName}_Characters SET Status = 'Survivor' WHERE Status = 'Blackened';`
+        : `UPDATE ${tableBaseName}_Characters SET Status = 'Dead' WHERE Status != 'Alive';`
+        db.query(queryStr, (err, res) => {
+            if(err){
+                console.log(err)
+                throw err
+            }
+        }) 
+    }
+
+    updateHD(db : mysql.Connection, tableBaseName : string, hope : number, despair : number): boolean{
+        db.query(`UPDATE ${tableBaseName}_Characters SET Hope = Hope+${hope}, Despair = Despair+${despair}
+                 WHERE Name = '${this.name}';`, (err, res) => {
+            if(err){
+                console.log(err)
+                throw err
+            }
+        })  
+
+        return true
     }
 
     buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{
