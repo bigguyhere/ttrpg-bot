@@ -132,7 +132,7 @@ module CustomSetup{
                 },
                 {
                     name: 'value',
-                    description: 'Value in which to change the relationship.',
+                    description: 'Value in which to set the relationship to. DOES NOT ADD/SUBTRACT FROM CURRENT ONE.',
                     required: true,
                     type: 10
                 },
@@ -516,10 +516,10 @@ module CustomSetup{
             description: 'Initiates the Hangman\'s Gambit minigame.',
             options: [
                 {
-                    name: 'player',
-                    description: 'Name of user who will receive the scrambled word DM.',
+                    name: 'char-name',
+                    description: 'Name of character whose owner will receive the scrambled word DM.',
                     required: true,
-                    type: 6
+                    type: 3
                 },
                 {
                     name: 'word',

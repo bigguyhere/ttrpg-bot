@@ -40,6 +40,38 @@ export class DRRelationship {
         })
     }
 
+    static getHDChange(db : mysql.Connection, tableNameBase : string, status : string): Promise<Array<[string, number]> | null>{
+        return new Promise((resolve) =>{
+            db.query(`SELECT Char1.Name, 
+            SUM(CASE 
+                WHEN Value > 0 THEN -2
+                WHEN Value = -2 THEN 1
+                ELSE 0
+                END) AS 'Change'
+            FROM 
+            ${tableNameBase}_Characters as Char1
+            JOIN ${tableNameBase}_Relationships as Relationships
+            JOIN ${tableNameBase}_Characters as Char2
+            ON Relationships.CHR_ID1 = Char1.CHR_ID AND
+            Relationships.CHR_ID2 = Char2.CHR_ID
+            WHERE Char2.Status = '${status}' AND Char1.Status = 'Alive'
+            GROUP BY Char1.Name;`, (err, res) =>  {
+                if(err){
+                    console.log(err)
+                    return resolve(null)
+                } 
+
+                let retArr : Array<[string, number]> = []
+
+                res.forEach((result: { Name: string; Change: number; }) => {
+                    retArr.push([result.Name, result.Change])
+                })
+                
+                return resolve(retArr)
+            })
+        })
+    }
+
     static createTable(db : mysql.Connection, tableNameBase : string): boolean {
         db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_Relationships ( 
             CHR_ID1 INT NOT NULL,

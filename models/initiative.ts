@@ -178,6 +178,21 @@ export class Initiative {
         return activeChrs[1]
     }
 
+    changeInit(db : mysql.Connection, tableNameBase : string, activeGame : ActiveGame): Promise<boolean>{
+        return new Promise((resolve) =>{
+            db.query(`UPDATE ${tableNameBase}_Initiative SET isTurn = false;
+                    UPDATE ${tableNameBase}_Initiative SET isTurn = true WHERE Name = '${this.name}';`
+            , (err, res) => {
+                if(err){
+                    console.log(err)
+                    return resolve(false)
+                }
+                
+                return resolve(true)
+            })  
+        })
+    }
+
     static async nextTurn(db : mysql.Connection, tableNameBase : string, activeGame : ActiveGame): Promise<Initiative | undefined>{
         let initChrs = await this.getAllInitChrs(db, tableNameBase)
 

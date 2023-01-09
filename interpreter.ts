@@ -443,15 +443,9 @@ module CommandInterpreter{
 
             const initChr = await Initiative.getInitChr(gamedb, tableNameBase, chrName)
 
-            if(initChr == null){
-                return 'Issue finding initiative character.'
-            }
+            const init = new Initiative(chrName, -1, true, -1, -1, '', null)
 
-            if(initChr?.isTurn){
-                return 'Cannot remove character on their turn.'
-            }
-
-            initChr.removeFromTable(gamedb, tableNameBase)
+            init.removeFromTable(gamedb, tableNameBase)
 
             if(activeGame.channelID != null){
                 let message = await UtilityFunctions.getMessage(interaction.guild, 
@@ -463,6 +457,44 @@ module CommandInterpreter{
             }   
 
             return 'Issue removing character from initiative.'
+        }
+
+        else if(commandName === 'init-active'){
+            if(activeGame == null){
+                return 'Issue retrieving active game.'
+            }
+
+            if(activeGame.turn == 0){
+                return 'Cannot change initiative when initiative hasn\'t started.'
+            }
+
+            if(activeGame.messageID == null){
+                return 'Cannot remove character from initiative as there is none in progress.'
+            }
+
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
+
+            //Needed to assert character is in initiative already
+            const initChr = await Initiative.getInitChr(gamedb, tableNameBase, chrName)
+
+            if(initChr == null){
+                return 'Issue finding initiative character.'
+            }
+            
+            if (!initChr.changeInit(gamedb, tableNameBase, activeGame)){
+                return 'Error: Initiative hasn\'t started yet'
+            }
+
+            if(activeGame.channelID != null){
+                let message = await UtilityFunctions.getMessage(interaction.guild, 
+                                                                activeGame.channelID, 
+                                                                activeGame.messageID)
+                message?.edit(await Initiative.buildInitMsg(gamedb, tableNameBase, activeGame))
+
+                return `**\"${chrName}\"** successfully set to active in initiative.`
+            }   
+
+            return 'Issue changing character from initiative.'
         }
 
         else if(commandName === 'hp'){

@@ -171,7 +171,7 @@ export class DRTruthBullet{
     useTB(db : mysql.Connection, tableBaseName : string): boolean{
         let trialStr = ''
         if(this.trial != null){
-            trialStr = `WHERE Trial = "${this.trial}"`
+            trialStr = `AND Trial = ${this.trial}`
         }
         
         db.query(`UPDATE ${tableBaseName}_TruthBullets SET isUsed = NOT isUsed WHERE Name = "${this.name}" ${trialStr};`, (err, res) => {

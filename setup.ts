@@ -47,7 +47,7 @@ module SetupFunctions{
         // Remove Character Command
         commands?.create({
             name: 'rmv-chr',
-            description: 'Removes character from the game',
+            description: 'Removes character from the game.',
             options: [
                 {
                     name: 'chr-name',
@@ -400,7 +400,7 @@ module SetupFunctions{
 
         commands?.create({
             name: 'hp',
-            description: 'Changes Character and/or Initative HP',
+            description: 'Changes Character and/or Initative HP.',
             options: [
                 {
                     name: 'char-name',

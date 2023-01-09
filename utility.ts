@@ -42,7 +42,7 @@ module UtilityFunctions{
     
     
                     for(let roll = 0; roll < numRolls; ++roll){
-                        let rollValue = Math.floor(Math.random() * diceValue + 1)
+                        let rollValue = getRandomNum(diceValue + 1)
     
                         if(rollValue == diceValue || rollValue == 1){
                             retStr += `**${rollValue}**`
@@ -108,11 +108,28 @@ module UtilityFunctions{
         return emoteStr
     }
 
-    export function formatString(baseStr : string | null, findPattern : string | RegExp = /'/g, replacerChr : string = ''): string {
+    export function getRandomNum(cieling: number){
+        return Math.floor( Math.random() * cieling );
+    }
+
+    export function scrambleString(str: string) : string{
+        if(str.length < 2){
+            return str
+        }
+
+        const split = getRandomNum(str.length - 1) + 1
+        const str1 = str.substring(0, split)
+        const str2 = str.substring(split)
+        return getRandomNum(2) == 0 
+        ? scrambleString(str1) + scrambleString(str2)
+        : scrambleString(str2) + scrambleString(str1)
+    }
+
+    export function formatString(baseStr : string | null, findPattern : string | RegExp = /’|'/g, replacerChr : string = ''): string {
         return baseStr == null ? 'null' : baseStr.trim().replace(findPattern, replacerChr)
     }
 
-    export function formatNullString(baseStr : string | null, findPattern : string | RegExp = /'/g, replacerChr : string = ''): string | null{       
+    export function formatNullString(baseStr : string | null, findPattern : string | RegExp = /’|'/g, replacerChr : string = ''): string | null{       
         return baseStr == null ? null : baseStr.trim().replace(findPattern, replacerChr)
     }
 
@@ -122,6 +139,7 @@ module UtilityFunctions{
             && channel.type === ChannelType.GuildText) as TextBasedChannel
         return await channel.messages.fetch(msgID).catch( (e) => {return undefined})
     }
+    
 
     export function parseColumns(columns : string | null): Array<[string,string]> | undefined{
         if(columns == null || columns === 'null'){

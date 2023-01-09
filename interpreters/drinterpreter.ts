@@ -107,6 +107,29 @@ export class DRInterpreter extends CustomInterpreter{
 
             let relationship = new DRRelationship(char1, char2)
 
+            let hope = 0, despair = 0
+            switch(value){
+                case(-2):
+                    despair = 3
+                    break
+                case(-1):
+                    despair = 1
+                    break
+                case(0):
+                    break
+                case(1):
+                    hope = 1
+                    break
+                case(2):
+                    hope = 3
+                    break
+                default:
+                    return 'Error: Wrong value - Must be -2, -1, 0, 1 or 2'
+            }
+
+            char1.updateHD(this.gamedb, this.tableNameBase, hope, despair)
+            char2.updateHD(this.gamedb, this.tableNameBase, hope, despair)
+
             relationship.changeRelationship(this.gamedb, this.tableNameBase, value)
 
             return `${charName1} and ${charName2}'s relationship has been successfully updated to ${value}`
@@ -211,13 +234,14 @@ export class DRInterpreter extends CustomInterpreter{
             }
         }else if(commandName === 'dr-add-tb'){
             const tbName = UtilityFunctions.formatString(options.getString('tb-name', true))
+            console.log(tbName)
 
             new DRTruthBullet(tbName,
                                 UtilityFunctions.formatString(options.getString('description', true)),
                                 options.getNumber('trial'),
                                 false).addToTable(this.gamedb, this.tableNameBase)
 
-            return `'The truth bullet **\"${tbName}\"** has been successfully created.`
+            return `The truth bullet **\"${tbName}\"** has been successfully created.`
         } else if(commandName === 'dr-rmv-tb'){ //can probably consolidate this and add skill into one command with how similar they are
             const tbName = UtilityFunctions.formatString(options.getString('tb-name', true))
 
@@ -341,6 +365,23 @@ export class DRInterpreter extends CustomInterpreter{
             }
 
             killer.updateStat(this.gamedb, this.tableNameBase, 'Status', 'Blackened')
+            killer.updateHD(this.gamedb, this.tableNameBase, 0, 3)
+
+            const changes = await DRRelationship.getHDChange(this.gamedb, this.tableNameBase, 'Victim')
+
+            if(changes == null){
+                return 'Issue retrieving character relationships.'
+            }
+
+            changes.forEach(change =>{
+                if(change[1] != 0){
+                    let chr = new DRCharacter(change[0], null, null, '', null,
+                                    -1, -1, 0, 0, 0, 0, 0)
+                    change[1] > 0 
+                    ? chr.updateHD(this.gamedb, this.tableNameBase, change[1], 0)
+                    : chr.updateHD(this.gamedb, this.tableNameBase, 0, change[1] * -1)
+                }
+            }) 
 
             vicitms.forEach(async victim => {
                 const chr = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, victim)
@@ -423,6 +464,22 @@ export class DRInterpreter extends CustomInterpreter{
                 
                 Initiative.dropTable(this.gamedb, this.tableNameBase)
                 DRVote.dropTable(this.gamedb, this.tableNameBase)
+                
+                const changes = await DRRelationship.getHDChange(this.gamedb, this.tableNameBase, 'Blackened')
+
+                if(changes == null){
+                    return 'Issue retrieving character relationships.'
+                }
+                
+                changes.forEach(change =>{
+                    if(change[1] != 0){
+                        let chr = new DRCharacter(change[0], null, null, '', null,
+                                        -1, -1, 0, 0, 0, 0, 0)
+                        change[1] > 0 
+                        ? chr.updateHD(this.gamedb, this.tableNameBase, change[1], 0)
+                        : chr.updateHD(this.gamedb, this.tableNameBase, 0, change[1] * -1)
+                    }
+                }) 
     
                 if(activeGame.channelID != null && activeGame.messageID != null){
                     let message = await UtilityFunctions.getMessage(interaction.guild, 
@@ -462,7 +519,7 @@ export class DRInterpreter extends CustomInterpreter{
                     return 'Cannot add character to trial as there is none in progress.'
                 }
     
-                let chrName = UtilityFunctions.formatString(options.getString('char-name', true))
+                const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
                 let emote = UtilityFunctions.getEmojiID(
                                 UtilityFunctions.formatString(options.getString('emote'))
                             )
@@ -498,6 +555,143 @@ export class DRInterpreter extends CustomInterpreter{
     
                 return `Character **\"${chrName}\"** added to trial: ${result[0]} = __*${result[1]}*__\n`
                 //return 'Issue adding character(s) to initiative.'
+        }
+        else if(commandName === 'dr-interrupt'){
+            if(activeGame == null){
+                return 'Issue retrieving active game.'
+            }
+
+            if(activeGame.turn == 0){
+                return 'Cannot change trial initiative when initiative hasn\'t started.'
+            }
+
+            if(activeGame.messageID == null){
+                return 'Cannot change trial initiative as there is none in progress.'
+            }
+
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
+            const tbName = UtilityFunctions.formatString(options.getString('tb-name', true))
+            let type = UtilityFunctions.formatNullString(options.getString('type'))
+            const consentConds = ['CON', 'CONS', 'CNST', 'CONSNT', 'CONSENT']
+            const counterConds =['COU', 'CNT', 'CNTR', 'COUNTER']
+            const rebuttalConds =['R', 'REB', 'RBTL', 'REBUTTAL', 'REBUTAL']
+            const consentGifs = ['https://tenor.com/view/consent-makoto-danganronpa-gif-25163640',
+                                 'https://tenor.com/view/consent-gif-20460974',
+                                 'https://tenor.com/view/danganronpa-v3-consent-gif-19290276']
+            const counterGifs = ['https://tenor.com/view/makoto-naegi-danganronpa-counter-gif-25163631',
+                                'https://tenor.com/view/danganronpa-scream-counter-gif-11893855',
+                                'https://tenor.com/view/shuichi-saihara-shuichi-saihara-danganronpa-objeciton-gif-18332631']
+            const rebuttalGifs = ['https://tenor.com/view/rebuttal-showdown-danganronpa-gundham-tanaka-gif-21093184',
+                                'https://tenor.com/view/rebuttal-showdown-danganronpa-mahiru-koizumi-gif-21093190',
+                                'https://tenor.com/view/rebuttal-showdown-danganronpa-sonia-nevermind-gif-21093192',
+                                'https://tenor.com/view/nagito-danganronpa-danganronpa-counter-no-thats-wrong-danganronpa-nagito-gif-19547097',
+                                'https://tenor.com/view/rebuttal-showdown-danganronpa-fuyuhiko-kuzuryu-gif-21093189',
+                                'https://tenor.com/view/rantaro-danganronpa-rantaro-amami-ranta-avocado-gif-15805354',
+                                'https://tenor.com/view/danganronpa-luizdoro_no_more-tenko-tenko2-gif-19039626',
+                                'https://tenor.com/view/danganronpa-luizdoro_no_more-tsumigi1-tsumigi-gif-19039633',
+                                'https://tenor.com/view/danganronpa-luizdoro_no_more-kaito-kaito2-gif-19039404',
+                                'https://tenor.com/view/korekiyo-korekiyo-objection-luizdoro_no_more-danganronpa-gif-19039050',
+                                'https://tenor.com/view/rebuttal-showdown-danganronpa-kasucichi-soda-gif-21093188',
+                                'https://tenor.com/view/rebuttal-showdown-danganronpa-akane-owari-gif-21093185',
+                                'https://tenor.com/view/rebuttal-showdown-danganronpa-peko-pekoyama-gif-21093191',
+                                'https://tenor.com/view/miu-objection-miu-danganronpa-gif-19028592',
+                                'https://tenor.com/view/kokichis-rebuttal-gif-20029871']
+
+            let retStr = '', gif = ''
+
+            //Needed to assert character is in initiative already
+            const initChr = await Initiative.getInitChr(this.gamedb, this.tableNameBase, chrName)
+
+            if(initChr == null){
+                return 'Issue finding initiative character.'
+            }
+            
+            if (!initChr.changeInit(this.gamedb, this.tableNameBase, activeGame)){
+                return 'Error: Initiative hasn\'t started yet'
+            }
+
+            if(activeGame.channelID != null){
+                let message = await UtilityFunctions.getMessage(interaction.guild, 
+                                                                activeGame.channelID, 
+                                                                activeGame.messageID)
+                message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
+
+                retStr += `**${chrName}** `
+            }
+
+            if(type != null){
+                type = type.toUpperCase()
+                if(consentConds.includes(type)){
+                    retStr += 'consents !'
+                    gif = consentGifs[UtilityFunctions.getRandomNum(consentGifs.length)]
+                }else if(counterConds.includes(type)){
+                    retStr += 'counters !'
+                    gif = counterGifs[UtilityFunctions.getRandomNum(counterGifs.length)]
+                } else if(rebuttalConds.includes(type)){
+                    retStr += 'initaites a rebuttal showdown !'
+                    gif =rebuttalGifs[UtilityFunctions.getRandomNum(rebuttalGifs.length)]
+                    
+                    const chr = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, chrName)
+
+                    if(chr != null){
+                        chr.updateHD(this.gamedb, this.tableNameBase, 1, 0)
+                    }
+                }else{
+                    return 'Invalid type.'
+                }
+            } else{
+                retStr += 'interrupts !'
+            }
+
+            retStr +=  ' It\'s now their turn !\n'
+
+            const tb = await DRTruthBullet.getTB(this.gamedb, this.tableNameBase, tbName, null)
+            
+            if(tb == null){
+                return 'Issue finding Truth Bullet.'
+            }
+
+            tb.useTB(this.gamedb, this.tableNameBase)
+
+            retStr += `\n**${tbName}:** ${tb.desc}\n${gif}`
+
+            return retStr
+
+            //return 'Issue changing character from initiative.'
+
+            //return `Truth bullet **\"${tbName}\"** has been successfully usage toggled.`
+        } else if(commandName === 'dr-hangman'){
+            if(activeGame == null){
+                return 'Issue retrieving active game.'
+            }
+
+            if(activeGame.turn == 0){
+                return 'Cannot initiate a hangman\'s gambit when initiative hasn\'t started.'
+            }
+
+            if(activeGame.messageID == null){
+                return 'Cannot initiate a hangman\'s gambit as there is no current initiaitve.'
+            }
+
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
+            const chr = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, chrName)
+
+            if(chr == null){
+                return 'Issue getting character.'
+            }
+
+            chr.updateHD(this.gamedb, this.tableNameBase, -1, 0)
+
+            const word = UtilityFunctions.formatString(options.getString('word', true))
+
+            const client = interaction.guild?.client
+            if(client == undefined){
+                return 'Issue finding server.'
+            }
+            client.users.cache.get(chr.owner)?.send(
+                `**Hangman\'s Gambit Begin !**\nYour word is: __*${UtilityFunctions.scrambleString(word).toUpperCase()}*__`)
+
+            return `${chrName} has initiated a hangman's gambit !`
         }
         
         return 'Error: Unknown DR Command.'
