@@ -1,6 +1,6 @@
 import DiscordJS, { EmbedBuilder } from 'discord.js';
 import mysql from 'mysql'
-import { UtilityFunctions } from '../../../utility';
+import { UtilityFunctions } from '../../../utility/general';
 import { DRCharacter } from './drcharacter';
 
 export class DRVote {

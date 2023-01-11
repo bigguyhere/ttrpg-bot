@@ -1,8 +1,8 @@
 import { Connection } from "mysql"
-import { BaseInterpreter, CustomInterpreter } from "./custom_interpreter"
-import { DRInterpreter } from "./drinterpreter"
+import { BaseInterpreter, CustomInterpreter } from "./interpreter_model"
+import { DRInterpreter } from "./custom_interpreters/drinterpreter"
 
-export class DetermineInterpreter{
+export class SelectInterpreter{
     /**
      * Determines which custom interpreter will be used based on game type
      * @param gameType - Two-or-three letter abbreviation of custom game type

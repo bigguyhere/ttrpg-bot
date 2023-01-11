@@ -199,14 +199,13 @@ export class DRCharacter extends Character {
             { name: '**Owner:**', value: String(owner) },
             { name: '\u200B', value: '\u200B' },
             { name: 'Health', value: String(this.getCurrentHealth()) , inline: true},
-            { name: 'Hope', value: String(this.hope), inline: true},
-            { name: 'Despair', value: String(this.despair), inline: true},
             { name: 'Brains', value: String(this.brains), inline: true },
             { name: 'Brawn', value: String(this.brawn), inline: true },
             { name: 'Nimble', value: String(this.nimble), inline: true },
             { name: 'Social', value: String(this.social), inline: true },
             { name: 'Intuition', value: String(this.intuition), inline: true },
-            { name: 'SP Used', value: String(this.spUsed), inline: true }
+            { name: 'SP Used', value: String(this.spUsed), inline: true },
+            { name: 'SP Total', value: String(this.spTotal), inline: true }
         )
         .setTimestamp()
     }

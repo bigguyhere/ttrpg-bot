@@ -1,14 +1,16 @@
-import { CacheType, ChatInputCommandInteraction, CommandInteractionOptionResolver } from "discord.js";
+import { CacheType, ChatInputCommandInteraction, CommandInteractionOptionResolver, GuildMember} from "discord.js";
 import { Connection } from "mysql";
-import { ActiveGame } from "../models/activegame";
-import { DRCharacter } from "../models/custommodels/drmodels/drcharacter";
-import { DRRelationship } from "../models/custommodels/drmodels/drrelationship";
-import { DRChrSkills, DRSkill } from "../models/custommodels/drmodels/drskill";
-import { DRChrTBs, DRTruthBullet } from "../models/custommodels/drmodels/drtruthbullet";
-import { DRVote } from "../models/custommodels/drmodels/drvote";
-import { Initiative } from "../models/initiative";
-import { UtilityFunctions } from "../utility";
-import { CustomInterpreter } from "./custom_interpreter";
+import { ActiveGame } from "../../models/activegame";
+import { DRCharacter } from "../../models/custommodels/drmodels/drcharacter";
+import { DRRelationship } from "../../models/custommodels/drmodels/drrelationship";
+import { DRChrSkills, DRSkill } from "../../models/custommodels/drmodels/drskill";
+import { DRChrTBs, DRTruthBullet } from "../../models/custommodels/drmodels/drtruthbullet";
+import { DRVote } from "../../models/custommodels/drmodels/drvote";
+import { Initiative } from "../../models/initiative";
+import { UtilityFunctions } from "../../utility/general";
+import { CustomInterpreter } from "../interpreter_model";
+import { VoiceFunctions } from "../../utility/voice"
+
 
 export class DRInterpreter extends CustomInterpreter{
     constructor (gamedb : Connection,
@@ -692,6 +694,65 @@ export class DRInterpreter extends CustomInterpreter{
                 `**Hangman\'s Gambit Begin !**\nYour word is: __*${UtilityFunctions.scrambleString(word).toUpperCase()}*__`)
 
             return `${chrName} has initiated a hangman's gambit !`
+        } else if(commandName === 'dr-view-hd'){
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
+            const chr = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, chrName)
+
+            if(chr == null){
+                return 'Issue getting character.'
+            }
+
+            const client = interaction.guild?.client
+
+            if(client == undefined){
+                return 'Issue finding server.'
+            }
+
+            client.users.cache.get(chr.owner)?.send(
+                `**${chrName}'s Hope/Despair:**\n__Hope:__ ***${chr.hope}***\t__Despair:__ ***${chr.despair}***\n__Status:__ **${chr.status}**`)
+
+            return `${chrName}'s Hope/Despair has been viewed.`
+        } else if(commandName === 'dr-body-discovery'){
+
+            const witnesses = UtilityFunctions.parseMultStr(
+                    UtilityFunctions.formatNullString(options.getString('witnesses', true)))
+            const discoverers = UtilityFunctions.parseMultStr(
+                    UtilityFunctions.formatNullString(options.getString('discoverers', true)))
+
+            if(witnesses == undefined){
+                return 'Issue parsing witnesses.'
+            }
+
+            if(discoverers == undefined){
+                return 'Issue parsing discoverers.'
+            }
+
+            witnesses.forEach(async witness => {
+                new DRCharacter(witness, null, null, '', null,
+                                -1, -1, 0, 0, 0, 0, 0)
+                                .updateHD(this.gamedb, this.tableNameBase, 0, 2)
+
+            })
+
+            discoverers.forEach(async discoverer => {
+                new DRCharacter(discoverer, null, null, '', null,
+                                -1, -1, 0, 0, 0, 0, 0)
+                                .updateHD(this.gamedb, this.tableNameBase, 0, 1)
+
+            })
+
+            const audioPlayer = await VoiceFunctions.playAudio('media/body-discovery.mp3')
+            const member = (interaction.member as GuildMember)
+            const connection = await VoiceFunctions.getConnection(member.voice.channel)
+
+            if(connection == null){
+                return '**A Body Has Been Discovered !**'
+            }
+
+            VoiceFunctions.setIdleDisconnect(audioPlayer, connection, 2000)
+            connection.subscribe(audioPlayer)
+
+            return '**A Body Has Been Discovered: Listen to Monokuma !**'
         }
         
         return 'Error: Unknown DR Command.'

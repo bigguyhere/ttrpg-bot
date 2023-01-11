@@ -1,8 +1,8 @@
 import DiscordJS, { GatewayIntentBits, Events } from 'discord.js'
 import dotenv from 'dotenv'
 import mysql from 'mysql'
-import { SetupFunctions } from './setup'
-import { CommandInterpreter } from './interpreter'
+import { SetupFunctions } from './setup/setup'
+import { CommandInterpreter } from './interpreters/baseInterp'
 
 
 dotenv.config()
@@ -11,7 +11,8 @@ const client = new DiscordJS.Client({
     intents:[
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates
     ]
 })
 

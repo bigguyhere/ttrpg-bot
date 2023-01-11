@@ -2,7 +2,7 @@ import mysql from 'mysql'
 import DiscordJS, { EmbedBuilder } from 'discord.js';
 import { Inventory } from './inventory'
 import { ActiveGame } from './activegame';
-import { UtilityFunctions } from '../utility';
+import { UtilityFunctions } from '../utility/general';
 
 export class Character {
     public id: number;
@@ -91,8 +91,14 @@ export class Character {
         })
     }
 
-    updateDMG(db : mysql.Connection, tableBaseName : string, value : number): boolean{
-        db.query(`UPDATE ${tableBaseName}_Characters SET DmgTaken = DmgTaken+${value} WHERE Name = '${this.name}';`, (err, res) => {
+    private incrementStat(db : mysql.Connection, tableBaseName : string, statName : string, statValue : string): boolean{
+        /*if(!isNaN(statValue) && statValue != ''){
+            console.log(typeof(statValue) + ' ' + statValue)
+            return false
+        }*/
+
+        db.query(`UPDATE ${tableBaseName}_Characters SET ${statName} = ${statName}+${statValue} WHERE Name = '${this.name}';`
+        , (err, res) => {
             if(err){
                 console.log(err)
                 throw err
@@ -102,12 +108,17 @@ export class Character {
         return true
     }
 
-    updateStat(db : mysql.Connection, tableBaseName : string, statName : string, statValue : string): boolean{
+    updateStat(db : mysql.Connection, tableBaseName : string, statName : string, statValue : string, increment : boolean = false): boolean{
         if(statName.toUpperCase() === 'NAME'){
             return false
         }
 
-        db.query(`UPDATE ${tableBaseName}_Characters SET ${statName} = '${statValue}' WHERE Name = '${this.name}';`, (err, res) => {
+        if(increment){
+            return this.incrementStat(db, tableBaseName, statName, statValue)
+        }  
+
+        db.query(`UPDATE ${tableBaseName}_Characters SET ${statName} = '${statValue}' WHERE Name = '${this.name}';`
+        , (err, res) => {
             if(err){
                 console.log(err)
                 throw err
