@@ -3,26 +3,21 @@ import { Connection } from "mysql"
 import { ActiveGame } from "../../models/activegame"
 import { Inventory } from "../../models/inventory"
 import { UtilityFunctions } from "../../utility/general"
-import { CustomInterpreter } from "../interpreter_model"
+import { Bridge, Interpreter } from "../interpreter_model"
 
-export class InventoryInterpreter{
-    constructor(private gamedb : Connection, 
-                private tableNameBase : string,
-                private options : Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
-                private interaction : ChatInputCommandInteraction<CacheType>){
-        this.gamedb = gamedb
-        this.tableNameBase = tableNameBase
-        this.options = options
-        this.interaction = interaction
+export class InventoryInterpreter extends Interpreter {
+    constructor(gamedb : Connection, 
+                tableNameBase : string,
+                options : Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
+                interaction : ChatInputCommandInteraction<CacheType>){
+            super(gamedb, tableNameBase, options, interaction)
     }
 
-    public async modify(customInterp : CustomInterpreter | null) : Promise<string> {
-        const chrName = UtilityFunctions.formatString(this.options.getString('char-name', true))
-
-        const chr = await customInterp?.getCharacter(chrName)
+    public async modify(chrName : string, bridge : Bridge) : Promise<string> {
+        const chr = await bridge.getCharacter(chrName)
         if(chr == null){
             return `Error finding character ${chrName}.`
-        } 
+        }
 
         const item = UtilityFunctions.formatString(this.options.getString('item-name', true))
         const quant = this.options.getNumber('quantity')
@@ -66,10 +61,8 @@ export class InventoryInterpreter{
         }
     }
 
-    public async view(customInterp : CustomInterpreter | null, activeGame : ActiveGame) : Promise<string> {
-        const chrName = UtilityFunctions.formatString(this.options.getString('char-name', true))
-    
-        const chr = await customInterp?.getCharacter(chrName)
+    public async view(chrName : string, bridge : Bridge, activeGame : ActiveGame) : Promise<string> {    
+        const chr = await bridge.getCharacter(chrName)
         if(chr == null){
             return `Error finding character ${chrName}.`
         } 

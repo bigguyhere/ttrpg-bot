@@ -2,7 +2,7 @@ import DiscordJS, { GatewayIntentBits, Events } from 'discord.js'
 import dotenv from 'dotenv'
 import mysql from 'mysql'
 import { SetupFunctions } from './setup/setup'
-import { CommandInterpreter } from './interpreters/baseInterp'
+import { CommandBridge } from './interpreters/std_bridge'
 
 
 dotenv.config()
@@ -17,7 +17,7 @@ const client = new DiscordJS.Client({
 })
 
 const gamesDBName = process.env.DATABASE
-const guildID = '1032153970254282753'
+const guildID = String(process.env.TESTGUILD)
 
 const gamedb = mysql.createConnection({
     host: process.env.HOST,
@@ -56,7 +56,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return
     }
 
-    CommandInterpreter.interpret(interaction, gamedb, guildID, client)
+    CommandBridge.reply(interaction, gamedb, guildID, client)
 })
 
 client.login(process.env.TOKEN)

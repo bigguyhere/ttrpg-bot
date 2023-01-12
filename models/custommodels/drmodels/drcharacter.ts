@@ -10,17 +10,17 @@ export class DRCharacter extends Character {
 
     constructor(
             name: string,
-            emote : string | null,
-            prounouns: string | null,
-            owner : string,
-            public talent : string | null,
-            public hope : number,
-            public despair : number,
-            public brains : number,
-            public brawn : number,
-            public nimble : number, 
-            public social : number, 
-            public intuition : number) {
+            emote : string | null = null,
+            prounouns: string | null = null,
+            owner : string = '',
+            public talent : string | null = null,
+            public hope : number = -1,
+            public despair : number = -1,
+            public brains : number = -1,
+            public brawn : number = -1,
+            public nimble : number = -1, 
+            public social : number = -1, 
+            public intuition : number = -1) {
             
             super(name, emote, prounouns, owner, brawn + 5, 0, 'Alive', []);
 
@@ -36,7 +36,7 @@ export class DRCharacter extends Character {
             this.spUsed = 0;
     }
 
-    static createTable(db : mysql.Connection, tableNameBase : string): boolean {
+    static createTable(db : mysql.Connection, tableNameBase : string)  {
         db.query(`ALTER TABLE ${tableNameBase}_Characters 
             ADD Talent varchar(255),
             ADD Hope TINYINT NOT NULL,
@@ -91,6 +91,7 @@ export class DRCharacter extends Character {
     }
 
     static getCharacter(db : mysql.Connection, tableBaseName : string, char_name: string): Promise<DRCharacter | null>{
+        
         return new Promise((resolve) =>{
             db.query(`SELECT * FROM ${tableBaseName}_Characters WHERE Name = "${char_name}";`, (err, res) =>  {
                 if(err || res.length != 1){
@@ -175,7 +176,7 @@ export class DRCharacter extends Character {
 
     updateHD(db : mysql.Connection, tableBaseName : string, hope : number, despair : number): boolean{
         db.query(`UPDATE ${tableBaseName}_Characters SET Hope = Hope+${hope}, Despair = Despair+${despair}
-                 WHERE Name = '${this.name}';`, (err, res) => {
+                 WHERE Name = '${this.name}' AND Status = 'Alive' OR Status = 'Blackened';`, (err, res) => {
             if(err){
                 console.log(err)
                 throw err
@@ -347,7 +348,7 @@ export class DRCharacter extends Character {
                 let retArr = new Array<DRTruthBullet>
 
                 res.forEach((tb: { Name: string; Description: string; Trial: number | null; isUsed: boolean; TB_ID: number; }) =>{
-                let retTB = new DRTruthBullet(tb.Name, tb.Description, tb.Trial, tb.isUsed)
+                let retTB = new DRTruthBullet(tb.Name, tb.Trial, tb.Description, tb.isUsed)
                 retTB.id = tb.TB_ID
 
                 retArr.push(retTB)

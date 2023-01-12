@@ -6,82 +6,108 @@ module CustomSetup{
     {guild: GuildResolvable;}>, {guild: GuildResolvable;}, null> 
     | undefined) : void {
 
-        // Add DR Character Command
+        // DR Character Commands
         commands?.create({
-            name: 'dr-add-chr',
-            description: 'Adds a DR character to a DR game.',
+            name: 'dr-character',
+            description: 'Facilitates DR character management.',
             options: [
                 {
-                    name: 'chr-name',
-                    description: 'Name of character in game.',
-                    required: true,
-                    type: 3
+                    name: 'add',
+                    description: 'Adds a DR character to a DR game.',
+                    type: 1,
+                    options: [
+                        {
+                            name: 'chr-name',
+                            description: 'Name of character in game.',
+                            required: true,
+                            type: 3
+                        },
+                        {
+                            name: 'brains',
+                            description: 'Brains stat value.',
+                            required: true,
+                            type: 10
+                        },
+                        {
+                            name: 'brawn',
+                            description: 'Brains stat value.',
+                            required: true,
+                            type: 10
+                        },
+                        {
+                            name: 'nimble',
+                            description: 'Brains stat value.',
+                            required: true,
+                            type: 10
+                        },
+                        {
+                            name: 'social',
+                            description: 'Brains stat value.',
+                            required: true,
+                            type: 10
+                        },
+                        {
+                            name: 'intuition',
+                            description: 'Brains stat value.',
+                            required: true,
+                            type: 10
+                        },
+                        {
+                            name: 'emote',
+                            description: 'Emote of character to be displayed. Must be an emote on this server.',
+                            required: false,
+                            type: 3
+                        },
+                        {
+                            name: 'pronouns',
+                            description: 'Pronouns to use by bot (Separate [P1]/[P2]). Defaults to They/Them.',
+                            required: false,
+                            type: 3
+                        },
+                        {
+                            name: 'chr-owner',
+                            description: 'User who owns the character, defaults to the user who executed the command.',
+                            required: false,
+                            type: 6
+                        },
+                        {
+                            name: 'ult-talent',
+                            description: 'Character\'s ultimate talent.',
+                            required: false,
+                            type: 3
+                        },
+                        {
+                            name: 'skills-list',
+                            description: 'List of skills for the character, should be less than the SP Total.',
+                            required: false,
+                            type: 3
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which character should be added to. Defaults to currently active game.',
+                            required: false,
+                            type: 3
+                        }
+                    ]
                 },
                 {
-                    name: 'brains',
-                    description: 'Brains stat value.',
-                    required: true,
-                    type: 10
-                },
-                {
-                    name: 'brawn',
-                    description: 'Brains stat value.',
-                    required: true,
-                    type: 10
-                },
-                {
-                    name: 'nimble',
-                    description: 'Brains stat value.',
-                    required: true,
-                    type: 10
-                },
-                {
-                    name: 'social',
-                    description: 'Brains stat value.',
-                    required: true,
-                    type: 10
-                },
-                {
-                    name: 'intuition',
-                    description: 'Brains stat value.',
-                    required: true,
-                    type: 10
-                },
-                {
-                    name: 'emote',
-                    description: 'Emote of character to be displayed. Must be an emote on this server.',
-                    required: false,
-                    type: 3
-                },
-                {
-                    name: 'pronouns',
-                    description: 'Pronouns to use by bot (Separate [P1]/[P2]). Defaults to They/Them.',
-                    required: false,
-                    type: 3
-                },
-                {
-                    name: 'chr-owner',
-                    description: 'User who owns the character, defaults to the user who executed the command.',
-                    required: false,
-                    type: 6
-                },
-                {
-                    name: 'ult-talent',
-                    description: 'Character\'s ultimate talent.',
-                    required: false,
-                    type: 3
-                },
-                {
-                    name: 'skills-list',
-                    description: 'List of skills for the character, should be less than the SP Total.',
-                    required: false,
-                    type: 3
-                },
-                {
-                    name: 'game-name',
-                    description: 'Game for which character should be added to. Defaults to currently active game.',
-                    required: false,
-                    type: 3
+                    name: 'view-hd',
+                    description: 'Allows player to view their hope and despair secrety.',
+                    type: 1,
+                    options: [
+                        {
+                            name: 'char-name',
+                            description: 'Character whose hope/despair will be viewed.',
+                            required: true,
+                            type: 3
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which character\'s hope/despair will be viewed. Defaults to currently active game.',
+                            required: false,
+                            type: 3
+                        }
+                    ]
                 }
             ]
         })
@@ -137,7 +163,14 @@ module CustomSetup{
                             name: 'value',
                             description: 'Value in which to set the relationship to. DOES NOT ADD/SUBTRACT FROM CURRENT ONE.',
                             required: true,
-                            type: 10
+                            type: 10,
+                            choices: [
+                                {name: 'Close Friends (+2)', value: 2},
+                                {name: 'Friends (+1)', value: 1},
+                                {name: 'Acquaintances (0)', value: 0},
+                                {name: 'Annoyance (-1)', value: -1},
+                                {name: 'Enemy (-2)', value: -2}
+                            ] 
                         },
                         {
                             name: 'game-name',
@@ -436,6 +469,18 @@ module CustomSetup{
                             description: 'Names of the victim(s) who are murdered. Multiple format: Victim1|Victim2|VictimN',
                             required: true,
                             type: 3
+                        },
+                        {
+                            name: 'add-all',
+                            description: 'Adds all alive characters in the Character table to the trial. Defaults to false.',
+                            required: false,
+                            type: 5
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which trial will begin in. Defaults to currently active game.',
+                            required: false,
+                            type: 3
                         }
                     ]
                 },
@@ -453,6 +498,12 @@ module CustomSetup{
                         {
                             name: 'cs-char2',
                             description: 'Second character doing the case summary.',
+                            required: false,
+                            type: 3
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which trial will be ended in. Defaults to currently active game.',
                             required: false,
                             type: 3
                         }
@@ -480,6 +531,12 @@ module CustomSetup{
                             description: 'Overrides default die roll. Defaults to 2d6 + Brains.',
                             required: false,
                             type: 3
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which character will be added to the trial. Defaults to currently active game.',
+                            required: false,
+                            type: 3
                         }
                     ]
                 },
@@ -499,6 +556,12 @@ module CustomSetup{
                             description: 'Name of character who is being voted as the blackened.',
                             required: true,
                             type: 3
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which vote will be cast. Defaults to currently active game.',
+                            required: false,
+                            type: 3
                         }
                     ]
                 },
@@ -517,6 +580,12 @@ module CustomSetup{
                             name: 'word',
                             description: 'Word that will be scrambled.',
                             required: true,
+                            type: 3
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which hangman\'s gambit will take place. Defaults to currently active game.',
+                            required: false,
                             type: 3
                         }
                     ]
@@ -548,22 +617,14 @@ module CustomSetup{
                                 {name: 'Counter', value: 1},
                                 {name: 'Rebuttal', value: 2}
                             ] 
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which trial will be interrupted. Defaults to currently active game.',
+                            required: false,
+                            type: 3
                         }
                     ]
-                }
-            ]
-        })
-
-        // View Hope/Despair Command
-        commands?.create({
-            name: 'dr-view-hd',
-            description: 'Allows player to view their hope and despair secrety.',
-            options: [
-                {
-                    name: 'char-name',
-                    description: 'Character whose hope/despair will be viewed.',
-                    required: true,
-                    type: 3
                 }
             ]
         })
@@ -582,6 +643,12 @@ module CustomSetup{
                 {
                     name: 'witnesses',
                     description: 'Character(s) who witnessed the murder. Multiple format: Wit1|Wit2|WitN',
+                    required: false,
+                    type: 3
+                },
+                {
+                    name: 'game-name',
+                    description: 'Game for which body will be discovered. Defaults to currently active game.',
                     required: false,
                     type: 3
                 }

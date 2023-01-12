@@ -1,8 +1,8 @@
 import { Connection } from "mysql"
-import { BaseInterpreter, CustomInterpreter } from "./interpreter_model"
-import { DRInterpreter } from "./custom_interpreters/drinterpreter"
+import { BaseBridge, Bridge } from "../interpreter_model"
+import { DRBridge } from "./dr_interpreters/dr_bridge"
 
-export class SelectInterpreter{
+export class SelectBridge{
     /**
      * Determines which custom interpreter will be used based on game type
      * @param gameType - Two-or-three letter abbreviation of custom game type
@@ -10,12 +10,12 @@ export class SelectInterpreter{
      * @param tableNameBase - Prefix for all table names
      * @returns - Returns a CustomInterpreter inheriting subclass if gameType is found, null otherwise 
      */
-    static select(gameType: string | null | undefined, gamedb : Connection, tableNameBase: string): CustomInterpreter | null{
+    static select(gameType: string | null | undefined, gamedb : Connection, tableNameBase: string): Bridge {
         switch(gameType){
             case 'dr':
-                return new DRInterpreter(gamedb, tableNameBase)
+                return new DRBridge(gamedb, tableNameBase)
         }
 
-        return new BaseInterpreter(gamedb, tableNameBase)
+        return new BaseBridge(gamedb, tableNameBase)
     }
 }

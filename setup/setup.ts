@@ -1,5 +1,5 @@
-import { Client, Guild, Options } from "discord.js"
-import { CustomSetup } from "../interpreters/custom_setup"
+import { Client, Guild } from "discord.js"
+import { CustomSetup } from "./custom_setup"
 
 module SetupFunctions{
     export function commandSetup(guild: Guild | undefined, client: Client<boolean>) : void {
@@ -12,7 +12,7 @@ module SetupFunctions{
             commands = client.application?.commands
         }
 
-        commands?.set([])
+        //commands?.set([])
 
         // Game Commands
         commands?.create({
@@ -353,18 +353,40 @@ module SetupFunctions{
                             description: 'True to hide HP values from initiative. Cannot be changed. Defaults to false.',
                             required: false,
                             type: 5
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which initiative will begin. Defaults to currently active game.',
+                            required: false,
+                            type: 3
                         }
                     ]
                 },
                 {
                     name: 'end',
                     description: 'Ends initiative.',
-                    type: 1
+                    type: 1,
+                    options: [
+                        {
+                            name: 'game-name',
+                            description: 'Game for which initiative will be ended. Defaults to currently active game.',
+                            required: false,
+                            type: 3
+                        }
+                    ]
                 },
                 {
                     name: 'next',
                     description: 'Starts or continues to the next turn of initiative.',
-                    type: 1
+                    type: 1,
+                    options: [
+                        {
+                            name: 'game-name',
+                            description: 'Game for which initiative will proceed to next turn. Defaults to currently active game.',
+                            required: false,
+                            type: 3
+                        }
+                    ]
                 },
                 {
                     name: 'add',
@@ -400,6 +422,12 @@ module SetupFunctions{
                             description: 'Quantity of characters to be added. Defaults to 1.',
                             required: false,
                             type: 10
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which character will be added to initiative. Defaults to currently active game.',
+                            required: false,
+                            type: 3
                         }
                     ]
                 },
@@ -413,6 +441,12 @@ module SetupFunctions{
                             description: 'Name of character to be removed from initiative.',
                             required: true,
                             type: 3
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which character will be removed from initiative. Defaults to currently active game.',
+                            required: false,
+                            type: 3
                         }
                     ]
                 },
@@ -425,6 +459,12 @@ module SetupFunctions{
                             name: 'char-name',
                             description: 'Name of character to make their turn.',
                             required: true,
+                            type: 3
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which active character is changed. Defaults to currently active game.',
+                            required: false,
                             type: 3
                         }
                     ]
@@ -451,6 +491,12 @@ module SetupFunctions{
                             description: 'True if only want to change initative health for a character. Defaults to false.',
                             required: false,
                             type: 5
+                        },
+                        {
+                            name: 'game-name',
+                            description: 'Game for which HP will be changed. Defaults to currently active game.',
+                            required: false,
+                            type: 3
                         }
                     ]
                 }

@@ -50,7 +50,7 @@ export class DRVote {
         })
     }
 
-    public static  async dropTable(db : mysql.Connection, tableNameBase : string){
+    public static async dropTable(db : mysql.Connection, tableNameBase : string){
 
         db.query(`DROP TABLE IF EXISTS ${tableNameBase}_Votes;`, (err, res) =>  {
             if(err){
@@ -59,6 +59,20 @@ export class DRVote {
             }
         })
 
+    }
+
+    public static async ifExists(db : mysql.Connection, tableBaseName : string) : Promise<boolean>{
+        return new Promise((resolve) => {
+            db.query('SHOW FULL TABLES IN gamesdb WHERE Table_Type LIKE \'BASE TABLE\' AND Tables_in_gamesdb LIKE \'%_Votes\';'
+            , (err, res) => {
+                if(err){
+                    console.log(err)
+                    throw err
+                }
+
+                return resolve(res.length == 1)
+            })
+        })
     }
 
     updateVote(db : mysql.Connection, tableBaseName : string) {

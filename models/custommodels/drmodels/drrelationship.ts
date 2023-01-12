@@ -15,7 +15,10 @@ export class DRRelationship {
     }
 
     changeRelationship(db : mysql.Connection, tableNameBase : string, newValue : number): boolean{
-        db.query(`UPDATE ${tableNameBase}_Relationships SET Value = ${newValue} WHERE (CHR_ID1 = ${this.char1.id} and CHR_ID2 = ${this.char2.id}) OR (CHR_ID1 = ${this.char2.id} and CHR_ID2 = ${this.char1.id});`, (err, res) =>{
+        db.query(`UPDATE ${tableNameBase}_Relationships SET Value = ${newValue} 
+            WHERE (CHR_ID1 = ${this.char1.id} and CHR_ID2 = ${this.char2.id}) 
+            OR (CHR_ID1 = ${this.char2.id} and CHR_ID2 = ${this.char1.id});`
+            , (err, res) =>{
             if(err){
                 console.log(err)
                 throw err
@@ -78,8 +81,8 @@ export class DRRelationship {
             CHR_ID2 INT NOT NULL,
             Value INT NOT NULL,
             PRIMARY KEY (CHR_ID1, CHR_ID2),
-            FOREIGN KEY (CHR_ID1) REFERENCES ${tableNameBase}_Characters(CHR_ID),
-            FOREIGN KEY (CHR_ID2) REFERENCES ${tableNameBase}_Characters(CHR_ID));`, (err, res) => {
+            FOREIGN KEY (CHR_ID1) REFERENCES ${tableNameBase}_Characters(CHR_ID) ON DELETE CASCADE,
+            FOREIGN KEY (CHR_ID2) REFERENCES ${tableNameBase}_Characters(CHR_ID) ON DELETE CASCADE);`, (err, res) => {
                 if(err){
                     console.log(err)
                     throw err

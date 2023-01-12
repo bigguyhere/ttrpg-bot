@@ -3,12 +3,12 @@ import { ActiveGame } from './activegame'
 
 export class Initiative {
     constructor(public name: string,
-                public rollValue: number,
-                public isTurn : boolean,
-                public Dmg : number,
-                public HP : number | null,
-                public user: string,
-                public emote: string | null){
+                public rollValue: number = -1,
+                public emote: string | null = null,
+                public user: string = '',
+                public isTurn : boolean = false,
+                public HP : number | null = 0,
+                public Dmg : number = 0){
         this.name = name
         this.rollValue = rollValue
         this.isTurn = isTurn
@@ -100,7 +100,7 @@ export class Initiative {
                 let retArr = new Array<Initiative>
 
                 res.forEach((init: { Name: string; Roll: number; isTurn: boolean; HP: number; Dmg: number; User: string; Emote: string | null }) =>{
-                    let retInit = new Initiative(init.Name, init.Roll, init.isTurn, init.Dmg, init.HP, init.User, init.Emote)
+                    let retInit = new Initiative(init.Name, init.Roll, init.Emote, init.User, init.isTurn, init.HP, init.Dmg)
     
                     retArr.push(retInit)
                 })
@@ -137,10 +137,10 @@ export class Initiative {
         for(let i = 0; i < initChrs.length; ++i){
             if(initChrs[i].isTurn){
                 const j = (i == initChrs.length - 1) ? 0 : i + 1
-                return [new Initiative(initChrs[i].name, initChrs[i].rollValue, initChrs[i].isTurn,
-                                initChrs[i].Dmg, initChrs[i].HP, initChrs[i].user, initChrs[i].emote),
-                        new Initiative(initChrs[j].name, initChrs[j].rollValue, initChrs[j].isTurn,
-                                initChrs[j].Dmg, initChrs[j].HP, initChrs[j].user, initChrs[j].emote),
+                return [new Initiative(initChrs[i].name, initChrs[i].rollValue, initChrs[i].emote,
+                                initChrs[i].user, initChrs[i].isTurn, initChrs[i].HP, initChrs[i].Dmg),
+                        new Initiative(initChrs[j].name, initChrs[j].rollValue, initChrs[j].emote,
+                            initChrs[j].user, initChrs[j].isTurn, initChrs[j].HP, initChrs[j].Dmg),
                         !(j == (i + 1))]
             }
         }

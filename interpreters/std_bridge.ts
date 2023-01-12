@@ -1,17 +1,14 @@
 import { Client, CacheType, ChatInputCommandInteraction, ChannelType, TextBasedChannel} from "discord.js"
 import { Connection } from "mysql"
-import { SelectInterpreter } from "./select_interpreter"
+import { SelectBridge } from "./custom_interpreters/select_interpreter"
 import { ActiveGame } from "../models/activegame"
-import { Character } from "../models/character"
-import { Initiative } from "../models/initiative"
-import { Inventory } from "../models/inventory"
 import { UtilityFunctions }  from '../utility/general'
 import { GameInterpreter } from "./std_interpreters/gameInterp"
 import { CharacterInterpreter } from "./std_interpreters/charInterp"
 import { InventoryInterpreter } from "./std_interpreters/invInterp"
 import { InitInterpreter } from "./std_interpreters/initInterp"
 
-module CommandInterpreter{
+module CommandBridge {
     /**
      * Replies with return of interpretHelper to original slash command
      * @param interaction - Interaction to be passed to interpretHelper
@@ -19,12 +16,12 @@ module CommandInterpreter{
      * @param guildID - GuildID (Server ID) to be passed to interpretHelper
      * @param client - Discord Client to be passed to interpretHelper
      */
-    export async function interpret(interaction: ChatInputCommandInteraction<CacheType>,
+    export async function reply(interaction: ChatInputCommandInteraction<CacheType>,
                                             gamedb: Connection,
                                             guildID: string,
                                             client: Client<boolean>) : Promise<void> {
         interaction.reply({
-            content: await interpretHelper(interaction, gamedb, guildID, client)
+            content: await bridge(interaction, gamedb, guildID, client)
         })
     }
 
@@ -35,25 +32,31 @@ module CommandInterpreter{
      * @param guildID - Current Discord Server ID
      * @param client - Discord Client generated for current instances
      */
-    export async function interpretHelper(interaction: ChatInputCommandInteraction<CacheType>, 
+    async function bridge(interaction: ChatInputCommandInteraction<CacheType>, 
                                             gamedb: Connection,
                                             guildID: string,
                                             client: Client<boolean>) : Promise<string> {
         ActiveGame.createTable(gamedb)
     
-        const { commandName, options } = interaction
+        let commandName = interaction.commandName
+        const options = interaction.options
         const subcommandName = options.getSubcommand()
 
         const gameName = UtilityFunctions.formatNullString(options.getString('game-name'), / /g, '_')
         
         const activeGame = await ActiveGame.getCurrentGame(gamedb, 'GamesDB', guildID, gameName)
         const tableNameBase = `${guildID}_${activeGame?.gameName == null? gameName : activeGame?.gameName}`;
-        const customInterp = SelectInterpreter.select(activeGame?.gameType, gamedb, tableNameBase)
+        const bridge = SelectBridge.select(activeGame?.gameType, gamedb, tableNameBase)
 
-        console.log(commandName)
+        const disabledCmd = bridge.getDisabledCmd(commandName, subcommandName)
+        if(disabledCmd != undefined){
+            return `**/${commandName} ${subcommandName}** is disabled for this game type. Please use **/${disabledCmd}** instead.`
+        }
+
+        commandName = bridge.getOverrideCmd(commandName)
 
         if(commandName === 'game') {
-            const gameInterpreter = new GameInterpreter(gamedb, tableNameBase, options, interaction, guildID)
+            const gameInterpreter = new GameInterpreter(gamedb, tableNameBase, options, interaction)
             switch (subcommandName){
                 case ('create'):
                     return gameInterpreter.createGame()
@@ -73,15 +76,16 @@ module CommandInterpreter{
         } 
         else if(commandName === 'character') {
             const chrInterpreter = new CharacterInterpreter(gamedb, tableNameBase, options, interaction)
+            const charName = UtilityFunctions.formatString(options.getString('chr-name', true))
             switch (subcommandName){
                 case ('add'):
-                    return await chrInterpreter.add()
+                    return await chrInterpreter.add(charName)
                 case ('remove'):
-                    return await chrInterpreter.remove(customInterp)
+                    return await chrInterpreter.remove(charName)
                 case ('view'):
-                    return await chrInterpreter.view(customInterp)
+                    return await chrInterpreter.view(charName, bridge)
                 case ('change-stat'):
-                    return chrInterpreter.changeStat()
+                    return chrInterpreter.changeStat(charName)
             }
         }
         else if(commandName === 'roll') {
@@ -97,49 +101,47 @@ module CommandInterpreter{
         }
         else if(commandName === 'inventory') {
             const invInterpreter = new InventoryInterpreter(gamedb, tableNameBase, options, interaction)
+            const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
             switch (subcommandName){
                 case ('modify'):
-                    return await invInterpreter.modify(customInterp)
+                    return await invInterpreter.modify(chrName, bridge)
                 case ('view'):
                     if(activeGame == null){
                         return 'Issue retrieving active game.'
                     }
-                    return await invInterpreter.view(customInterp, activeGame)
+                    return await invInterpreter.view(chrName, bridge, activeGame)
             }
         }
         else if (commandName === 'initiative') {
-            const initInterpreter = new InitInterpreter(gamedb, tableNameBase, options, interaction, guildID)
+            const initInterpreter = new InitInterpreter(gamedb, tableNameBase, options, interaction)
 
             if(activeGame == null){
                 return 'Issue retrieving active game.'
             }
 
             switch (subcommandName){
-                if(activeGame == null){
-                    return 'Issue retrieving active game.'
-                }
                 case ('begin'):
                     return await initInterpreter.begin(activeGame)
                 case ('end'):
                     return await initInterpreter.end(activeGame)
-                case('next'):
+                case ('next'):
                     return await initInterpreter.next(activeGame, client)
-                case('add'):
-                    return await initInterpreter.addCharacter(activeGame, customInterp)
-                case('remove'):
+                case ('add'):
+                    return await initInterpreter.addCharacter(activeGame, bridge)
+                case ('remove'):
                     return await initInterpreter.removeCharacter(activeGame)
-                case('active'):
+                case ('active'):
                     return await initInterpreter.setActiveChar(activeGame)
-                case('hp'):
-                    return await initInterpreter.changeHP(activeGame, customInterp)
+                case ('hp'):
+                    return await initInterpreter.changeHP(activeGame, bridge)
             }
         }
 
         // Calls custom interpreter if command is not within base commands
-        const retVal = customInterp?.interpret(commandName, options, activeGame, interaction) 
+        const retVal = bridge.parse(commandName, subcommandName, options, activeGame, interaction) 
         return retVal == undefined ? 'Command Not Found.' : retVal
     }
     
 }
 
-export{CommandInterpreter}
+export{CommandBridge}

@@ -5,7 +5,10 @@ import { ActiveGame } from '../../activegame';
 export class DRTruthBullet{
     public id: number;
     public trial : number;
-    constructor(public name : string, public desc : string, trial : number | null, public isUsed : boolean){
+    constructor(public name : string, 
+                trial : number | null = null, 
+                public desc : string = '', 
+                public isUsed : boolean = false){
         this.id = -1;
         this.name = name;
         this.desc = desc;
@@ -50,8 +53,8 @@ export class DRTruthBullet{
                 } 
                 
                 let retTB = new DRTruthBullet(res[0].Name,
-                                            res[0].Description,
                                             res[0].Trial,
+                                            res[0].Description,
                                             res[0].isUsed)
                 retTB.id = res[0].TB_ID
                 
@@ -76,7 +79,7 @@ export class DRTruthBullet{
                 let retArr = new Array<DRTruthBullet>
 
                 res.forEach((tb: { Name: string; Description: string; Trial: number | null; isUsed: boolean; TB_ID: number; }) =>{
-                let retTB = new DRTruthBullet(tb.Name, tb.Description, tb.Trial, tb.isUsed)
+                let retTB = new DRTruthBullet(tb.Name, tb.Trial, tb.Description, tb.isUsed)
                 retTB.id = tb.TB_ID
 
                 retArr.push(retTB)
@@ -168,13 +171,11 @@ export class DRTruthBullet{
         return true
     }
 
-    useTB(db : mysql.Connection, tableBaseName : string): boolean{
-        let trialStr = ''
-        if(this.trial != null){
-            trialStr = `AND Trial = ${this.trial}`
-        }
+    useTB(db : mysql.Connection, tableBaseName : string, value : boolean | null = null): boolean{
+        let trialStr = this.trial == null ? '' : `AND Trial = ${this.trial}`
+        let valueStr = value == null ? 'NOT isUsed' : String(value)
         
-        db.query(`UPDATE ${tableBaseName}_TruthBullets SET isUsed = NOT isUsed WHERE Name = "${this.name}" ${trialStr};`, (err, res) => {
+        db.query(`UPDATE ${tableBaseName}_TruthBullets SET isUsed = ${valueStr} WHERE Name = "${this.name}" ${trialStr};`, (err, res) => {
             if(err){
                 console.log(err)
                 throw err

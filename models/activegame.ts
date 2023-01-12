@@ -6,13 +6,13 @@ export class ActiveGame{
                 public gameName : string | null,
                 public gameType : string | null,
                 public DM : string,
-                public isActive : boolean,
-                public defaultRoll : string,
-                public round : number,
-                public turn : number,
-                public hideHP : boolean,
-                public channelID : string | null,
-                public messageID : string | null){
+                public isActive : boolean = true,
+                public defaultRoll : string = '',
+                public round : number = 0,
+                public turn : number = 0,
+                public hideHP : boolean = false,
+                public channelID : string | null = null,
+                public messageID : string | null = null){
         this.serverID = serverID;
         this.gameName = gameName;
         this.gameType = gameType;

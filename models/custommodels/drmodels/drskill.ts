@@ -5,7 +5,10 @@ import { ActiveGame } from '../../activegame';
 export class DRSkill{
     public id: number;
     public prereqs : string
-    constructor(public name : string, prereqs : string | null, public desc : string, public spCost : number){
+    constructor(public name : string, 
+                prereqs : string | null = null, 
+                public desc : string = '', 
+                public spCost : number = -1){
         this.id = -1;
         this.name = name;
         this.desc = desc;

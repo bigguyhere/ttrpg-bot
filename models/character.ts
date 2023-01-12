@@ -9,13 +9,13 @@ export class Character {
     public prounouns: string;
     public health: number;
     constructor(public name: string, 
-                public emote: string | null, 
-                prounouns: string | null, 
-                public owner: string, 
-                health: number | null, 
-                public dmgTaken : number, 
-                public status : string | null,
-                public otherStats : Array<[string, string]>) {
+                public emote: string | null = null, 
+                prounouns: string | null = null, 
+                public owner: string = '', 
+                health: number | null = 0, 
+                public dmgTaken : number = 0, 
+                public status : string | null = null,
+                public otherStats : Array<[string, string]> = []) {
         this.id = -1;
         this.name = name;
         this.emote = emote;
@@ -92,12 +92,14 @@ export class Character {
     }
 
     private incrementStat(db : mysql.Connection, tableBaseName : string, statName : string, statValue : string): boolean{
-        /*if(!isNaN(statValue) && statValue != ''){
-            console.log(typeof(statValue) + ' ' + statValue)
-            return false
-        }*/
 
-        db.query(`UPDATE ${tableBaseName}_Characters SET ${statName} = ${statName}+${statValue} WHERE Name = '${this.name}';`
+        const value = parseInt(statValue.replace(/,/g, ''))
+
+        if(isNaN(value)){
+            return false
+        }
+
+        db.query(`UPDATE ${tableBaseName}_Characters SET ${statName} = ${statName}+${value} WHERE Name = '${this.name}';`
         , (err, res) => {
             if(err){
                 console.log(err)

@@ -1,26 +1,20 @@
 import { CacheType, ChatInputCommandInteraction, Client, CommandInteractionOptionResolver } from "discord.js"
 import { Connection } from "mysql"
 import { ActiveGame } from "../../models/activegame"
-import { Character } from "../../models/character"
 import { Initiative } from "../../models/initiative"
-import { Inventory } from "../../models/inventory"
 import { UtilityFunctions } from "../../utility/general"
-import { CustomInterpreter } from "../interpreter_model"
-import { SelectInterpreter } from "../select_interpreter"
+import { Bridge, Interpreter } from "../interpreter_model"
 
-export class InitInterpreter{
-    private userID : string
-    constructor(private gamedb : Connection, 
-                private tableNameBase : string,
-                private options : Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
-                private interaction : ChatInputCommandInteraction<CacheType>,
-                private guildID : string){
-        this.gamedb = gamedb
-        this.tableNameBase = tableNameBase
-        this.options = options
-        this.interaction = interaction
+export class InitInterpreter extends Interpreter{
+    protected userID : string
+    protected guildID : string
+    constructor(gamedb : Connection, 
+                tableNameBase : string,
+                options : Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
+                interaction : ChatInputCommandInteraction<CacheType>) {
+        super(gamedb, tableNameBase, options, interaction)
+        this.guildID = String(interaction.guild?.id)
         this.userID = interaction.user.id
-        this.guildID = guildID
     }
 
     public async begin(activeGame : ActiveGame) : Promise<string>{
@@ -35,19 +29,7 @@ export class InitInterpreter{
         let roll = this.options.getString('roll')
         roll ??= '1d20'
 
-        Initiative.createTable(this.gamedb, this.tableNameBase)
-        const msg = await this.interaction.channel?.send(
-            await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
-
-        msg?.pin()
-
-        if(msg == undefined){
-            return 'Error sending initiative message.'
-        }
-
-        activeGame.updateInit(this.gamedb, msg.channel.id, msg.id, roll, 0, 0, hideHP)
-
-        return '**Initative Begins !**'
+        return this.initSetup(activeGame, roll, hideHP, 'Initiative')
     }
 
     public async end(activeGame : ActiveGame) : Promise<string>{
@@ -98,7 +80,7 @@ export class InitInterpreter{
 
     }
 
-    public async addCharacter(activeGame : ActiveGame, customInterp : CustomInterpreter | null) : Promise<string>{
+    public async addCharacter(activeGame : ActiveGame, bridge : Bridge) : Promise<string>{
         if(activeGame.messageID == null){
             return 'Cannot add character to initiative as there is none in progress.'
         }
@@ -109,7 +91,7 @@ export class InitInterpreter{
                     )
         let hp = this.options.getNumber('hp')
 
-        const chr = await customInterp?.getCharacter(chrName)
+        const chr = await bridge.getCharacter(chrName)
         let dmg = 0
         if(hp == null && chr != null){
             hp = chr.health
@@ -136,7 +118,7 @@ export class InitInterpreter{
                 return 'Error parsing roll.'
             }
 
-            if(!(await new Initiative(name, result[1], false, dmg, hp, this.userID, emote).addToTable(this.gamedb, this.tableNameBase))){
+            if(!(await new Initiative(name, result[1], emote, this.userID, false, hp, dmg).addToTable(this.gamedb, this.tableNameBase))){
                 return 'Error: Character is already in initiative.'
             }
 
@@ -162,7 +144,7 @@ export class InitInterpreter{
 
         const chrName = UtilityFunctions.formatString(this.options.getString('char-name', true))
 
-        const init = new Initiative(chrName, -1, true, -1, -1, '', null)
+        const init = new Initiative(chrName)
 
         init.removeFromTable(this.gamedb, this.tableNameBase)
 
@@ -212,20 +194,26 @@ export class InitInterpreter{
         return 'Issue changing character from initiative.'
     }
 
-    public async changeHP(activeGame : ActiveGame, customInterp : CustomInterpreter | null){
+    public async changeHP(activeGame : ActiveGame, bridge : Bridge){
         const chrName = UtilityFunctions.formatString(this.options.getString('char-name', true))
-            const value = this.options.getNumber('value', true)
+            const value = this.options.getNumber('value', true) * -1
             let initOnly = this.options.getBoolean('init-only')
 
             initOnly ??= false
 
-            const chr = await customInterp?.getCharacter(chrName)
+            const chr = await bridge.getCharacter(chrName)
             let replyStr = ''
             const isChrFindable = !initOnly && chr != null && chr != undefined
 
             if(isChrFindable){
-                chr.updateStat(this.gamedb, this.tableNameBase, 'DmgTaken', String(value), true)
+                if(!chr.updateStat(this.gamedb, this.tableNameBase, 'DmgTaken', String(value), true)){
+                    return 'Error: Cannot increment a non-number.'
+                }
                 replyStr += 'Character '
+            }
+
+            if(activeGame.messageID == null){
+                return `${replyStr}for **\"${chrName}\"** updated.`
             }
 
             const initChr = await Initiative.getInitChr(this.gamedb, this.tableNameBase, chrName)
@@ -248,5 +236,22 @@ export class InitInterpreter{
             }
 
             return replyStr === '' ? 'Error: Character & Initiative not found' : `${replyStr}for **\"${chrName}\"** updated.` 
-    }   
+    } 
+    
+    protected async initSetup(activeGame : ActiveGame, roll : string, hideHP : boolean, message : string){
+        Initiative.createTable(this.gamedb, this.tableNameBase)
+        
+        const msg = await this.interaction.channel?.send(
+            await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame)
+        )
+        msg?.pin()
+
+        if(msg == undefined){
+            return 'Error sending initiative message.'
+        }
+
+        activeGame.updateInit(this.gamedb, msg.channel.id, msg.id, roll, 0, 0, hideHP)
+
+        return `**${message} Begins !**`
+    }
 }

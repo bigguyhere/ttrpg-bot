@@ -4,22 +4,20 @@ import { ActiveGame } from "../../models/activegame"
 import { Character } from "../../models/character"
 import { Inventory } from "../../models/inventory"
 import { UtilityFunctions } from "../../utility/general"
-import { SelectInterpreter } from "../select_interpreter"
+import { SelectBridge } from "../custom_interpreters/select_interpreter"
+import { Interpreter } from "../interpreter_model"
 
-export class GameInterpreter{
-    private userID : string
-    private gameName : string | null
-    constructor(private gamedb : Connection, 
-                private tableNameBase : string,
-                private options : Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
-                private interaction : ChatInputCommandInteraction<CacheType>,
-                private guildID : string){
-        this.gamedb = gamedb
-        this.tableNameBase = tableNameBase
-        this.options = options
-        this.interaction = interaction
+export class GameInterpreter extends Interpreter {
+    protected userID : string
+    protected gameName : string | null
+    protected guildID : string
+    constructor(gamedb : Connection, 
+                tableNameBase : string,
+                options : Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
+                interaction : ChatInputCommandInteraction<CacheType>){
+        super(gamedb, tableNameBase, options, interaction)
         this.userID = interaction.user.id
-        this.guildID = guildID
+        this.guildID = String(interaction.guild?.id)
         this.gameName = UtilityFunctions.formatNullString(options.getString('game-name'), / /g, '_')
     }
 
@@ -30,8 +28,7 @@ export class GameInterpreter{
 
         DM ??= this.userID
 
-        const newGame = new ActiveGame(this.guildID, this.gameName, gameType, DM, true, '',
-                         0, 0, false, null, null)
+        const newGame = new ActiveGame(this.guildID, this.gameName, gameType, DM)
 
         newGame.addToTable(this.gamedb)
         
@@ -44,14 +41,13 @@ export class GameInterpreter{
 
         Character.createTable(this.gamedb, this.tableNameBase, additionalStats)
         Inventory.createTable(this.gamedb, this.tableNameBase)
-        SelectInterpreter.select(gameType, this.gamedb, this.tableNameBase)?.initializeTables()
+        SelectBridge.select(gameType, this.gamedb, this.tableNameBase).initializeTables()
 
         return `The game **\"${this.gameName}\"** has been successfully created.`
     }
 
     public changeGame() : string {
-        new ActiveGame(this.guildID, String(this.gameName), '', 
-            this.userID, true, '', 0, 0, false, null, null).changeGame(this.gamedb)
+        new ActiveGame(this.guildID, String(this.gameName), '', this.userID).changeGame(this.gamedb)
     
         return `Game successfully changed to **\"${this.gameName}\"**`
     }
