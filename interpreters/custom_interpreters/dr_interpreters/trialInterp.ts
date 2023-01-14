@@ -118,6 +118,7 @@ export class TrialInterpreter extends InitInterpreter{
         chrs.forEach(chr => {
             const hope = chr.name === chrName1 || chr.name === chrName2 ? 4 : 1
             chr.updateHD(this.gamedb, this.tableNameBase, hope, 1)
+            chr.updateStat(this.gamedb, this.tableNameBase, 'SPTotal', '1', true)
         });
 
         DRVote.createTable(this.gamedb, this.tableNameBase)

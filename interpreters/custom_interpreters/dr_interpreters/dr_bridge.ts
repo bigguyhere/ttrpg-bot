@@ -57,7 +57,7 @@ export class DRBridge extends Bridge {
         activeGame: ActiveGame | null,
         interaction: ChatInputCommandInteraction<CacheType>) : Promise<string> 
     {
-    
+
         if(commandName === 'dr-character'){   
             const drCharInterpreter = new DRCharacterInterpreter(this.gamedb, this.tableNameBase, options, interaction)
             const charName = UtilityFunctions.formatString(options.getString('chr-name', true))
