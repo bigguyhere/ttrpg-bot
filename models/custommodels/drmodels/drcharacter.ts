@@ -238,7 +238,7 @@ export class DRCharacter extends Character {
             descStr += `\n**(${skill.spCost}) - ${skill.name}:** ${skill.prereqs}`
         });
 
-        descStr += `\n\n**SP Total:** ${this.spTotal}\n**SP Total:** ${spUsed} ${spUsed > this.spTotal ? 
+        descStr += `\n\n**SP Total:** ${this.spTotal}\n**SP Used:** ${spUsed} ${spUsed > this.spTotal ? 
             '\n**THIS CHARACTER HAS EXCEEDED THEIR SP TOTAL**': ''}` //TODO: Pronoun per character
 
         embedBuilder.setDescription(descStr)
@@ -312,7 +312,7 @@ export class DRCharacter extends Character {
     getAllChrSkills(db : mysql.Connection, tableBaseName : string): Promise<Array<DRSkill> | null>{
         return new Promise((resolve) =>{
             db.query(`SELECT * FROM ${tableBaseName}_Skills as Skills JOIN ${tableBaseName}_ChrSkills as ChrSkills 
-                            WHERE ChrSkills.CHR_ID = ${this.id} AND ChrSkills.SKL_ID = Skills.SKL_ID;`, (err, res) =>  {
+                            WHERE ChrSkills.CHR_ID = ${this.id} AND ChrSkills.SKL_ID = Skills.SKL_ID ORDER BY Name;`, (err, res) =>  {
                 if(err){
                     console.log(err)
                     return resolve(null)
@@ -320,8 +320,9 @@ export class DRCharacter extends Character {
 
                 let retArr = new Array<DRSkill>
 
-                res.forEach((skill: { Name: string; Prereqs: string | null; Description: string; SPCost: number; SKL_ID: number; }) =>{
-                let retSkill = new DRSkill(skill.Name, skill.Prereqs, skill.Description, skill.SPCost)
+                res.forEach((skill: { Name: string; Prereqs: string | null | undefined; Description: string | undefined;
+                     SPCost: number | undefined; Type: string | null | undefined; SKL_ID: number; }) =>{
+                let retSkill = new DRSkill(skill.Name, skill.Prereqs, skill.Description, skill.SPCost, skill.Type)
                 retSkill.id = skill.SKL_ID
 
                 retArr.push(retSkill)

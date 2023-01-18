@@ -12,7 +12,8 @@ export class SkillInterpreter extends Interpreter {
         new DRSkill(skillName,
                     UtilityFunctions.formatNullString(this.options.getString('prereqs')),
                     UtilityFunctions.formatString(this.options.getString('description', true)),
-                    this.options.getNumber('sp-cost', true)).addToTable(this.gamedb, this.tableNameBase)
+                    this.options.getNumber('sp-cost', true),
+                    this.options.getString('type')).addToTable(this.gamedb, this.tableNameBase)
         
         return `The skill **\"${skillName}\"** has been successfully created.`
     }
@@ -58,8 +59,9 @@ export class SkillInterpreter extends Interpreter {
     }
 
     public async view(activeGame : ActiveGame) : Promise<string> {    
-        const chrName = UtilityFunctions.formatNullString(this.options.getString('char-name', true))
-        const skillName = UtilityFunctions.formatNullString(this.options.getString('skill-name', true))
+        const chrName = UtilityFunctions.formatNullString(this.options.getString('char-name'))
+        const skillName = UtilityFunctions.formatNullString(this.options.getString('skill-name'))
+        const isDM = activeGame.DM === this.interaction.user.id
 
         if(chrName != null && skillName != null){
             return 'Must choose either Skill summary or Character Skill summary, not both.'
@@ -70,7 +72,17 @@ export class SkillInterpreter extends Interpreter {
                 return `Error finding character ${chrName}.`
             } 
 
-            const chrSkills = await chr.getAllChrSkills(this.gamedb, this.tableNameBase)
+            let chrSkills = await chr.getAllChrSkills(this.gamedb, this.tableNameBase)
+
+            if(chrSkills != null && !isDM && chr.owner !== this.interaction.user.id){
+                chrSkills = chrSkills.filter(skill => skill.Type === 'PUB')
+            }
+
+            if(chrSkills?.length == 1){
+                this.interaction.channel?.send({embeds : [chrSkills[0].buildViewEmbed(this.interaction.user, this.interaction.guild, activeGame)] });
+
+                return `**${chrName}'s** Publc Skill **\"${chrSkills[0].name}\"** has been successfully viewed`
+            }
 
             const embedBuilder = chr.buildSkillEmbed(this.interaction.user, this.interaction.guild, chrSkills)
             if(embedBuilder == null){
@@ -86,12 +98,21 @@ export class SkillInterpreter extends Interpreter {
             if(skill == null){
                 return `Error finding skill ${skillName}.`
             } 
+
+            if(skill.Type === 'PRV'  && !isDM && 
+                !await skill.isViewable(this.gamedb, this.tableNameBase, this.interaction.user.id)){
+                return 'Error: You do not have access to this skill.'
+            }
             
             this.interaction.channel?.send({embeds : [skill.buildViewEmbed(this.interaction.user, this.interaction.guild, activeGame)] });
 
             return `Skill **\"${skillName}\"** has been successfully viewed`
         } else{
-            const allSkills = await DRSkill.getAllSkills(this.gamedb, this.tableNameBase)
+            let allSkills = await DRSkill.getAllSkills(this.gamedb, this.tableNameBase)
+
+            if(allSkills != null && !isDM){
+                allSkills = allSkills.filter(skill => skill.Type !== 'PRV')
+            }
 
             const embedBuilder = DRSkill.buildSummaryEmbed(this.interaction.user, this.interaction.guild, activeGame, allSkills)
             if(embedBuilder == null){

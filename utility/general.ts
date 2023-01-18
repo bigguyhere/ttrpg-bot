@@ -125,11 +125,11 @@ module UtilityFunctions{
         : scrambleString(str2) + scrambleString(str1)
     }
 
-    export function formatString(baseStr : string | null, findPattern : string | RegExp = /’|'/g, replacerChr : string = ''): string {
+    export function formatString(baseStr : string | null, findPattern : string | RegExp = /"|’|'/g, replacerChr : string = ''): string {
         return baseStr == null ? 'null' : baseStr.trim().replace(findPattern, replacerChr)
     }
 
-    export function formatNullString(baseStr : string | null, findPattern : string | RegExp = /’|'/g, replacerChr : string = ''): string | null{       
+    export function formatNullString(baseStr : string | null, findPattern : string | RegExp = /"|’|'/g, replacerChr : string = ''): string | null{       
         return baseStr == null ? null : baseStr.trim().replace(findPattern, replacerChr)
     }
 

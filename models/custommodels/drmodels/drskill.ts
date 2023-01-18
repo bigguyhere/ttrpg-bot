@@ -5,20 +5,18 @@ import { ActiveGame } from '../../activegame';
 export class DRSkill{
     public id: number;
     public prereqs : string
+    public Type : string
     constructor(public name : string, 
                 prereqs : string | null = null, 
                 public desc : string = '', 
-                public spCost : number = -1){
+                public spCost : number = -1,
+                Type : string | null = null){
         this.id = -1;
         this.name = name;
         this.desc = desc;
         this.spCost = spCost;
-
-        if(prereqs == null){
-            this.prereqs = 'None'
-        }else{
-            this.prereqs = prereqs;
-        }
+        this.Type = Type == null ? 'Private' : Type;
+        this.prereqs = prereqs == null ? 'None' : prereqs;
     }
 
     static createTables(db : mysql.Connection, tableNameBase : string): boolean {
@@ -28,6 +26,7 @@ export class DRSkill{
             Prereqs varchar(255),
             Description varchar(1000),
             SPCost SMALLINT,
+            Type varchar(3) NOT NULL,
             PRIMARY KEY (SKL_ID));`, (err, res) => {
                 if(err){
                     console.log(err)
@@ -50,7 +49,8 @@ export class DRSkill{
                 let retSkill = new DRSkill(res[0].Name,
                                             res[0].Prereqs,
                                             res[0].Description,
-                                            res[0].SPCost)
+                                            res[0].SPCost,
+                                            res[0].Type)
                 retSkill.id = res[0].SKL_ID
                 
                 return resolve(retSkill)
@@ -60,7 +60,7 @@ export class DRSkill{
 
     static getAllSkills(db : mysql.Connection, tableBaseName : string): Promise<Array<DRSkill> | null>{
         return new Promise((resolve) =>{
-            db.query(`SELECT * FROM ${tableBaseName}_Skills;`, (err, res) =>  {
+            db.query(`SELECT * FROM ${tableBaseName}_Skills ORDER BY Name;`, (err, res) =>  {
                 if(err){
                     console.log(err)
                     return resolve(null)
@@ -68,14 +68,42 @@ export class DRSkill{
 
                 let retArr = new Array<DRSkill>
 
-                res.forEach((skill: { Name: string; Prereqs: string | null; Description: string; SPCost: number; SKL_ID: number; }) =>{
-                let retSkill = new DRSkill(skill.Name, skill.Prereqs, skill.Description, skill.SPCost)
+                res.forEach((skill: { Name: string; Prereqs: string | null | undefined; Description: string | undefined;
+                     SPCost: number | undefined; Type: string | undefined; SKL_ID: number; }) =>{
+                let retSkill = new DRSkill(skill.Name, skill.Prereqs, skill.Description, skill.SPCost, skill.Type)
                 retSkill.id = skill.SKL_ID
 
                 retArr.push(retSkill)
                 })
 
                 return resolve(retArr)
+            })
+        })
+    }
+
+    isViewable(db : mysql.Connection, tableBaseName : string, owner : string, ): Promise<boolean | null>{
+        return new Promise((resolve) =>{
+            db.query(`SELECT DISTINCT Skills.SKL_ID FROM ${tableBaseName}_Skills as Skills 
+                        JOIN ${tableBaseName}_ChrSkills as ChrSkills
+                        JOIN ${tableBaseName}_Characters as Characters 
+                                            WHERE 
+                                            Characters.Owner = '${owner}'
+                                            AND Characters.CHR_ID = ChrSkills.CHR_ID
+                                            AND ChrSkills.SKL_ID = Skills.SKL_ID
+                                            AND Skills.Type != 'PUB'
+                                            ORDER BY Skills.SKL_ID;`, (err, res) =>  {
+                if(err){
+                    console.log(err)
+                    return resolve(null)
+                } 
+
+                for(const r of res){
+                    if(r.SKL_ID === this.id){
+                        return resolve(true)
+                    }
+                }
+
+                return resolve(false)
             })
         })
     }
@@ -101,7 +129,7 @@ export class DRSkill{
 
         let embedBuilder = new EmbedBuilder()
         .setColor(0x7852A9)
-        .setTitle(`**${activeGame.gameName} Skill Summary**`)
+        .setTitle(`**${activeGame.gameName} Public Skill Summary**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
         .setThumbnail(String(guild?.iconURL()))
         .setTimestamp()
@@ -118,8 +146,8 @@ export class DRSkill{
 
     addToTable(db : mysql.Connection, tableBaseName : string): boolean {
 
-        db.query(`INSERT INTO ${tableBaseName}_Skills (Name, Prereqs, Description, SPCost)
-        VALUES ("${this.name}", "${this.prereqs}", "${this.desc}", "${this.spCost}");`, (err, res) =>  {
+        db.query(`INSERT INTO ${tableBaseName}_Skills (Name, Prereqs, Description, SPCost, Type)
+        VALUES ("${this.name}", "${this.prereqs}", "${this.desc}", "${this.spCost}", "${this.Type}");`, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err

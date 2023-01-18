@@ -1,4 +1,4 @@
-import { ApplicationCommand, ApplicationCommandManager, GuildApplicationCommandManager, GuildResolvable } from "discord.js";
+import { ApplicationCommand, ApplicationCommandManager, ApplicationCommandType, GuildApplicationCommandManager, GuildResolvable, InteractionType } from "discord.js";
 
 module CustomSetup{
     export function setup(commands: GuildApplicationCommandManager |
@@ -73,12 +73,6 @@ module CustomSetup{
                         {
                             name: 'ult-talent',
                             description: 'Character\'s ultimate talent.',
-                            required: false,
-                            type: 3
-                        },
-                        {
-                            name: 'skills-list',
-                            description: 'List of skills for the character, should be less than the SP Total.',
                             required: false,
                             type: 3
                         },
@@ -216,6 +210,17 @@ module CustomSetup{
                             description: 'Prerequisites for the skill. Defaults to none.',
                             required: false,
                             type: 3
+                        },
+                        {
+                            name: 'type',
+                            description: 'Type of skill (General, Private, Public). Defaults to Private.',
+                            required: false,
+                            type: 3,
+                            choices: [
+                                {name: 'Private', value: 'PRV'},
+                                {name: 'General', value: 'GEN'},
+                                {name: 'Public', value: 'PUB'}
+                            ]
                         },
                         {
                             name: 'game-name',

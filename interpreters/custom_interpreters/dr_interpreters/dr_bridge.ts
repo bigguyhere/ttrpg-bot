@@ -13,6 +13,7 @@ import { SkillInterpreter } from "./skillInterp";
 import { TBInterpreter } from "./tbInterp";
 import { TrialInterpreter } from "./trialInterp";
 import { DRCharacterInterpreter } from "./drCharInterp";
+import { DRUtilityFunctions } from "../../../utility/custom_utility/dr_utility";
 
 
 export class DRBridge extends Bridge {
@@ -47,6 +48,7 @@ export class DRBridge extends Bridge {
         DRSkill.createTables(this.gamedb, this.tableNameBase)
         DRTruthBullet.createTables(this.gamedb, this.tableNameBase)
         DRRelationship.createTable(this.gamedb, this.tableNameBase)
+        DRUtilityFunctions.importGeneralSkills(this.gamedb, this.tableNameBase)
         return true;
     }
 
