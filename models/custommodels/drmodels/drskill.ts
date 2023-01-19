@@ -1,4 +1,4 @@
-import DiscordJS, { EmbedBuilder } from 'discord.js';
+import DiscordJS, { Embed, EmbedBuilder } from 'discord.js';
 import mysql from 'mysql'
 import { ActiveGame } from '../../activegame';
 
@@ -24,7 +24,7 @@ export class DRSkill{
             SKL_ID INT NOT NULL AUTO_INCREMENT,
             Name varchar(255) NOT NULL,
             Prereqs varchar(255),
-            Description varchar(1000),
+            Description varchar(2000),
             SPCost SMALLINT,
             Type varchar(3) NOT NULL,
             PRIMARY KEY (SKL_ID));`, (err, res) => {
@@ -58,9 +58,19 @@ export class DRSkill{
         })
     }
 
-    static getAllSkills(db : mysql.Connection, tableBaseName : string): Promise<Array<DRSkill> | null>{
+    static getAllSkills(db : mysql.Connection, tableBaseName : string, 
+        startIndex : number | null = null, endIndex : number | null = null): Promise<Array<DRSkill> | null>{
         return new Promise((resolve) =>{
-            db.query(`SELECT * FROM ${tableBaseName}_Skills ORDER BY Name;`, (err, res) =>  {
+            let queryStr = `SELECT * FROM ${tableBaseName}_Skills ORDER BY Name`
+            if(startIndex != null){
+                queryStr += `LIMIT ${startIndex}`
+            }
+            if(endIndex != null){
+                queryStr += `, ${endIndex}`
+            }
+            queryStr += ';'
+
+            db.query(queryStr, (err, res) =>  {
                 if(err){
                     console.log(err)
                     return resolve(null)
@@ -122,26 +132,33 @@ export class DRSkill{
         .setTimestamp()
     }
 
-    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame, skills : Array<DRSkill> | null): EmbedBuilder | null{
+    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame, skills : Array<DRSkill> | null, paginationLimit : number = 10): EmbedBuilder[] | null{
         if(skills == null){
             return null
         }
+        let embeds : EmbedBuilder[] = []
 
-        let embedBuilder = new EmbedBuilder()
-        .setColor(0x7852A9)
-        .setTitle(`**${activeGame.gameName} Public Skill Summary**`)
-        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setThumbnail(String(guild?.iconURL()))
-        .setTimestamp()
+        for(let i = 0; i < Math.ceil(skills.length / paginationLimit); ++i){
+            embeds.push(new EmbedBuilder()
+            .setColor(0x7852A9)
+            .setTitle(`**${activeGame.gameName} Public Skill Summary**`)
+            .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+            .setThumbnail(String(guild?.iconURL()))
+            .setTimestamp())
 
-        let descStr = `**DM:** ${guild?.members.cache.get(activeGame.DM)}\n***(Cost) - Name:*** *Prereqs*\n`
-        skills.forEach(skill => {
-            descStr += `\n**(${skill.spCost}) - ${skill.name}:** ${skill.prereqs}`
-        });
+            let descStr = `**DM:** ${guild?.members.cache.get(activeGame.DM)}\n***(Cost) - Name:*** *Prereqs*\n`
+            
+            const curLimit = paginationLimit * (i + 1)
+            const limit = curLimit > skills.length ? skills.length : curLimit
+            for(let j = paginationLimit * i; j < limit; ++j){
+                descStr += `\n**(${skills[j].spCost}) - ${skills[j].name}:** ${skills[j].prereqs}`
+            }
+    
+            embeds[i].setDescription(descStr)
 
-        embedBuilder.setDescription(descStr)
+        }
 
-        return embedBuilder
+        return embeds
     }
 
     addToTable(db : mysql.Connection, tableBaseName : string): boolean {

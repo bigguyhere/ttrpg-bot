@@ -30,7 +30,6 @@ module DRUtilityFunctions{
             }
             
             for(const skill of res) {
-                console.log(skill.SkillName)
                 new DRSkill(
                     UtilityFunctions.formatString(skill.SkillName),
                     UtilityFunctions.formatString(skill.Prereqs),

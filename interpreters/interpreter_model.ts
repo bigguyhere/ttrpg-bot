@@ -94,7 +94,7 @@ export abstract class Bridge{
         subcommandName : string,
         options: Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
         activeGame: ActiveGame | null,
-        interaction: ChatInputCommandInteraction<CacheType>) : Promise<string>
+        interaction: ChatInputCommandInteraction<CacheType>) : Promise<string | null>
 }
 
 export class BaseBridge extends Bridge {

@@ -20,9 +20,12 @@ module CommandBridge {
                                             gamedb: Connection,
                                             guildID: string,
                                             client: Client<boolean>) : Promise<void> {
-        interaction.reply({
-            content: await bridge(interaction, gamedb, guildID, client)
-        })
+        const content = await bridge(interaction, gamedb, guildID, client)
+        if(content != null){
+            interaction.reply({
+                content: content
+            })
+        }
     }
 
     /**
@@ -35,7 +38,7 @@ module CommandBridge {
     async function bridge(interaction: ChatInputCommandInteraction<CacheType>, 
                                             gamedb: Connection,
                                             guildID: string,
-                                            client: Client<boolean>) : Promise<string> {
+                                            client: Client<boolean>) : Promise<string | null> {
         ActiveGame.createTable(gamedb)
     
         let commandName = interaction.commandName

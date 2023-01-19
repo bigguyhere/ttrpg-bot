@@ -2,6 +2,7 @@ import { ActiveGame } from "../../../models/activegame"
 import { DRCharacter } from "../../../models/custommodels/drmodels/drcharacter"
 import { DRChrSkills, DRSkill } from "../../../models/custommodels/drmodels/drskill"
 import { UtilityFunctions } from "../../../utility/general"
+import { Pagination } from "../../../utility/pagination"
 import { Interpreter } from "../../interpreter_model"
 
 export class SkillInterpreter extends Interpreter {
@@ -58,7 +59,7 @@ export class SkillInterpreter extends Interpreter {
         }
     }
 
-    public async view(activeGame : ActiveGame) : Promise<string> {    
+    public async view(activeGame : ActiveGame) : Promise<string | null> {    
         const chrName = UtilityFunctions.formatNullString(this.options.getString('char-name'))
         const skillName = UtilityFunctions.formatNullString(this.options.getString('skill-name'))
         const isDM = activeGame.DM === this.interaction.user.id
@@ -114,12 +115,17 @@ export class SkillInterpreter extends Interpreter {
                 allSkills = allSkills.filter(skill => skill.Type !== 'PRV')
             }
 
-            const embedBuilder = DRSkill.buildSummaryEmbed(this.interaction.user, this.interaction.guild, activeGame, allSkills)
-            if(embedBuilder == null){
+            const embeds = DRSkill.buildSummaryEmbed(this.interaction.user, this.interaction.guild, activeGame, allSkills)
+            if(embeds == null){
                 return `Error building embed.`
             }
             
-            this.interaction.channel?.send({embeds : [embedBuilder] });
+            if(embeds.length != 1){
+                Pagination.getPaginatedMessage(embeds, this.interaction)
+                return null
+            }
+
+            this.interaction.channel?.send({embeds : [embeds[0]]});
 
             return `All skills have been successfully viewed`
         }
