@@ -211,11 +211,13 @@ export class DRCharacter extends Character {
         .setTimestamp()
     }
 
-    buildSkillEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, skills : Array<DRSkill> | null): EmbedBuilder | null{
+    buildSkillEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, skills : Array<DRSkill> | null, 
+        paginationLimit : number = 10): EmbedBuilder[] | null{
         
         if(skills == null){
             return null
         }
+        let embeds : EmbedBuilder[] = []
 
         let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
         const owner = guild?.members.cache.get(this.owner)
@@ -224,33 +226,48 @@ export class DRCharacter extends Character {
             thumbnail = String(owner?.displayAvatarURL())
         }
 
-        let embedBuilder = new EmbedBuilder()
-        .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
-        .setTitle(`**${this.name}'s Skills**`)
-        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setThumbnail(thumbnail)
-        .setTimestamp()
-
         let spUsed = 0
-        let descStr = `**Skills:**\n***(Cost) - Name:*** *Prereqs*\n`
+
         skills.forEach(skill => {
             spUsed += skill.spCost
-            descStr += `\n**(${skill.spCost}) - ${skill.name}:** ${skill.prereqs}`
-        });
+        })
 
-        descStr += `\n\n**SP Total:** ${this.spTotal}\n**SP Used:** ${spUsed} ${spUsed > this.spTotal ? 
+        const totalStr = `\n\n**SP Total:** ${this.spTotal}\n**SP Used:** ${spUsed} ${spUsed > this.spTotal ? 
             '\n**THIS CHARACTER HAS EXCEEDED THEIR SP TOTAL**': ''}` //TODO: Pronoun per character
 
-        embedBuilder.setDescription(descStr)
+        const numEmbeds = skills.length > 0 ? Math.ceil(skills.length / paginationLimit) : 1
+        
+        for(let i = 0; i < numEmbeds; ++i){
+            embeds.push(new EmbedBuilder()
+            .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+            .setTitle(`**${this.name}'s Skills**`)
+            .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+            .setThumbnail(thumbnail)
+            .setTimestamp())
 
-        return embedBuilder
+            let descStr = `**Skills:**\n***(Cost) - Name:*** *Prereqs*\n`
+
+            const curLimit = paginationLimit * (i + 1)
+            const limit = curLimit > skills.length ? skills.length : curLimit
+            for(let j = paginationLimit * i; j < limit; ++j){
+                descStr += `\n**(${skills[j].spCost}) - ${skills[j].name}:** ${skills[j].prereqs}`
+            }
+
+            descStr += totalStr
+
+            embeds[i].setDescription(descStr)
+        }
+
+        return embeds
     }
 
-    buildTBEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, tbs : Array<DRTruthBullet> | null): EmbedBuilder | null{
+    buildTBEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, tbs : Array<DRTruthBullet> | null,
+        paginationLimit : number = 10): EmbedBuilder[] | null{
         
         if(tbs == null){
             return null
         }
+        let embeds : EmbedBuilder[] = []
 
         let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
         const owner = guild?.members.cache.get(this.owner)
@@ -259,22 +276,30 @@ export class DRCharacter extends Character {
             thumbnail = String(owner?.displayAvatarURL())
         }
 
-        let embedBuilder = new EmbedBuilder()
-        .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
-        .setTitle(`**${this.name}'s Truth Bullets**`)
-        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setThumbnail(thumbnail)
-        .setTimestamp()
+        const numEmbeds = tbs.length > 0 ? Math.ceil(tbs.length / paginationLimit) : 1
 
-        let descStr = `**Truth Bullets:**\n`
-        tbs.forEach(tb => {
-            descStr += `\n**Trial ${tb.trial == -1 ? '?' : tb.trial}:** *${tb.name}*`
-        });
-        descStr += `\n\n**Total Truth Bullets:** ${tbs.length}`
+        for(let i = 0; i < numEmbeds; ++i){
+            embeds.push(new EmbedBuilder()
+            .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+            .setTitle(`**${this.name}'s Truth Bullets**`)
+            .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+            .setThumbnail(thumbnail)
+            .setTimestamp())
 
-        embedBuilder.setDescription(descStr)
+            let descStr = `**Truth Bullets:**\n`
 
-        return embedBuilder
+            const curLimit = paginationLimit * (i + 1)
+            const limit = curLimit > tbs.length ? tbs.length : curLimit
+            for(let j = paginationLimit * i; j < limit; ++j){
+                descStr += `\n**Trial ${tbs[j].trial == -1 ? '?' : tbs[j].trial}:** *${tbs[j].name}*`
+            }
+
+            descStr += `\n\n**Total Truth Bullets:** ${tbs.length}`
+
+            embeds[i].setDescription(descStr)
+        }
+
+        return embeds
     }
 
     async generateRelations(db : mysql.Connection, tableNameBase : string): Promise<boolean>{

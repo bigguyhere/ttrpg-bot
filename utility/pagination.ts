@@ -3,11 +3,8 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputComma
 
 module Pagination {
     let embeds: EmbedBuilder[] = []
+    let titleStr = ''
     let curPage = 0
-
-    export function initializeEmbeds(ebs : EmbedBuilder[]){
-        embeds = ebs;
-    }
 
     function createButtons() : ActionRowBuilder<ButtonBuilder>{
         const row = new ActionRowBuilder<ButtonBuilder>()
@@ -31,13 +28,16 @@ module Pagination {
         return row
     }
 
-    export function getPaginatedMessage(ebs : EmbedBuilder[], interaction : ChatInputCommandInteraction<CacheType>){
+    export function getPaginatedMessage(ebs : EmbedBuilder[], interaction : ChatInputCommandInteraction<CacheType>, 
+        topStr : string = ''){
         const channel = interaction.channel
+        titleStr = topStr
         embeds = ebs
 
         const embed = embeds[curPage]
 
         interaction.reply({
+            content: titleStr,
             embeds: [embed],
             components: [createButtons()]   
         })
@@ -65,6 +65,7 @@ module Pagination {
                 }
 
                 interaction.editReply({
+                    content: titleStr,
                     embeds: [embeds[curPage]],
                     components: [createButtons()]
                 })       

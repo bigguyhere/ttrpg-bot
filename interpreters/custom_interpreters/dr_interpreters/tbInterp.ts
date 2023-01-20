@@ -2,6 +2,7 @@ import { ActiveGame } from "../../../models/activegame"
 import { DRCharacter } from "../../../models/custommodels/drmodels/drcharacter"
 import { DRChrTBs, DRTruthBullet } from "../../../models/custommodels/drmodels/drtruthbullet"
 import { UtilityFunctions } from "../../../utility/general"
+import { Pagination } from "../../../utility/pagination"
 import { Interpreter } from "../../interpreter_model"
 
 export class TBInterpreter extends Interpreter {
@@ -22,7 +23,7 @@ export class TBInterpreter extends Interpreter {
 
         new DRTruthBullet(tbName, this.options.getNumber('trial')).removeFromTable(this.gamedb, this.tableNameBase)    
 
-        return `The skill **\"${tbName}\"** has been successfully removed.`
+        return `The truth bullet **\"${tbName}\"** has been successfully removed.`
     }
 
     public use(activeGame : ActiveGame) : string {
@@ -68,10 +69,11 @@ export class TBInterpreter extends Interpreter {
         }
     }
 
-    public async view(activeGame : ActiveGame) : Promise<string> {    
+    public async view(activeGame : ActiveGame) : Promise<string | null> {    
         const chrName = UtilityFunctions.formatNullString(this.options.getString('char-name'))
         const tbName = UtilityFunctions.formatNullString(this.options.getString('tb-name'))
         const trialNum = this.options.getNumber('trial')
+        const isDM = activeGame.DM === this.interaction.user.id
 
         if(chrName != null && tbName != null){
             return 'Must choose either Truth Bullet summary or Character Truth Bullet summary, not both.'
@@ -82,38 +84,71 @@ export class TBInterpreter extends Interpreter {
                 return `Error finding character ${chrName}.`
             } 
 
-            const chrSkills = await chr.getAllChrTBs(this.gamedb, this.tableNameBase, trialNum)
+            let chrTBs = await chr.getAllChrTBs(this.gamedb, this.tableNameBase, trialNum)
 
-            const embedBuilder = chr.buildTBEmbed(this.interaction.user, this.interaction.guild, chrSkills)
-            if(embedBuilder == null){
+            if(chrTBs != null && !isDM && chr.owner !== this.interaction.user.id){
+                chrTBs = chrTBs.filter(tb => tb.isUsed)
+            }
+
+            if(chrTBs?.length == 1){
+                this.interaction.channel?.send({embeds : [chrTBs[0].buildViewEmbed(this.interaction.user, this.interaction.guild, activeGame)] });
+
+                return `**${chrName}'s** Truth Bullet **\"${chrTBs[0].name}\"** has been successfully viewed`
+            }
+
+            const embeds = chr.buildTBEmbed(this.interaction.user, this.interaction.guild, chrTBs)
+            if(embeds == null){
                 return `Error building embed.`
             }
-            
-            this.interaction.channel?.send({embeds : [embedBuilder] });
 
-            return `**${chrName}'s** truth bullets has been successfully viewed.`
+            const replyStr = `**${chrName}'s** truth bullets has been successfully viewed.`
+            
+            if(embeds.length != 1){
+                Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
+                return null
+            }
+            
+            this.interaction.channel?.send({ embeds : [embeds[0]]});
+
+            return replyStr
         } else if(tbName != null){
             
             const tb = await DRTruthBullet.getTB(this.gamedb, this.tableNameBase, tbName, trialNum)
             if(tb == null){
                 return `Error finding truth bullet ${tbName}.`
             } 
+
+            if(!tb.isUsed && !isDM && 
+                !await tb.isViewable(this.gamedb, this.tableNameBase, this.interaction.user.id)){
+                return 'Error: You do not have access to this truth bullet.'
+            }
             
             this.interaction.channel?.send({embeds : 
                 [tb.buildViewEmbed(this.interaction.user, this.interaction.guild, activeGame)] });
 
             return `Truth Bullet **\"${tbName}\"** has been successfully viewed.`
         } else{
-            const allTBs = await DRTruthBullet.getAllTBs(this.gamedb, this.tableNameBase, trialNum)
+            let allTBs = await DRTruthBullet.getAllTBs(this.gamedb, this.tableNameBase, trialNum)
 
-            const embedBuilder = DRTruthBullet.buildSummaryEmbed(this.interaction.user, this.interaction.guild, activeGame, allTBs)
-            if(embedBuilder == null){
+             if(allTBs != null && !isDM){
+                allTBs = allTBs.filter(tb => tb.isUsed)
+            }
+
+            const embeds = DRTruthBullet.buildSummaryEmbed(this.interaction.user, this.interaction.guild, activeGame, allTBs)
+            if(embeds == null){
                 return `Error building embed.`
             }
             
-            this.interaction.channel?.send({embeds : [embedBuilder] });
+            const replyStr = 'All truth bullets have been successfully viewed.'
+            
+            if(embeds.length != 1){
+                Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
+                return null
+            } 
 
-            return 'All truth bullets have been successfully viewed.'
+            this.interaction.channel?.send({ embeds : [embeds[0]]});
+
+            return replyStr
         } 
     }
 

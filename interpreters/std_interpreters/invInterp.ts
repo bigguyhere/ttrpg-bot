@@ -3,6 +3,7 @@ import { Connection } from "mysql"
 import { ActiveGame } from "../../models/activegame"
 import { Inventory } from "../../models/inventory"
 import { UtilityFunctions } from "../../utility/general"
+import { Pagination } from "../../utility/pagination"
 import { Bridge, Interpreter } from "../interpreter_model"
 
 export class InventoryInterpreter extends Interpreter {
@@ -61,7 +62,7 @@ export class InventoryInterpreter extends Interpreter {
         }
     }
 
-    public async view(chrName : string, bridge : Bridge, activeGame : ActiveGame) : Promise<string> {    
+    public async view(chrName : string, bridge : Bridge, activeGame : ActiveGame) : Promise<string | null> {    
         const chr = await bridge.getCharacter(chrName)
         if(chr == null){
             return `Error finding character ${chrName}.`
@@ -72,12 +73,17 @@ export class InventoryInterpreter extends Interpreter {
         if(itemName == null){
             const chrItems = await chr.getAllChrItems(this.gamedb, this.tableNameBase)
 
-            const embedBuilder = chr.buildInventoryEmbed(this.interaction.user, this.interaction.guild, chrItems)
-            if(embedBuilder == null){
+            const embeds = chr.buildInventoryEmbed(this.interaction.user, this.interaction.guild, chrItems)
+            if(embeds == null){
                 return `Error building embed.`
             }
+
+            if(embeds.length != 1){
+                Pagination.getPaginatedMessage(embeds, this.interaction)
+                return null
+            }
             
-            this.interaction.channel?.send({embeds : [embedBuilder] });
+            this.interaction.channel?.send({embeds : [embeds[0]] });
     
             return  `**${chrName}'s** inventory has been successfully viewed.`
         }else{

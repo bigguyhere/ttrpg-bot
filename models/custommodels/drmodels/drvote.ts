@@ -128,26 +128,35 @@ export class DRVote {
         })
     }
 
-    static buildSummaryEmbed(guild : DiscordJS.Guild | null, results : Array<[DRCharacter, number]>): EmbedBuilder | undefined{
-        
-        let embedBuilder = new EmbedBuilder()
-        .setColor(0x7852A9)
-        .setTitle(`**Voting Summary**`)
-        .setThumbnail(String(guild?.iconURL()))
-        .setTimestamp()
+    static buildSummaryEmbed(guild : DiscordJS.Guild | null, results : Array<[DRCharacter, number]>,
+         paginationLimit : number = 10): EmbedBuilder[] | undefined{
+        let embeds : EmbedBuilder[] = []
 
-        let descStr = `**Votes:**\n`
-        results.forEach(result => {
-            if(result[0] == null){
-                return undefined
+        const numEmbeds = results.length > 0 ? Math.ceil(results.length / paginationLimit) : 1
+        
+        for(let i = 0; i < numEmbeds; ++i){
+            embeds.push(new EmbedBuilder()
+            .setColor(0x7852A9)
+            .setTitle(`**Voting Summary**`)
+            .setThumbnail(String(guild?.iconURL()))
+            .setTimestamp())
+
+            let descStr = `**Votes:**\n`
+
+            const curLimit = paginationLimit * (i + 1)
+            const limit = curLimit > results.length ? results.length : curLimit
+            for(let j = paginationLimit * i; j < limit; ++j){
+                if(results[j][0] == null){
+                    return undefined
+                }
+
+                let emoteStr = UtilityFunctions.getEmoteDisplay(guild, results[j][0].emote)
+                descStr += `\n${emoteStr} ${results[j][0].name}: **${results[j][1]}**`
             }
 
-            let emoteStr = UtilityFunctions.getEmoteDisplay(guild, result[0].emote)
-            descStr += `\n${emoteStr} ${result[0].name}: **${result[1]}**`
-        });
+            embeds[i].setDescription(descStr)
+        }
 
-        embedBuilder.setDescription(descStr)
-
-        return embedBuilder
+        return embeds
     }
 }

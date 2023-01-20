@@ -85,14 +85,21 @@ export class SkillInterpreter extends Interpreter {
                 return `**${chrName}'s** Publc Skill **\"${chrSkills[0].name}\"** has been successfully viewed`
             }
 
-            const embedBuilder = chr.buildSkillEmbed(this.interaction.user, this.interaction.guild, chrSkills)
-            if(embedBuilder == null){
+            const embeds = chr.buildSkillEmbed(this.interaction.user, this.interaction.guild, chrSkills)
+            if(embeds == null){
                 return `Error building embed.`
             }
-            
-            this.interaction.channel?.send({embeds : [embedBuilder] });
 
-            return  `**${chrName}'s** skills has been successfully viewed.`
+            const replyStr = `**${chrName}'s** skills has been successfully viewed.`
+            
+            if(embeds.length != 1){
+                Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
+                return null
+            }
+
+            this.interaction.channel?.send({ embeds : [embeds[0]]});
+
+            return replyStr
         } else if(skillName != null){
 
             const skill = await DRSkill.getSkill(this.gamedb, this.tableNameBase, skillName)
@@ -120,14 +127,16 @@ export class SkillInterpreter extends Interpreter {
                 return `Error building embed.`
             }
             
+            const replyStr = 'All skills have been successfully viewed' 
+            
             if(embeds.length != 1){
-                Pagination.getPaginatedMessage(embeds, this.interaction)
+                Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
                 return null
-            }
+            } 
 
-            this.interaction.channel?.send({embeds : [embeds[0]]});
+            this.interaction.channel?.send({ embeds : [embeds[0]]});
 
-            return `All skills have been successfully viewed`
+            return replyStr
         }
     }
 

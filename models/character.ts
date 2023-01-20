@@ -248,35 +248,47 @@ export class Character {
         return embedBuilder
     }
 
-    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame: ActiveGame, chars : Array<Character> | null): EmbedBuilder | null{
+    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame: ActiveGame,
+         chars : Array<Character> | null, paginationLimit : number = 10): EmbedBuilder[] | null{
 
         if(chars == null){
             return null
         }
+        let embeds : EmbedBuilder[] = []
 
-        let embedBuilder = new EmbedBuilder()
-        .setColor(0x7852A9)
-        .setTitle(`**${activeGame.gameName} Summary**`)
-        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setThumbnail(String(guild?.iconURL()))
-        .setTimestamp()
+        const numEmbeds = chars.length > 0 ? Math.ceil(chars.length / paginationLimit) : 1
 
-        let descStr = `**DM:** ${guild?.members.cache.get(activeGame.DM)}\n`
-        chars.forEach(char => {
-            let emoteStr = UtilityFunctions.getEmoteDisplay(guild, char.emote)
-            descStr += `\n${guild?.members.cache.get(char.owner)}: ${char.name} ${emoteStr}`
-        });
+        for(let i = 0; i < numEmbeds; ++i){
+            embeds.push(new EmbedBuilder()
+            .setColor(0x7852A9)
+            .setTitle(`**${activeGame.gameName} Summary**`)
+            .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+            .setThumbnail(String(guild?.iconURL()))
+            .setTimestamp())
 
-        embedBuilder.setDescription(descStr)
+            let descStr = `**DM:** ${guild?.members.cache.get(activeGame.DM)}\n`
 
-        return embedBuilder
+            const curLimit = paginationLimit * (i + 1)
+            const limit = curLimit > chars.length ? chars.length : curLimit
+            for(let j = paginationLimit * i; j < limit; ++j){
+                let emoteStr = UtilityFunctions.getEmoteDisplay(guild, chars[j].emote)
+                descStr += `\n${guild?.members.cache.get(chars[j].owner)}: ${chars[j].name} ${emoteStr}`
+            }
+
+            embeds[i].setDescription(descStr)
+        }
+
+        return embeds
     }
 
-    buildInventoryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, items : Array<Inventory> | null): EmbedBuilder | null{
+    buildInventoryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, 
+        items : Array<Inventory> | null, paginationLimit : number = 10): EmbedBuilder[] | null{
         
         if(items == null){
             return null
         }
+        let embeds : EmbedBuilder[] = []
+        let weights : number[] = []
 
         let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
         const owner = guild?.members.cache.get(this.owner)
@@ -285,28 +297,40 @@ export class Character {
             thumbnail = String(owner?.displayAvatarURL())
         }
 
-        let embedBuilder = new EmbedBuilder()
-        .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
-        .setTitle(`**${this.name}'s Inventory**`)
-        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setThumbnail(thumbnail)
-        .setTimestamp()
+        let totalWeight = 0
 
-        let totalWeight = 0;
-        let descStr = `**Item Name:** Amnt *(Weight)*\n`
         items.forEach(item => {
             let itemWeight = (item.weight == null ? 0 : item.quantity * item.weight)
-            descStr += `\n**${item.itemName}:** x${item.quantity} ${(itemWeight == 0 ? '' : `*(${itemWeight})*`)}`
+            weights.push(itemWeight)
             totalWeight += itemWeight
         });
 
-        if(totalWeight != 0){
-            descStr += `\n\n**Total Weight:** ${totalWeight}`
+        const numEmbeds = items.length > 0 ? Math.ceil(items.length / paginationLimit) : 1
+
+        for(let i = 0; i < numEmbeds; ++i){
+            embeds.push(new EmbedBuilder()
+            .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+            .setTitle(`**${this.name}'s Inventory**`)
+            .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+            .setThumbnail(thumbnail)
+            .setTimestamp())
+
+            let descStr = `**Item Name:** Amnt *(Weight)*\n`
+
+            const curLimit = paginationLimit * (i + 1)
+            const limit = curLimit > items.length ? items.length : curLimit
+            for(let j = paginationLimit * i; j < limit; ++j){
+                descStr += `\n**${items[j].itemName}:** x${items[j].quantity} ${(weights[j] == 0 ? '' : `*(${weights[j]})*`)}`
+            }
+
+            if(totalWeight != 0){
+                descStr += `\n\n**Total Weight:** ${totalWeight}`
+            }
+
+            embeds[i].setDescription(descStr)
         }
 
-        embedBuilder.setDescription(descStr)
-
-        return embedBuilder
+        return embeds
     }
 
     getCurrentHealth(): number{

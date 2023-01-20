@@ -5,6 +5,7 @@ import { DRTruthBullet } from "../../../models/custommodels/drmodels/drtruthbull
 import { DRVote } from "../../../models/custommodels/drmodels/drvote"
 import { Initiative } from "../../../models/initiative"
 import { UtilityFunctions } from "../../../utility/general"
+import { Pagination } from "../../../utility/pagination"
 import { Bridge } from "../../interpreter_model"
 import { InitInterpreter } from "../../std_interpreters/initInterp"
 
@@ -112,8 +113,8 @@ export class TrialInterpreter extends InitInterpreter{
             return 'Issue getting characters.'
         }
 
-        const chrName1 = UtilityFunctions.formatString(this.options.getString('cs-char1'))
-        const chrName2 = UtilityFunctions.formatString(this.options.getString('cs-char2'))
+        const chrName1 = UtilityFunctions.formatNullString(this.options.getString('cs-char1'))
+        const chrName2 = UtilityFunctions.formatNullString(this.options.getString('cs-char2'))
 
         chrs.forEach(chr => {
             const hope = chr.name === chrName1 || chr.name === chrName2 ? 4 : 1
@@ -177,7 +178,7 @@ export class TrialInterpreter extends InitInterpreter{
         return `Character **\"${chrName}\"** added to trial: ${result[0]} = __*${result[1]}*__\n`
     }
 
-    public async vote(activeGame : ActiveGame) : Promise<string>{
+    public async vote(activeGame : ActiveGame) : Promise<string | null>{
         
         if(! await DRVote.ifExists(this.gamedb, this.tableNameBase)){
             return 'Error: Trial has not been ended yet.'
@@ -235,6 +236,15 @@ export class TrialInterpreter extends InitInterpreter{
                 }
             }) 
 
+            const blackened = results[0]
+            if(blackened[0] == null){
+                return 'Issue finding name of blackened.'
+            }
+            const nameStr = blackened[0].talent == null ? blackened[0].name : `The ${blackened[0].talent}: ${blackened[0].name}`
+            const replyStr = `All votes counted ! The blackened was chosen to be **${nameStr}** with **${blackened[1]}** votes !` 
+
+            DRCharacter.setToDead(this.gamedb, this.tableNameBase, blackened[0].status !== 'Blackened')
+
             if(activeGame.channelID != null && activeGame.messageID != null){
                 let message = await UtilityFunctions.getMessage(this.interaction.guild, 
                                                                 activeGame.channelID, 
@@ -243,23 +253,21 @@ export class TrialInterpreter extends InitInterpreter{
 
                 activeGame.updateInit(this.gamedb, null, null, '2d6', 0, 0, true)
 
-                const embedBuilder = DRVote.buildSummaryEmbed(this.interaction.guild, results)
+                const embeds = DRVote.buildSummaryEmbed(this.interaction.guild, results)
 
-                if(embedBuilder == undefined){
+                if(embeds == undefined){
                     return `Issue finding Character.`
                 }
-
-                message?.channel.send({embeds : [embedBuilder] })
-            }
-            const blackened = results[0]
-            if(blackened[0] == null){
-                return 'Issue finding name of blackened.'
-            }
-            const nameStr = blackened[0].talent == null ? blackened[0].name : `The ${blackened[0].talent}: ${blackened[0].name}`
-
-            DRCharacter.setToDead(this.gamedb, this.tableNameBase, blackened[0].status !== 'Blackened')
             
-            return `All votes counted ! The blackened was chosen to be **${nameStr}** with **${blackened[1]}** votes !`
+                if(embeds.length != 1){
+                    Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
+                    return null
+                } else {
+                    message?.channel.send({embeds : [embeds[0]] })
+                }
+            }
+            
+            return replyStr
         }
 
         return `A character has voted. **${remainingVotes}** votes remain.`

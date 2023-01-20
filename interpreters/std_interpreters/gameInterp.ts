@@ -4,6 +4,7 @@ import { ActiveGame } from "../../models/activegame"
 import { Character } from "../../models/character"
 import { Inventory } from "../../models/inventory"
 import { UtilityFunctions } from "../../utility/general"
+import { Pagination } from "../../utility/pagination"
 import { SelectBridge } from "../custom_interpreters/select_interpreter"
 import { Interpreter } from "../interpreter_model"
 
@@ -68,22 +69,29 @@ export class GameInterpreter extends Interpreter {
         return `DM successfully changed to from ${oldDM} to ${newDM}`
     }
 
-    public async viewSummary(activeGame : ActiveGame) : Promise<string> {
+    public async viewSummary(activeGame : ActiveGame) : Promise<string | null> {
         if(activeGame == null){
             return 'Issue retrieving active game.'
         }
 
-        let embed = Character.buildSummaryEmbed(this.interaction.user, 
+        let embeds = Character.buildSummaryEmbed(this.interaction.user, 
                                                 this.interaction.guild, 
                                                 activeGame, 
                                                 await Character.getAllCharacters(this.gamedb, this.tableNameBase))
 
-        if(embed == null){
+        if(embeds == null){
             return 'Error finding all characters and building embed.'
         }
 
-        this.interaction.channel?.send({embeds : [embed] });
+        const replyStr = `The characters in **\"${activeGame.gameName}\"** has been successfully viewed.`
+            
+        if(embeds.length != 1){
+            Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
+            return null
+        } 
 
-        return `The characters in **\"${activeGame.gameName}\"** has been successfully viewed.`
+        this.interaction.channel?.send({ embeds : [embeds[0]]});
+
+        return replyStr
     }
 }

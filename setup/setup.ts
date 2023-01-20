@@ -40,7 +40,12 @@ module SetupFunctions{
                             name: 'game-type',
                             description: 'Load Predefined TTRPG (Currently Implemented: DR).',
                             required: false,
-                            type: 3
+                            type: 3,
+                            choices: [
+                                {name: 'DanganronpaTTRPG', value: 'dr'},
+                                {name: 'PokemanzTTRPG', value: 'pkm'},
+                                {name: 'Other', value: ''}
+                            ]
                         },
                         {
                             name: 'additional-stats',

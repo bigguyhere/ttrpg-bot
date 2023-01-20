@@ -103,40 +103,64 @@ export class DRTruthBullet{
         .setTimestamp()
     }
 
-    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame, tbs : Array<DRTruthBullet> | null): EmbedBuilder | null{
+    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame, 
+        tbs : Array<DRTruthBullet> | null, paginationLimit : number = 10): EmbedBuilder[] | null{
         if(tbs == null){
             return null
         }
 
         let isDM = user.id === activeGame.DM
 
-        let embedBuilder = new EmbedBuilder()
-        .setColor(0x7852A9)
-        .setTitle(`**${activeGame.gameName} Truth Bullet Summary ${isDM ? '(DM View)': '(Used View)'}**`)
-        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setThumbnail(String(guild?.iconURL()))
-        .setTimestamp()
+        let embeds : EmbedBuilder[] = []
 
-        let ctr = 0
-        let descStr = `**DM:** ${guild?.members.cache.get(activeGame.DM)}\n\n**Truth Bullets:**\n`
-        if(isDM){
-            tbs.forEach(tb => {
-                    descStr += `**Trial ${tb.trial == -1 ? '?': tb.trial}:** *${tb.name} (Used: ${tb.isUsed ? 'Yes' : 'No'})* \n`
-            });
-            ctr = tbs.length
-        }else{
-            tbs.forEach(tb => {
-                if(tb.isUsed){
-                    ctr++
-                    descStr += `**Trial ${tb.trial == -1 ? '?': tb.trial}:** *${tb.name}*\n`
-                }
-            });
+        const numEmbeds = tbs.length > 0 ? Math.ceil(tbs.length / paginationLimit) : 1
+
+        for(let i = 0; i < numEmbeds; ++i){
+            embeds.push(new EmbedBuilder()
+            .setColor(0x7852A9)
+            .setTitle(`**${activeGame.gameName} Truth Bullet Summary ${isDM ? '(DM View)': '(Used View)'}**`)
+            .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+            .setThumbnail(String(guild?.iconURL()))
+            .setTimestamp())
+
+            let descStr = `**DM:** ${guild?.members.cache.get(activeGame.DM)}\n\n**Truth Bullets:**\n`
+            const curLimit = paginationLimit * (i + 1)
+            const limit = curLimit > tbs.length ? tbs.length : curLimit
+            for(let j = paginationLimit * i; j < limit; ++j){
+                descStr += `**Trial ${tbs[j].trial == -1 ? '?': tbs[j].trial}:** *${tbs[j].name} (Used: ${tbs[j].isUsed ? 'Yes' : 'No'})* \n`
+            }
+            descStr += `\n\n**Total Truth Bullets:** ${tbs.length}`
+
+            embeds[i].setDescription(descStr)
         }
-        descStr += `\n\n**Total Truth Bullets:** ${ctr}`
 
-        embedBuilder.setDescription(descStr)
+        return embeds
+    }
 
-        return embedBuilder
+    isViewable(db: mysql.Connection, tableBaseName: string, owner: string) {
+        return new Promise((resolve) =>{
+            db.query(`SELECT DISTINCT TruthBullets.TB_ID FROM ${tableBaseName}_TruthBullets as TruthBullets
+                        JOIN ${tableBaseName}_ChrTBs as ChrTBs
+                        JOIN ${tableBaseName}_Characters as Characters 
+                                            WHERE 
+                                            Characters.Owner = '${owner}'
+                                            AND Characters.CHR_ID = ChrTBs.CHR_ID
+                                            AND ChrTBs.TB_ID = TruthBullets.TB_ID
+                                            ORDER BY TruthBullets.TB_ID;`, (err, res) =>  {
+                if(err){
+                    console.log(err)
+                    return resolve(null)
+                } 
+
+                for(const r of res){
+                    if(r.TB_ID === this.id){
+                        return resolve(true)
+                    }
+                }
+
+                return resolve(false)
+            })
+        })
     }
 
     addToTable(db : mysql.Connection, tableBaseName : string): boolean {

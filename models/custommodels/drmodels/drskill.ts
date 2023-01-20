@@ -1,4 +1,4 @@
-import DiscordJS, { Embed, EmbedBuilder } from 'discord.js';
+import DiscordJS, { EmbedBuilder } from 'discord.js';
 import mysql from 'mysql'
 import { ActiveGame } from '../../activegame';
 
@@ -132,13 +132,16 @@ export class DRSkill{
         .setTimestamp()
     }
 
-    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame, skills : Array<DRSkill> | null, paginationLimit : number = 10): EmbedBuilder[] | null{
+    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame,
+         skills : Array<DRSkill> | null, paginationLimit : number = 10): EmbedBuilder[] | null{
         if(skills == null){
             return null
         }
         let embeds : EmbedBuilder[] = []
 
-        for(let i = 0; i < Math.ceil(skills.length / paginationLimit); ++i){
+        const numEmbeds = skills.length > 0 ? Math.ceil(skills.length / paginationLimit) : 1
+
+        for(let i = 0; i < numEmbeds; ++i){
             embeds.push(new EmbedBuilder()
             .setColor(0x7852A9)
             .setTitle(`**${activeGame.gameName} Public Skill Summary**`)
@@ -155,7 +158,6 @@ export class DRSkill{
             }
     
             embeds[i].setDescription(descStr)
-
         }
 
         return embeds
