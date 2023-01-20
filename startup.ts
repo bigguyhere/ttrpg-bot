@@ -1,8 +1,8 @@
 import DiscordJS, { GatewayIntentBits, Events } from 'discord.js'
 import dotenv from 'dotenv'
-import mysql from 'mysql'
 import { SetupFunctions } from './setup/setup'
 import { CommandBridge } from './interpreters/std_bridge'
+import { DatabaseFunctions } from './utility/database'
 
 
 dotenv.config()
@@ -19,24 +19,10 @@ const client = new DiscordJS.Client({
 const gamesDBName = process.env.DATABASE
 const guildID = String(process.env.TESTGUILD)
 
-const gamedb = mysql.createConnection({
-    host: process.env.HOST,
-    user: process.env.USER,
-    password: process.env.PASSWORD,
-    database: gamesDBName,
-    charset : 'utf8mb4',
-    multipleStatements: true
-})
-
-gamedb.connect( (err) => {
-    if(err){
-        console.log(`Issue Connecting to MYSQL Database. ${err}`)
-    }
-    return
-})
-
 client.on('ready', () => {
     console.log('Bot is ready.')
+
+    const gamedb = DatabaseFunctions.connect(process.env.HOST, process.env.USER, process.env.PASSWORD, gamesDBName)
 
     gamedb.query(`CREATE DATABASE IF NOT EXISTS ${gamesDBName}`, (err, res) => {
         if(err){
@@ -48,6 +34,8 @@ client.on('ready', () => {
     
     SetupFunctions.commandSetup(guild, client);
 
+    DatabaseFunctions.disconnect(gamedb)
+
     console.log('Bot has completed setup.')
 })
 
@@ -56,7 +44,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return
     }
 
-    CommandBridge.reply(interaction, gamedb, guildID, client)
+    const gamedb = DatabaseFunctions.connect(process.env.HOST, process.env.USER, process.env.PASSWORD, gamesDBName)
+
+    await CommandBridge.reply(interaction, gamedb, guildID, client)
+
+    DatabaseFunctions.disconnect(gamedb)
 })
 
 client.login(process.env.TOKEN)
