@@ -7,13 +7,36 @@ import { Interpreter } from "../../interpreter_model"
 
 export class TBInterpreter extends Interpreter {
 
-    public add() : string {
+    public async add() : Promise<string> {
         const tbName = UtilityFunctions.formatString(this.options.getString('tb-name', true))
+        const assignAll = this.options.getBoolean('assign-all')
 
-        new DRTruthBullet(tbName,
+        const tb = new DRTruthBullet(tbName,
             this.options.getNumber('trial'),
             UtilityFunctions.formatString(this.options.getString('description', true)),
-            false).addToTable(this.gamedb, this.tableNameBase)
+            false)
+        tb.addToTable(this.gamedb, this.tableNameBase)
+
+        if(assignAll){
+            const chrs = await DRCharacter.getAllCharacters(this.gamedb, this.tableNameBase, true)
+
+            if(chrs == null){
+                return 'Issue getting characters.'
+            }
+            for(const chr of chrs){
+                let newChrTB = new DRChrTBs(chr.id, tb.id)
+
+                let exists = await newChrTB.ifExists(this.gamedb, this.tableNameBase)
+
+                if(exists == null){
+                    return `Error checking if ChrTB exists.`
+                }else if(exists){
+                    newChrTB.removeFromTable(this.gamedb, this.tableNameBase)
+                }else{
+                    newChrTB.addToTable(this.gamedb, this.tableNameBase)
+                }
+            }
+        }
 
         return `The truth bullet **\"${tbName}\"** has been successfully created.`
     }

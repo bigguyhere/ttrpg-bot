@@ -176,7 +176,7 @@ export class DRCharacter extends Character {
 
     updateHD(db : mysql.Connection, tableBaseName : string, hope : number, despair : number): boolean{
         db.query(`UPDATE ${tableBaseName}_Characters SET Hope = Hope+${hope}, Despair = Despair+${despair}
-                 WHERE Name = '${this.name}' AND Status = 'Alive' OR Status = 'Blackened';`, (err, res) => {
+                 WHERE Name = '${this.name}' AND (Status = 'Alive' OR Status = 'Blackened');`, (err, res) => {
             if(err){
                 console.log(err)
                 throw err

@@ -48,7 +48,7 @@ export class DRTruthBullet{
             }
 
             db.query(`SELECT * FROM ${tableBaseName}_TruthBullets WHERE Name = "${tb_name}" ${trialStr};`, (err, res) =>  {
-                if(err){
+                if(err || res.length == 0){
                     return resolve(null)
                 } 
                 

@@ -17,7 +17,7 @@ export class TrialInterpreter extends InitInterpreter{
             + ' Please end other trial before starting a new one.'
         }
 
-        let addAll = this.options.getBoolean('add-all')
+        const addAll = this.options.getBoolean('add-all')
         const blackened = UtilityFunctions.formatString(this.options.getString('blackened', true))
         const vicitms = UtilityFunctions.parseMultStr(
                 UtilityFunctions.formatString(this.options.getString('victims', true)))
@@ -113,14 +113,30 @@ export class TrialInterpreter extends InitInterpreter{
             return 'Issue getting characters.'
         }
 
-        const chrName1 = UtilityFunctions.formatNullString(this.options.getString('cs-char1'))
-        const chrName2 = UtilityFunctions.formatNullString(this.options.getString('cs-char2'))
+        const chrNames = [UtilityFunctions.formatNullString(this.options.getString('cs-char1')),
+                         UtilityFunctions.formatNullString(this.options.getString('cs-char2'))]
+
+        let csChrNum = 0
+        chrNames.forEach(chrName => {
+            if(chrName != null){
+                csChrNum += 1
+            }
+        })
+
+        const csChrs = chrs.filter(chr => {return chr.name === chrNames[0] || chr.name === chrNames[1]})
+
+        if(csChrNum != csChrs.length){
+            return `Character ${chrNames[0]} or ${chrNames[1]} not found. Try the **/dr-trial end** commmand again with proper spelling.`
+        }
+
+        csChrs.forEach(chr => {
+            chr.updateHD(this.gamedb, this.tableNameBase, 3, 0)
+        })
 
         chrs.forEach(chr => {
-            const hope = chr.name === chrName1 || chr.name === chrName2 ? 4 : 1
-            chr.updateHD(this.gamedb, this.tableNameBase, hope, 1)
+            chr.updateHD(this.gamedb, this.tableNameBase, 1, 1)
             chr.updateStat(this.gamedb, this.tableNameBase, 'SPTotal', '1', true)
-        });
+        })
 
         DRVote.createTable(this.gamedb, this.tableNameBase)
         DRVote.generateVotes(this.gamedb, this.tableNameBase, chrs)

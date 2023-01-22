@@ -331,6 +331,12 @@ module CustomSetup{
                             type: 10
                         },
                         {
+                            name: 'assign-all',
+                            description: 'Assigns all alive characters in the Character table this truth bullet. Defaults to false.',
+                            required: false,
+                            type: 5
+                        },
+                        {
                             name: 'game-name',
                             description: 'Game for which the truth bullet will be added. Defaults to currently active game.',
                             required: false,

@@ -1,4 +1,5 @@
 import mysql, { Connection } from 'mysql'
+import * as util from 'util'
 
 module DatabaseFunctions{
     export function connect(host : string | undefined, un : string | undefined, 
