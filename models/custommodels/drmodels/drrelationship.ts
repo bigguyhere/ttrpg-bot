@@ -14,7 +14,7 @@ export class DRRelationship {
         this.value = 0;
     }
 
-    changeRelationship(db : mysql.Connection, tableNameBase : string, newValue : number): boolean{
+    changeRelationship(db : mysql.Connection, tableNameBase : string, newValue : number){
         db.query(`UPDATE ${tableNameBase}_Relationships SET Value = ${newValue} 
             WHERE (CHR_ID1 = ${this.char1.id} and CHR_ID2 = ${this.char2.id}) 
             OR (CHR_ID1 = ${this.char2.id} and CHR_ID2 = ${this.char1.id});`
@@ -24,8 +24,6 @@ export class DRRelationship {
                 throw err
             }
         })
-
-        return true
     }
 
     getRelationship(db : mysql.Connection, tableNameBase : string): Promise<DRRelationship | null>{
@@ -75,7 +73,7 @@ export class DRRelationship {
         })
     }
 
-    static createTable(db : mysql.Connection, tableNameBase : string): boolean {
+    static createTable(db : mysql.Connection, tableNameBase : string){
         db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_Relationships ( 
             CHR_ID1 INT NOT NULL,
             CHR_ID2 INT NOT NULL,
@@ -88,8 +86,6 @@ export class DRRelationship {
                     throw err
                 }
             })
-
-        return true
     }
 
     buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{

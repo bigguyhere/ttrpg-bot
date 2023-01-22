@@ -36,7 +36,7 @@ export class DRCharacter extends Character {
             this.spUsed = 0;
     }
 
-    static createTable(db : mysql.Connection, tableNameBase : string)  {
+    static createTable(db : mysql.Connection, tableNameBase : string) {
         db.query(`ALTER TABLE ${tableNameBase}_Characters 
             ADD Talent varchar(255),
             ADD Hope TINYINT NOT NULL,
@@ -53,8 +53,6 @@ export class DRCharacter extends Character {
                     throw err
                 }
             })
-
-        return true
     }
 
     /*
@@ -174,7 +172,7 @@ export class DRCharacter extends Character {
         }) 
     }
 
-    updateHD(db : mysql.Connection, tableBaseName : string, hope : number, despair : number): boolean{
+    updateHD(db : mysql.Connection, tableBaseName : string, hope : number, despair : number){
         db.query(`UPDATE ${tableBaseName}_Characters SET Hope = Hope+${hope}, Despair = Despair+${despair}
                  WHERE Name = '${this.name}' AND (Status = 'Alive' OR Status = 'Blackened');`, (err, res) => {
             if(err){
@@ -182,8 +180,6 @@ export class DRCharacter extends Character {
                 throw err
             }
         })  
-
-        return true
     }
 
     buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{
@@ -385,8 +381,7 @@ export class DRCharacter extends Character {
         })
     }
 
-    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean{
-
+    removeFromTable(db : mysql.Connection, tableBaseName : string){
         db.query(`DELETE FROM ${tableBaseName}_Relationships WHERE (CHR_ID1 = ${this.id} OR CHR_ID2 = ${this.id});`, (err, res) =>{
             if(err){
                 console.log(err)
@@ -394,6 +389,6 @@ export class DRCharacter extends Character {
             }
         })
 
-        return super.removeFromTable(db, tableBaseName)
+        super.removeFromTable(db, tableBaseName)
     }
 }

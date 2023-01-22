@@ -37,7 +37,7 @@ export class Character {
         }
     }
 
-    static createTable(db : mysql.Connection, tableNameBase : string, additionalStats : Array<[string, string]>): boolean {
+    static createTable(db : mysql.Connection, tableNameBase : string, additionalStats : Array<[string, string]>){
         let queryStr = `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Characters ( 
             CHR_ID INT NOT NULL AUTO_INCREMENT,
             Name varchar(255) NOT NULL UNIQUE,
@@ -60,8 +60,6 @@ export class Character {
                 throw err
             }
         })
-
-        return true
     }
 
     addToTable(db : mysql.Connection, tableBaseName : string): Promise<boolean>{
@@ -130,16 +128,13 @@ export class Character {
         return true
     }
 
-    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean{
-
+    removeFromTable(db : mysql.Connection, tableBaseName : string){
         db.query(`DELETE FROM ${tableBaseName}_Characters WHERE Name='${this.name}'`, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err
             }
         })
-
-        return true
     }
 
     static getCharacter(db : mysql.Connection, tableBaseName : string, char_name : string | number): Promise<Character | null>{

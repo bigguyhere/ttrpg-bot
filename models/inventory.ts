@@ -18,8 +18,7 @@ export class Inventory{
         }
     }
 
-    static createTable(db : mysql.Connection, tableNameBase : string): boolean {
-        
+    static createTable(db : mysql.Connection, tableNameBase : string){
         db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_Inventories (
             CHR_ID INT NOT NULL,
             ItemName varchar(255) NOT NULL,
@@ -33,13 +32,11 @@ export class Inventory{
                     throw err
                 }
             })
-
-        return true
     }
 
     
 
-    addToTable(db : mysql.Connection, tableBaseName : string): boolean {
+    addToTable(db : mysql.Connection, tableBaseName : string){
         let desc = this.desc == null ? "null" : `"${this.desc}"`
         let weight = this.weight == null ? "null" : `"${this.weight}"`
 
@@ -50,8 +47,6 @@ export class Inventory{
                 throw err
             }
         })
-
-        return true
     }
 
     static getItem(db : mysql.Connection, tableBaseName : string, char_id : number, item_name : string): Promise<Inventory | boolean | null>{      
@@ -91,19 +86,16 @@ export class Inventory{
         .setTimestamp()
     }
 
-    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean {
-
+    removeFromTable(db : mysql.Connection, tableBaseName : string){
         db.query(`DELETE FROM ${tableBaseName}_Inventories WHERE CHR_ID = '${this.chrId}' AND ItemName = '${this.itemName}';`, (err, res) =>{
             if(err){
                 console.log(err)
                 throw err
             }
         })
-
-        return true
     }
 
-    updateItem(db : mysql.Connection, tableBaseName : string, newQuantity : number, newWeight : number | null, newDesc : string | null): boolean{
+    updateItem(db : mysql.Connection, tableBaseName : string, newQuantity : number, newWeight : number | null, newDesc : string | null){
         db.query(`UPDATE ${tableBaseName}_Inventories SET Quantity = '${newQuantity}' ${newWeight == null ? `, Weight = ${newWeight}`: ''} ${newDesc == null ? `, Description = ${newDesc}`: ''}
             WHERE CHR_ID = '${this.chrId}' AND ItemName = '${this.itemName}';`, (err, res) => {
             if(err){
@@ -111,7 +103,5 @@ export class Inventory{
                 throw err
             }
         })  
-
-        return true
     }
 }

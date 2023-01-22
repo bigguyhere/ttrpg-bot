@@ -19,7 +19,7 @@ export class DRSkill{
         this.prereqs = prereqs == null ? 'None' : prereqs;
     }
 
-    static createTables(db : mysql.Connection, tableNameBase : string): boolean {
+    static createTables(db : mysql.Connection, tableNameBase : string){
         db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_Skills ( 
             SKL_ID INT NOT NULL AUTO_INCREMENT,
             Name varchar(255) NOT NULL,
@@ -35,8 +35,6 @@ export class DRSkill{
             })
 
         DRChrSkills.createTables(db, tableNameBase)
-
-        return true
     }
 
     static getSkill(db : mysql.Connection, tableBaseName : string, skill_name : string): Promise<DRSkill | null>{
@@ -163,8 +161,7 @@ export class DRSkill{
         return embeds
     }
 
-    addToTable(db : mysql.Connection, tableBaseName : string): boolean {
-
+    addToTable(db : mysql.Connection, tableBaseName : string){
         db.query(`INSERT INTO ${tableBaseName}_Skills (Name, Prereqs, Description, SPCost, Type)
         VALUES ("${this.name}", "${this.prereqs}", "${this.desc}", "${this.spCost}", "${this.Type}");`, (err, res) =>  {
             if(err){
@@ -174,20 +171,15 @@ export class DRSkill{
 
             this.id = res.insertId
         })
-
-        return true
     }
 
-    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean{
-
+    removeFromTable(db : mysql.Connection, tableBaseName : string){
         db.query(`DELETE FROM ${tableBaseName}_Skills WHERE Name = '${this.name}';`, (err, res) =>{
             if(err){
                 console.log(err)
                 throw err
             }
         })
-
-        return true
     }
 }
 
@@ -198,8 +190,7 @@ export class DRChrSkills{
         this.sklId = sklId;
     }
 
-    static createTables(db : mysql.Connection, tableNameBase : string): boolean {
-        
+    static createTables(db : mysql.Connection, tableNameBase : string){
         db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_ChrSkills (
             CHR_ID INT NOT NULL,
             SKL_ID INT NOT NULL,
@@ -210,12 +201,9 @@ export class DRChrSkills{
                     throw err
                 }
             })
-
-        return true
     }
 
-    addToTable(db : mysql.Connection, tableBaseName : string): boolean {
-
+    addToTable(db : mysql.Connection, tableBaseName : string){
         db.query(`INSERT INTO ${tableBaseName}_ChrSkills (CHR_ID, SKL_ID)
         VALUES ("${this.chrId}", "${this.sklId}");`, (err, res) =>  {
             if(err){
@@ -223,20 +211,15 @@ export class DRChrSkills{
                 throw err
             }
         })
-
-        return true
     }
 
-    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean {
-
+    removeFromTable(db : mysql.Connection, tableBaseName : string){
         db.query(`DELETE FROM ${tableBaseName}_ChrSkills WHERE CHR_ID = '${this.chrId}' AND SKL_ID = '${this.sklId}';`, (err, res) =>{
             if(err){
                 console.log(err)
                 throw err
             }
         })
-
-        return true
     }
 
     //TODO: See if you can make a SQL query in future that can delete if exists and add if doesn't

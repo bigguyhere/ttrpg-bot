@@ -13,7 +13,7 @@ export class DRVote {
         this.vote = vote;
     }
 
-    public static createTable(db : mysql.Connection, tableNameBase : string): boolean {
+    public static createTable(db : mysql.Connection, tableNameBase : string){
         db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_Votes ( 
             Voter INT NOT NULL,
             Vote INT,
@@ -25,8 +25,6 @@ export class DRVote {
                     throw err
                 }
             })
-
-        return true
     }
 
     static generateVotes(db : mysql.Connection, tableNameBase : string, allChars : Array<DRCharacter>) {

@@ -26,8 +26,7 @@ export class ActiveGame{
         this.messageID = messageID
     }
 
-    public static createTable(db : mysql.Connection): boolean {
-
+    public static createTable(db : mysql.Connection){
         db.query(`CREATE TABLE IF NOT EXISTS ActiveGames ( 
             SERV_ID varchar(255) NOT NULL,
             GameName varchar(255) NOT NULL,
@@ -46,8 +45,6 @@ export class ActiveGame{
                 throw err
             }
         })
-
-        return true
     }
 
     private inactivizeGames(db : mysql.Connection): void{
@@ -59,8 +56,7 @@ export class ActiveGame{
         })  
     }
 
-    addToTable(db : mysql.Connection): boolean{
-
+    addToTable(db : mysql.Connection){
         //Sets currently active game(s) to inactive
         this.inactivizeGames(db)
 
@@ -74,12 +70,9 @@ export class ActiveGame{
             }
             
         })
-
-        return true
     }
 
-    setDM(db : mysql.Connection): boolean{
-
+    setDM(db : mysql.Connection){
         db.query(`UPDATE ActiveGames SET DM = '${this.DM}' 
                     WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
             if(err){
@@ -88,8 +81,6 @@ export class ActiveGame{
             }
             
         })
-
-        return true
     }
 
     updateInit(db : mysql.Connection, 
@@ -98,7 +89,7 @@ export class ActiveGame{
                 newRoll: string,
                 newRound: number,
                 newTurn: number,
-                newHideHP: boolean): boolean{
+                newHideHP: boolean){
 
         this.channelID = newChnnlID
         this.messageID = newMsgID
@@ -116,12 +107,9 @@ export class ActiveGame{
             }
             
         })
-
-        return true
     }
 
-    changeGame(db : mysql.Connection): boolean{
-
+    changeGame(db : mysql.Connection){
         this.inactivizeGames(db)
 
         db.query(`UPDATE ActiveGames SET isActive = 1 WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`, (err, res) =>  {
@@ -131,8 +119,6 @@ export class ActiveGame{
             }
             
         })
-
-        return true
     }
 
     static getCurrentGame(db : mysql.Connection, dbName : string, serverID : string | null, gameName : string | null) : Promise<ActiveGame | null>{

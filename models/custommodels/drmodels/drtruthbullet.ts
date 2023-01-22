@@ -21,7 +21,7 @@ export class DRTruthBullet{
         }
     }
 
-    static createTables(db : mysql.Connection, tableNameBase : string): boolean {
+    static createTables(db : mysql.Connection, tableNameBase : string){
         db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_TruthBullets ( 
             TB_ID INT NOT NULL AUTO_INCREMENT,
             Name varchar(255) NOT NULL,
@@ -36,8 +36,6 @@ export class DRTruthBullet{
             })
 
         DRChrTBs.createTables(db, tableNameBase)
-
-        return true
     }
 
     static getTB(db : mysql.Connection, tableBaseName : string, tb_name : string, trial : number | null): Promise<DRTruthBullet | null>{
@@ -163,8 +161,7 @@ export class DRTruthBullet{
         })
     }
 
-    addToTable(db : mysql.Connection, tableBaseName : string): boolean {
-
+    addToTable(db : mysql.Connection, tableBaseName : string){
         db.query(`INSERT INTO ${tableBaseName}_TruthBullets (Name, Description, Trial, isUsed)
         VALUES ("${this.name}", "${this.desc}", "${this.trial}", ${this.isUsed});`, (err, res) =>  {
             if(err){
@@ -174,11 +171,9 @@ export class DRTruthBullet{
 
             this.id = res.insertId
         })
-
-        return true
     }
 
-    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean{
+    removeFromTable(db : mysql.Connection, tableBaseName : string){
 
         let trialStr = ''
         if(this.trial != null){
@@ -191,11 +186,9 @@ export class DRTruthBullet{
                 throw err
             }
         })
-
-        return true
     }
 
-    useTB(db : mysql.Connection, tableBaseName : string, value : boolean | null = null): boolean{
+    useTB(db : mysql.Connection, tableBaseName : string, value : boolean | null = null){
         let trialStr = this.trial == null ? '' : `AND Trial = ${this.trial}`
         let valueStr = value == null ? 'NOT isUsed' : String(value)
         
@@ -205,8 +198,6 @@ export class DRTruthBullet{
                 throw err
             }
         })
-
-        return true
     }
 }
 
@@ -217,8 +208,7 @@ export class DRChrTBs{
         this.tbId = tbId;
     }
 
-    static createTables(db : mysql.Connection, tableNameBase : string): boolean {
-        
+    static createTables(db : mysql.Connection, tableNameBase : string){  
         db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_ChrTBs (
             CHR_ID INT NOT NULL,
             TB_ID INT NOT NULL,
@@ -229,12 +219,9 @@ export class DRChrTBs{
                     throw err
                 }
             })
-
-        return true
     }
 
-    addToTable(db : mysql.Connection, tableBaseName : string): boolean {
-
+    addToTable(db : mysql.Connection, tableBaseName : string){
         db.query(`INSERT INTO ${tableBaseName}_ChrTBs (CHR_ID, TB_ID)
         VALUES ("${this.chrId}", "${this.tbId}");`, (err, res) =>  {
             if(err){
@@ -242,20 +229,15 @@ export class DRChrTBs{
                 throw err
             }
         })
-
-        return true
     }
 
-    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean {
-
+    removeFromTable(db : mysql.Connection, tableBaseName : string){
         db.query(`DELETE FROM ${tableBaseName}_ChrTBs WHERE CHR_ID = '${this.chrId}' AND TB_ID = '${this.tbId}';`, (err, res) =>{
             if(err){
                 console.log(err)
                 throw err
             }
         })
-
-        return true
     }
 
     //TODO: See if you can make a SQL query in future that can delete if exists and add if doesn't

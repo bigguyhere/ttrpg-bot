@@ -18,8 +18,7 @@ export class Initiative {
         this.Dmg = Dmg
     }
 
-    public static createTable(db : mysql.Connection, tableNameBase : string): boolean {
-
+    public static createTable(db : mysql.Connection, tableNameBase : string){
         db.query(`CREATE TABLE IF NOT EXISTS ${tableNameBase}_Initiative ( 
             Name varchar(255) NOT NULL,
             Roll SMALLINT NOT NULL,
@@ -34,8 +33,6 @@ export class Initiative {
                 throw err
             }
         })
-
-        return true
     }
 
     public static dropTable(db : mysql.Connection, tableNameBase : string) {
@@ -66,27 +63,22 @@ export class Initiative {
          })
     }
 
-    removeFromTable(db : mysql.Connection, tableBaseName : string): boolean{
-
+    removeFromTable(db : mysql.Connection, tableBaseName : string){
         db.query(`DELETE FROM ${tableBaseName}_Initiative WHERE Name = '${this.name}'`, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err
             }
         })
-
-        return true
     }
 
-    updateDMG(db : mysql.Connection, tableBaseName : string, value : number): boolean{
+    updateDMG(db : mysql.Connection, tableBaseName : string, value : number){
         db.query(`UPDATE ${tableBaseName}_Initiative SET Dmg = Dmg+${value} WHERE Name = '${this.name}';`, (err, res) => {
             if(err){
                 console.log(err)
                 throw err
             }
         })  
-
-        return true
     }
 
     static getAllInitChrs(db : mysql.Connection, tableBaseName : string): Promise<Array<Initiative> | null>{
