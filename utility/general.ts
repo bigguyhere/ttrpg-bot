@@ -110,7 +110,7 @@ module UtilityFunctions{
     }
 
     export function getRandomNum(cieling: number){
-        return Math.floor( Math.random() * (cieling - 1)) + 1;
+        return Math.floor( Math.random() * cieling) + 1;
     }
 
     export function scrambleString(str: string) : string{
@@ -118,7 +118,7 @@ module UtilityFunctions{
             return str
         }
 
-        const split = getRandomNum(str.length)
+        const split = getRandomNum(str.length - 1)
         const str1 = str.substring(0, split)
         const str2 = str.substring(split)
         return getRandomNum(2) == 1
