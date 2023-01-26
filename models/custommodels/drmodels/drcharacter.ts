@@ -184,14 +184,24 @@ export class DRCharacter extends Character {
 
     buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{
 
+        let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
         const owner = guild?.members.cache.get(this.owner)
+        let color = owner?.displayHexColor as DiscordJS.ColorResolvable | undefined
+
+        if(thumbnail == undefined){
+            thumbnail = String(owner?.displayAvatarURL())
+        }
+
+        if(color == undefined){
+            color = Character.defaultEmbedColor
+        }
 
         return new EmbedBuilder()
-        .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+        .setColor(color)
         .setTitle(`**${this.name}**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
         .setDescription(`${this.talent == null ? '' : this.talent + '\n'}${this.prounouns}`)
-        .setThumbnail(String(owner?.displayAvatarURL()))
+        .setThumbnail(thumbnail)
         .addFields(
             { name: '**Owner:**', value: String(owner) },
             { name: '\u200B', value: '\u200B' },
@@ -217,9 +227,14 @@ export class DRCharacter extends Character {
 
         let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
         const owner = guild?.members.cache.get(this.owner)
+        let color = owner?.displayHexColor as DiscordJS.ColorResolvable | undefined
 
         if(thumbnail == undefined){
             thumbnail = String(owner?.displayAvatarURL())
+        }
+
+        if(color == undefined){
+            color = Character.defaultEmbedColor
         }
 
         let spUsed = 0
@@ -235,7 +250,7 @@ export class DRCharacter extends Character {
         
         for(let i = 0; i < numEmbeds; ++i){
             embeds.push(new EmbedBuilder()
-            .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+            .setColor(color)
             .setTitle(`**${this.name}'s Skills**`)
             .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
             .setThumbnail(thumbnail)
@@ -267,16 +282,21 @@ export class DRCharacter extends Character {
 
         let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
         const owner = guild?.members.cache.get(this.owner)
+        let color = owner?.displayHexColor as DiscordJS.ColorResolvable | undefined
 
         if(thumbnail == undefined){
             thumbnail = String(owner?.displayAvatarURL())
+        }
+
+        if(color == undefined){
+            color = Character.defaultEmbedColor
         }
 
         const numEmbeds = tbs.length > 0 ? Math.ceil(tbs.length / paginationLimit) : 1
 
         for(let i = 0; i < numEmbeds; ++i){
             embeds.push(new EmbedBuilder()
-            .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+            .setColor(color)
             .setTitle(`**${this.name}'s Truth Bullets**`)
             .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
             .setThumbnail(thumbnail)

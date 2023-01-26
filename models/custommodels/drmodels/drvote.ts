@@ -134,7 +134,7 @@ export class DRVote {
         
         for(let i = 0; i < numEmbeds; ++i){
             embeds.push(new EmbedBuilder()
-            .setColor(0x7852A9)
+            .setColor(DRCharacter.defaultEmbedColor)
             .setTitle(`**Voting Summary**`)
             .setThumbnail(String(guild?.iconURL()))
             .setTimestamp())

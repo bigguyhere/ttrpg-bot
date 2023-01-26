@@ -5,6 +5,8 @@ import { ActiveGame } from './activegame';
 import { UtilityFunctions } from '../utility/general';
 
 export class Character {
+    public static defaultEmbedColor = 0x7852A9
+
     public id: number;
     public prounouns: string;
     public health: number;
@@ -217,13 +219,18 @@ export class Character {
 
         let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
         const owner = guild?.members.cache.get(this.owner)
+        let color = owner?.displayHexColor as DiscordJS.ColorResolvable | undefined
 
         if(thumbnail == undefined){
             thumbnail = String(owner?.displayAvatarURL())
         }
 
+        if(color == undefined){
+            color = Character.defaultEmbedColor
+        }
+
         let embedBuilder = new EmbedBuilder()
-        .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+        .setColor(color)
         .setTitle(`**${this.name}**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
         .setDescription(`${this.prounouns}`)
@@ -255,7 +262,7 @@ export class Character {
 
         for(let i = 0; i < numEmbeds; ++i){
             embeds.push(new EmbedBuilder()
-            .setColor(0x7852A9)
+            .setColor(Character.defaultEmbedColor)
             .setTitle(`**${activeGame.gameName} Summary**`)
             .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
             .setThumbnail(String(guild?.iconURL()))
@@ -287,9 +294,14 @@ export class Character {
 
         let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
         const owner = guild?.members.cache.get(this.owner)
+        let color = owner?.displayHexColor as DiscordJS.ColorResolvable | undefined
 
         if(thumbnail == undefined){
             thumbnail = String(owner?.displayAvatarURL())
+        }
+
+        if(color == undefined){
+            color = Character.defaultEmbedColor
         }
 
         let totalWeight = 0
@@ -304,7 +316,7 @@ export class Character {
 
         for(let i = 0; i < numEmbeds; ++i){
             embeds.push(new EmbedBuilder()
-            .setColor(owner?.displayHexColor as DiscordJS.ColorResolvable)
+            .setColor(color)
             .setTitle(`**${this.name}'s Inventory**`)
             .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
             .setThumbnail(thumbnail)
