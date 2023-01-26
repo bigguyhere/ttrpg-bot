@@ -36,7 +36,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const gamedb = DatabaseFunctions.connect(process.env.HOST, process.env.USER, process.env.PASSWORD, gamesDBName)
 
-    await CommandBridge.reply(interaction, gamedb, guildID, client)
+    await CommandBridge.reply(interaction, gamedb, guildID, client).then(() => {
+        DatabaseFunctions.disconnect(gamedb)
+    })
 })
 
 client.login(process.env.TOKEN)

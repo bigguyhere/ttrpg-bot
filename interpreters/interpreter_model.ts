@@ -91,7 +91,7 @@ export abstract class Bridge{
 
     abstract parse(
         commandName: string,
-        subcommandName : string,
+        subcommandName : string | null,
         options: Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
         activeGame: ActiveGame | null,
         interaction: ChatInputCommandInteraction<CacheType>) : Promise<string | null>

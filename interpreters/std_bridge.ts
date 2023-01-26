@@ -43,7 +43,7 @@ module CommandBridge {
     
         let commandName = interaction.commandName
         const options = interaction.options
-        const subcommandName = options.getSubcommand()
+        const subcommandName = options.getSubcommand(false)
 
         const gameName = UtilityFunctions.formatNullString(options.getString('game-name'), / /g, '_')
         
@@ -51,9 +51,12 @@ module CommandBridge {
         const tableNameBase = `${guildID}_${activeGame?.gameName == null? gameName : activeGame?.gameName}`;
         const bridge = SelectBridge.select(activeGame?.gameType, gamedb, tableNameBase)
 
-        const disabledCmd = bridge.getDisabledCmd(commandName, subcommandName)
-        if(disabledCmd != undefined){
-            return `**/${commandName} ${subcommandName}** is disabled for this game type. Please use **/${disabledCmd}** instead.`
+        if(subcommandName != null){
+            const disabledCmd = bridge.getDisabledCmd(commandName, subcommandName)
+            
+            if(disabledCmd != undefined){
+                return `**/${commandName} ${subcommandName}** is disabled for this game type. Please use **/${disabledCmd}** instead.`
+            }
         }
 
         commandName = bridge.getOverrideCmd(commandName)

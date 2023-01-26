@@ -93,7 +93,7 @@ export class DRRelationship {
         const owner1 = guild?.members.cache.get(this.char1.owner)
         const owner2 = guild?.members.cache.get(this.char2.owner)
         return new EmbedBuilder()
-        .setColor(0x7852A9)
+        .setColor(DRCharacter.defaultEmbedColor)
         .setTitle(`**${this.char1.name} X ${this.char2.name}**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
         .setThumbnail(String(guild?.iconURL()))
