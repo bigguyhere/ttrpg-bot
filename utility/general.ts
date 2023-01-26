@@ -28,7 +28,8 @@ module UtilityFunctions{
                 let parseSect = parseInt(sect)
     
                 if(parseDie.length > 1){
-                    const numRolls = parseDie[0] === '' ? 1 : parseInt(parseDie[0]), diceValue = parseInt(parseDie[1])
+                    const numRolls = parseDie[0] === '' ? 1 : parseInt(parseDie[0])
+                    const diceValue = parseInt(parseDie[1])
     
                     if(isNaN(numRolls) || isNaN(diceValue)){
                         return undefined
@@ -42,7 +43,7 @@ module UtilityFunctions{
     
     
                     for(let roll = 0; roll < numRolls; ++roll){
-                        let rollValue = getRandomNum(diceValue + 1)
+                        let rollValue = getRandomNum(diceValue)
     
                         if(rollValue == diceValue || rollValue == 1){
                             retStr += `**${rollValue}**`
@@ -109,7 +110,7 @@ module UtilityFunctions{
     }
 
     export function getRandomNum(cieling: number){
-        return Math.floor( Math.random() * cieling );
+        return Math.floor( Math.random() * (cieling - 1)) + 1;
     }
 
     export function scrambleString(str: string) : string{
@@ -117,10 +118,10 @@ module UtilityFunctions{
             return str
         }
 
-        const split = getRandomNum(str.length - 1) + 1
+        const split = getRandomNum(str.length)
         const str1 = str.substring(0, split)
         const str2 = str.substring(split)
-        return getRandomNum(2) == 0 
+        return getRandomNum(2) == 1
         ? scrambleString(str1) + scrambleString(str2)
         : scrambleString(str2) + scrambleString(str1)
     }
