@@ -80,11 +80,11 @@ export class InventoryInterpreter extends Interpreter {
             }
 
             if(embeds.length != 1){
-                Pagination.getPaginatedMessage(embeds, this.interaction)
+                await Pagination.getPaginatedMessage(embeds, this.interaction)
                 return null
             }
             
-            this.interaction.channel?.send({embeds : [embeds[0]] });
+            await this.interaction.channel?.send({embeds : [embeds[0]] });
     
             return  `**${chrName}'s** inventory has been successfully viewed.`
         }else{
@@ -105,7 +105,7 @@ export class InventoryInterpreter extends Interpreter {
                 return 'Error building embed.'
             }
             
-            this.interaction.channel?.send({embeds : [embedBuilder] });
+            await this.interaction.channel?.send({embeds : [embedBuilder] });
     
             return `**${chrName}'s** item **${itemName}** has been successfully viewed.`
         }

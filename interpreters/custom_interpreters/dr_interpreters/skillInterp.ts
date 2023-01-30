@@ -83,7 +83,8 @@ export class SkillInterpreter extends Interpreter {
             }
 
             if(chrSkills?.length == 1){
-                this.interaction.channel?.send({embeds : [await chrSkills[0].buildViewEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame)] });
+                await this.interaction.channel?.send({embeds : 
+                    [await chrSkills[0].buildViewEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame)] });
 
                 return `**${chrName}'s** Skill **\"${chrSkills[0].name}\"** has been successfully viewed`
             }
@@ -96,11 +97,11 @@ export class SkillInterpreter extends Interpreter {
             const replyStr = `**${chrName}'s** skills has been successfully viewed.`
             
             if(embeds.length != 1){
-                Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
+                await Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
                 return null
             }
 
-            this.interaction.channel?.send({ embeds : [embeds[0]]});
+            await this.interaction.channel?.send({ embeds : [embeds[0]]});
 
             return replyStr
         } else if(skillName != null){
@@ -115,7 +116,8 @@ export class SkillInterpreter extends Interpreter {
                 return 'Error: You do not have access to this skill.'
             }
             
-            this.interaction.channel?.send({embeds : [await skill.buildViewEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame)] });
+            await this.interaction.channel?.send({embeds : 
+                [await skill.buildViewEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame)] });
 
             return `Skill **\"${skillName}\"** has been successfully viewed`
         } else{
@@ -133,11 +135,11 @@ export class SkillInterpreter extends Interpreter {
             const replyStr = 'All skills have been successfully viewed' 
             
             if(embeds.length != 1){
-                Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
+                await Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
                 return null
             } 
 
-            this.interaction.channel?.send({ embeds : [embeds[0]]});
+            await this.interaction.channel?.send({ embeds : [embeds[0]]});
 
             return replyStr
         }

@@ -66,7 +66,7 @@ export class DRBridge extends Bridge {
             const charName = UtilityFunctions.formatString(options.getString('char-name', true))
             switch(subcommandName) {
                 case ('add'):
-                    return drCharInterpreter.add(charName)
+                    return await drCharInterpreter.add(charName)
                 case ('remove'):
                     return await drCharInterpreter.remove(charName)
                 case ('change-stat'):
@@ -74,7 +74,7 @@ export class DRBridge extends Bridge {
                 case ('view'):
                     return await drCharInterpreter.view(charName, this)
                 case ('view-hd'):
-                    return drCharInterpreter.viewHD(charName)
+                    return await drCharInterpreter.viewHD(charName)
             }
         }
         else if(commandName === 'dr-relationship') {
@@ -108,7 +108,7 @@ export class DRBridge extends Bridge {
             const tbInterpreter = new TBInterpreter(this.gamedb, this.tableNameBase, options, client, interaction)
             switch(subcommandName) {
                 case ('add'):
-                    return tbInterpreter.add()
+                    return await tbInterpreter.add()
                 case ('remove'):
                     return tbInterpreter.remove()
                 case ('use'):
@@ -186,7 +186,7 @@ export class DRBridge extends Bridge {
                 return '**A Body Has Been Discovered !**'
             }
 
-            VoiceFunctions.setIdleDisconnect(audioPlayer, connection, 2000)
+            await VoiceFunctions.setIdleDisconnect(audioPlayer, connection, 2000)
             connection.subscribe(audioPlayer)
 
             return '**A Body Has Been Discovered: Listen to Monokuma !**'

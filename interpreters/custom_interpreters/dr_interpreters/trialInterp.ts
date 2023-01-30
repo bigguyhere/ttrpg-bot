@@ -94,7 +94,7 @@ export class TrialInterpreter extends InitInterpreter{
                 let message = await UtilityFunctions.getMessage(this.interaction.guild,
                                                                 activeGame.channelID, 
                                                                 String(activeGame.messageID))
-                message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
+                await message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
             }
         }
 
@@ -235,7 +235,7 @@ export class TrialInterpreter extends InitInterpreter{
             let results = await DRVote.getResults(this.gamedb, this.tableNameBase)
             
             Initiative.dropTable(this.gamedb, this.tableNameBase)
-            DRVote.dropTable(this.gamedb, this.tableNameBase)
+            await DRVote.dropTable(this.gamedb, this.tableNameBase)
             
             const changes = await DRRelationship.getHDChange(this.gamedb, this.tableNameBase, 'Blackened')
 
@@ -265,7 +265,7 @@ export class TrialInterpreter extends InitInterpreter{
                 let message = await UtilityFunctions.getMessage(this.interaction.guild, 
                                                                 activeGame.channelID, 
                                                                 activeGame.messageID)
-                message?.unpin()
+                await message?.unpin()
 
                 activeGame.updateInit(this.gamedb, null, null, '2d6', 0, 0, true)
 
@@ -276,10 +276,10 @@ export class TrialInterpreter extends InitInterpreter{
                 }
             
                 if(embeds.length != 1){
-                    Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
+                    await Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
                     return null
                 } else {
-                    message?.channel.send({embeds : [embeds[0]] })
+                    await message?.channel.send({embeds : [embeds[0]] })
                 }
             }
             

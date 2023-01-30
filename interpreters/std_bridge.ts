@@ -22,7 +22,7 @@ module CommandBridge {
                                             client: Client<boolean>) : Promise<void> {
         const content = await bridge(interaction, gamedb, guildID, client)
         if(content != null){
-            interaction.reply({
+            await interaction.reply({
                 content: content
             })
         }
@@ -72,7 +72,7 @@ module CommandBridge {
                     if(activeGame == null){
                         return 'Issue retrieving active game.'
                     }
-                    return gameInterpreter.changeDM(activeGame)
+                    return await gameInterpreter.changeDM(activeGame)
                 case ('view-summary'):
                     if(activeGame == null){
                         return 'Issue retrieving active game.'
@@ -144,7 +144,7 @@ module CommandBridge {
         }
 
         // Calls custom interpreter if command is not within base commands
-        const retVal = bridge.parse(commandName, subcommandName, options, activeGame, client, interaction) 
+        const retVal = await bridge.parse(commandName, subcommandName, options, activeGame, client, interaction) 
         return retVal == undefined ? 'Command Not Found.' : retVal
     }
     

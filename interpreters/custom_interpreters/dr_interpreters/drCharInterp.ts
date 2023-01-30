@@ -24,10 +24,10 @@ export class DRCharacterInterpreter extends CharacterInterpreter {
                                     this.options.getNumber('intuition', true),
                                     );
         
-        if(!newChar.addToTable(this.gamedb, this.tableNameBase)){
+        if(!(await newChar.addToTable(this.gamedb, this.tableNameBase))){
             return `Error: Duplicate character ${charName}`
         }
-        newChar.generateRelations(this.gamedb, this.tableNameBase)  
+        await newChar.generateRelations(this.gamedb, this.tableNameBase)  
 
         return `The character **\"${charName}\"** has been successfully created.`
     }

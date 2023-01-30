@@ -52,7 +52,7 @@ export class RelationshipInterpreter extends Interpreter {
             return 'Error obtaining relationship.'
         }
 
-        this.interaction.channel?.send(
+        await this.interaction.channel?.send(
             {embeds : [await relationship.buildViewEmbed(this.interaction.user, this.interaction.guild, this.client)] });
 
         return `${charName1} and ${charName2}'s relationship has been successfully viewed`

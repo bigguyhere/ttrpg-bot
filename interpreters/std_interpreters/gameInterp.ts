@@ -86,11 +86,11 @@ export class GameInterpreter extends Interpreter {
         const replyStr = `The characters in **\"${activeGame.gameName}\"** has been successfully viewed.`
             
         if(embeds.length != 1){
-            Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
+            await Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
             return null
         } 
 
-        this.interaction.channel?.send({ embeds : [embeds[0]]});
+        await this.interaction.channel?.send({ embeds : [embeds[0]]});
 
         return replyStr
     }

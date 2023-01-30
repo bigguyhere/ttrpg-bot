@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import { SetupFunctions } from './setup/setup'
 import { CommandBridge } from './interpreters/std_bridge'
 import { DatabaseFunctions } from './utility/database'
+import { Connection } from 'mysql'
 
 
 dotenv.config()

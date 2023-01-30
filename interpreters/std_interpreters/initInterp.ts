@@ -44,7 +44,7 @@ export class InitInterpreter extends Interpreter{
             let message = await UtilityFunctions.getMessage(this.interaction.guild,
                                                             activeGame.channelID, 
                                                             activeGame.messageID)
-            message?.unpin()
+            await message?.unpin()
 
             activeGame.updateInit(this.gamedb, null, null, '1d20', 0, 0, false)
         
@@ -70,7 +70,7 @@ export class InitInterpreter extends Interpreter{
                 let message = await UtilityFunctions.getMessage(this.interaction.guild,
                                                                 activeGame.channelID, 
                                                                 activeGame.messageID)
-                message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
+                await message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
             }  
             
             const displayUser = await this.client.users.fetch(nextInit?.user)
@@ -129,7 +129,7 @@ export class InitInterpreter extends Interpreter{
             let message = await UtilityFunctions.getMessage(this.interaction.guild,
                                                             activeGame.channelID, 
                                                             activeGame.messageID)
-            message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
+            await message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
         }
 
         return replyStr
@@ -152,7 +152,7 @@ export class InitInterpreter extends Interpreter{
             let message = await UtilityFunctions.getMessage(this.interaction.guild, 
                                                             activeGame.channelID, 
                                                             activeGame.messageID)
-            message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
+           await  message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
 
             return `**\"${chrName}\"** successfully removed from initiative.`
         }   
@@ -178,7 +178,7 @@ export class InitInterpreter extends Interpreter{
             return 'Issue finding initiative character.'
         }
         
-        if (!initChr.changeInit(this.gamedb, this.tableNameBase, activeGame)){
+        if (! (await initChr.changeInit(this.gamedb, this.tableNameBase, activeGame))){
             return 'Error: Initiative hasn\'t started yet'
         }
 
@@ -186,7 +186,7 @@ export class InitInterpreter extends Interpreter{
             let message = await UtilityFunctions.getMessage(this.interaction.guild, 
                                                             activeGame.channelID, 
                                                             activeGame.messageID)
-            message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
+            await message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
 
             return `**\"${chrName}\"** successfully set to active in initiative.`
         }   
@@ -231,7 +231,7 @@ export class InitInterpreter extends Interpreter{
                     let message = await UtilityFunctions.getMessage(this.interaction.guild,
                                                                     activeGame.channelID, 
                                                                     activeGame.messageID)
-                    message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
+                    await message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
                 }
             }
 
@@ -244,7 +244,8 @@ export class InitInterpreter extends Interpreter{
         const msg = await this.interaction.channel?.send(
             await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame)
         )
-        msg?.pin()
+        
+        await msg?.pin()
 
         if(msg == undefined){
             return 'Error sending initiative message.'

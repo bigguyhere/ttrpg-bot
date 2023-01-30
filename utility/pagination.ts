@@ -28,7 +28,7 @@ module Pagination {
         return row
     }
 
-    export function getPaginatedMessage(ebs : EmbedBuilder[], interaction : ChatInputCommandInteraction<CacheType>, 
+    export async function getPaginatedMessage(ebs : EmbedBuilder[], interaction : ChatInputCommandInteraction<CacheType>, 
         topStr : string = ''){
         const channel = interaction.channel
         titleStr = topStr
@@ -36,7 +36,7 @@ module Pagination {
 
         const embed = embeds[curPage]
 
-        interaction.reply({
+        await interaction.reply({
             content: titleStr,
             embeds: [embed],
             components: [createButtons()]   
@@ -47,12 +47,12 @@ module Pagination {
         })
 
         if(collector != undefined){
-            collector.on('collect', (btnInteraction) =>{
+            collector.on('collect', async (btnInteraction) =>{
                 if(!btnInteraction){
                     return
                 }
                 
-                btnInteraction.deferUpdate()
+                await btnInteraction.deferUpdate()
 
                 if(btnInteraction.customId !== 'prev_btn' && btnInteraction.customId !== 'next_btn'){
                     return
@@ -64,7 +64,7 @@ module Pagination {
                     ++curPage
                 }
 
-                interaction.editReply({
+                await interaction.editReply({
                     content: titleStr,
                     embeds: [embeds[curPage]],
                     components: [createButtons()]

@@ -114,7 +114,8 @@ export class TBInterpreter extends Interpreter {
             }
 
             if(chrTBs?.length == 1){
-                this.interaction.channel?.send({embeds : [await chrTBs[0].buildViewEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame)] });
+                await this.interaction.channel?.send({embeds : 
+                    [await chrTBs[0].buildViewEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame)] });
 
                 return `**${chrName}'s** Truth Bullet **\"${chrTBs[0].name}\"** has been successfully viewed`
             }
@@ -127,11 +128,11 @@ export class TBInterpreter extends Interpreter {
             const replyStr = `**${chrName}'s** truth bullets has been successfully viewed.`
             
             if(embeds.length != 1){
-                Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
+                await Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
                 return null
             }
             
-            this.interaction.channel?.send({ embeds : [embeds[0]]});
+            await this.interaction.channel?.send({ embeds : [embeds[0]]});
 
             return replyStr
         } else if(tbName != null){
@@ -146,7 +147,7 @@ export class TBInterpreter extends Interpreter {
                 return 'Error: You do not have access to this truth bullet.'
             }
             
-            this.interaction.channel?.send({embeds : 
+            await this.interaction.channel?.send({embeds : 
                 [await tb.buildViewEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame)] });
 
             return `Truth Bullet **\"${tbName}\"** has been successfully viewed.`
@@ -165,11 +166,11 @@ export class TBInterpreter extends Interpreter {
             const replyStr = 'All truth bullets have been successfully viewed.'
             
             if(embeds.length != 1){
-                Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
+                await Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
                 return null
             } 
 
-            this.interaction.channel?.send({ embeds : [embeds[0]]});
+            await this.interaction.channel?.send({ embeds : [embeds[0]]});
 
             return replyStr
         } 
