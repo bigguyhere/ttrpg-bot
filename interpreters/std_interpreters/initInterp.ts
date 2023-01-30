@@ -11,8 +11,9 @@ export class InitInterpreter extends Interpreter{
     constructor(gamedb : Connection, 
                 tableNameBase : string,
                 options : Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
+                client : Client<boolean>,
                 interaction : ChatInputCommandInteraction<CacheType>) {
-        super(gamedb, tableNameBase, options, interaction)
+        super(gamedb, tableNameBase, options, client, interaction)
         this.guildID = String(interaction.guild?.id)
         this.userID = interaction.user.id
     }
@@ -54,7 +55,7 @@ export class InitInterpreter extends Interpreter{
         return 'Error Finding ChannelID and/or MessageID'
     }
 
-    public async next(activeGame : ActiveGame, client : Client<boolean>) : Promise<string>{
+    public async next(activeGame : ActiveGame) : Promise<string>{
             if(activeGame.messageID == null){
                 return 'Error: No initative in progress.'
             }
@@ -72,10 +73,9 @@ export class InitInterpreter extends Interpreter{
                 message?.edit(await Initiative.buildInitMsg(this.gamedb, this.tableNameBase, activeGame))
             }  
             
-            const guild = client.guilds.cache.get(this.guildID)
-            const displayUser = guild?.members.cache.get(String(nextInit?.user))
+            const displayUser = await this.client.users.fetch(nextInit?.user)
 
-            return `${nextInit?.emote == undefined ? '' : UtilityFunctions.getEmoteDisplay(this.interaction.guild, nextInit.emote)}`
+            return `${nextInit?.emote == undefined ? '' : UtilityFunctions.getEmoteDisplay(this.client, nextInit.emote)}`
                     + `${displayUser} (Round ${activeGame.round}, Turn ${activeGame.turn}) **${nextInit?.name}'s** Turn!`
 
     }

@@ -50,10 +50,13 @@ export class SkillInterpreter extends Interpreter {
             return `Error checking if ChrSkill exists.`
         }else if(exists){
             newChrSkill.removeFromTable(this.gamedb, this.tableNameBase)
+            const decrement = -1 * skill.spCost
+            chr.updateStat(this.gamedb, this.tableNameBase, 'SPUsed', String(decrement), true)
 
             return `Removed skill **\"${skillName}\"** to character **\"${chrName}\"** successfully.`
         }else{
             newChrSkill.addToTable(this.gamedb, this.tableNameBase)
+            chr.updateStat(this.gamedb, this.tableNameBase, 'SPUsed', String(skill.spCost), true)
 
             return `Added skill **\"${skillName}\"** to character **\"${chrName}\"** successfully.`
         }
@@ -80,12 +83,12 @@ export class SkillInterpreter extends Interpreter {
             }
 
             if(chrSkills?.length == 1){
-                this.interaction.channel?.send({embeds : [chrSkills[0].buildViewEmbed(this.interaction.user, this.interaction.guild, activeGame)] });
+                this.interaction.channel?.send({embeds : [await chrSkills[0].buildViewEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame)] });
 
-                return `**${chrName}'s** Publc Skill **\"${chrSkills[0].name}\"** has been successfully viewed`
+                return `**${chrName}'s** Skill **\"${chrSkills[0].name}\"** has been successfully viewed`
             }
 
-            const embeds = chr.buildSkillEmbed(this.interaction.user, this.interaction.guild, chrSkills)
+            const embeds = await chr.buildSkillEmbed(this.interaction.user, this.client, chrSkills)
             if(embeds == null){
                 return `Error building embed.`
             }
@@ -112,7 +115,7 @@ export class SkillInterpreter extends Interpreter {
                 return 'Error: You do not have access to this skill.'
             }
             
-            this.interaction.channel?.send({embeds : [skill.buildViewEmbed(this.interaction.user, this.interaction.guild, activeGame)] });
+            this.interaction.channel?.send({embeds : [await skill.buildViewEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame)] });
 
             return `Skill **\"${skillName}\"** has been successfully viewed`
         } else{
@@ -122,7 +125,7 @@ export class SkillInterpreter extends Interpreter {
                 allSkills = allSkills.filter(skill => skill.Type !== 'PRV')
             }
 
-            const embeds = DRSkill.buildSummaryEmbed(this.interaction.user, this.interaction.guild, activeGame, allSkills)
+            const embeds = await DRSkill.buildSummaryEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame, allSkills)
             if(embeds == null){
                 return `Error building embed.`
             }

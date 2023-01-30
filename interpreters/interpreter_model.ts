@@ -1,4 +1,4 @@
-import { CacheType, ChatInputCommandInteraction, CommandInteractionOptionResolver } from "discord.js"
+import { CacheType, ChatInputCommandInteraction, Client, CommandInteractionOptionResolver } from "discord.js"
 import { Connection } from "mysql"
 import { ActiveGame } from "../models/activegame"
 import { Character } from "../models/character"
@@ -94,6 +94,7 @@ export abstract class Bridge{
         subcommandName : string | null,
         options: Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
         activeGame: ActiveGame | null,
+        client : Client<boolean>,
         interaction: ChatInputCommandInteraction<CacheType>) : Promise<string | null>
 }
 
@@ -105,6 +106,7 @@ export class BaseBridge extends Bridge {
                 subcommandName : string,
                 options: Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
                 activeGame: ActiveGame | null,
+                client : Client<boolean>,
                 interaction: ChatInputCommandInteraction<CacheType>): Promise<string> {
         return 'Command Not Found.'
     }
@@ -116,10 +118,12 @@ export abstract class Interpreter {
     constructor(protected gamedb : Connection, 
                 protected tableNameBase : string,
                 protected options : Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
+                protected client : Client<boolean>,
                 protected interaction : ChatInputCommandInteraction<CacheType>){
         this.gamedb = gamedb
         this.tableNameBase = tableNameBase
         this.options = options
+        this.client = client
         this.interaction = interaction
     }
 }

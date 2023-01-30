@@ -2,7 +2,7 @@
 
 }*/
 
-import { ChannelType, Guild, Message, TextBasedChannel } from "discord.js"
+import { ChannelType, Guild, Message, TextBasedChannel, Client } from "discord.js"
 
 //ToDo -> Refactor to convert into postfix to all for paranthesis, multiplication, and division
 module UtilityFunctions{
@@ -97,10 +97,10 @@ module UtilityFunctions{
 
     }
 
-    export function getEmoteDisplay(guild : Guild | undefined | null, emote :string | null): string{
+    export function getEmoteDisplay(client : Client, emote :string | null): string{
         let emoteStr
         if(emote?.length != 2){
-            let newEmote = guild?.emojis.cache.get(String(emote))
+            let newEmote = client.emojis.resolve(String(emote))
             emoteStr = newEmote == undefined ? '' : `<:${newEmote.name}:${newEmote.id}>`
         }else{
             emoteStr = emote

@@ -1,4 +1,4 @@
-import DiscordJS, { EmbedBuilder } from 'discord.js';
+import DiscordJS, { Client, EmbedBuilder } from 'discord.js';
 import mysql from 'mysql'
 import { DRCharacter } from './drcharacter';
 
@@ -88,10 +88,10 @@ export class DRRelationship {
             })
     }
 
-    buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{
+    async buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, client: Client<boolean>): Promise<EmbedBuilder>{
 
-        const owner1 = guild?.members.cache.get(this.char1.owner)
-        const owner2 = guild?.members.cache.get(this.char2.owner)
+        const owner1 = await client.users.fetch(this.char1.owner)
+        const owner2 = await client.users.fetch(this.char2.owner)
         return new EmbedBuilder()
         .setColor(DRCharacter.defaultEmbedColor)
         .setTitle(`**${this.char1.name} X ${this.char2.name}**`)

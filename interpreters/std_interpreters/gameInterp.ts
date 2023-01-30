@@ -15,8 +15,9 @@ export class GameInterpreter extends Interpreter {
     constructor(gamedb : Connection, 
                 tableNameBase : string,
                 options : Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
+                client : Client<boolean>,
                 interaction : ChatInputCommandInteraction<CacheType>){
-        super(gamedb, tableNameBase, options, interaction)
+        super(gamedb, tableNameBase, options, client, interaction)
         this.userID = interaction.user.id
         this.guildID = String(interaction.guild?.id)
         this.gameName = UtilityFunctions.formatNullString(options.getString('game-name'), / /g, '_')
@@ -53,16 +54,14 @@ export class GameInterpreter extends Interpreter {
         return `Game successfully changed to **\"${this.gameName}\"**`
     }
 
-    public changeDM(activeGame : ActiveGame, client: Client<boolean>) : string {
+    public async changeDM(activeGame : ActiveGame) : Promise<string> {
         const newDM = this.options.getUser('newdm-name', true)
     
         if(activeGame == null){
             return 'Issue retrieving active game.'
         }
 
-        const guild = client.guilds.cache.get(this.guildID)
-        const oldDM = guild?.members.cache.get(activeGame.DM)
-
+        const oldDM = await this.client.users.fetch(activeGame.defaultRoll)
         activeGame.DM = newDM.id
         activeGame.setDM(this.gamedb)
 
@@ -74,7 +73,8 @@ export class GameInterpreter extends Interpreter {
             return 'Issue retrieving active game.'
         }
 
-        let embeds = Character.buildSummaryEmbed(this.interaction.user, 
+        let embeds = await Character.buildSummaryEmbed(this.client,
+                                                this.interaction.user, 
                                                 this.interaction.guild, 
                                                 activeGame, 
                                                 await Character.getAllCharacters(this.gamedb, this.tableNameBase))

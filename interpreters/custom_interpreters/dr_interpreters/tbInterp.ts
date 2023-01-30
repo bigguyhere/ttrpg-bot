@@ -114,12 +114,12 @@ export class TBInterpreter extends Interpreter {
             }
 
             if(chrTBs?.length == 1){
-                this.interaction.channel?.send({embeds : [chrTBs[0].buildViewEmbed(this.interaction.user, this.interaction.guild, activeGame)] });
+                this.interaction.channel?.send({embeds : [await chrTBs[0].buildViewEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame)] });
 
                 return `**${chrName}'s** Truth Bullet **\"${chrTBs[0].name}\"** has been successfully viewed`
             }
 
-            const embeds = chr.buildTBEmbed(this.interaction.user, this.interaction.guild, chrTBs)
+            const embeds = await chr.buildTBEmbed(this.interaction.user, this.client, chrTBs)
             if(embeds == null){
                 return `Error building embed.`
             }
@@ -147,7 +147,7 @@ export class TBInterpreter extends Interpreter {
             }
             
             this.interaction.channel?.send({embeds : 
-                [tb.buildViewEmbed(this.interaction.user, this.interaction.guild, activeGame)] });
+                [await tb.buildViewEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame)] });
 
             return `Truth Bullet **\"${tbName}\"** has been successfully viewed.`
         } else{
@@ -157,7 +157,7 @@ export class TBInterpreter extends Interpreter {
                 allTBs = allTBs.filter(tb => tb.isUsed)
             }
 
-            const embeds = DRTruthBullet.buildSummaryEmbed(this.interaction.user, this.interaction.guild, activeGame, allTBs)
+            const embeds = await DRTruthBullet.buildSummaryEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame, allTBs)
             if(embeds == null){
                 return `Error building embed.`
             }

@@ -126,7 +126,7 @@ export class DRVote {
         })
     }
 
-    static buildSummaryEmbed(guild : DiscordJS.Guild | null, results : Array<[DRCharacter, number]>,
+    static buildSummaryEmbed(client : DiscordJS.Client, guild : DiscordJS.Guild | null, results : Array<[DRCharacter, number]>,
          paginationLimit : number = 10): EmbedBuilder[] | undefined{
         let embeds : EmbedBuilder[] = []
 
@@ -148,7 +148,7 @@ export class DRVote {
                     return undefined
                 }
 
-                let emoteStr = UtilityFunctions.getEmoteDisplay(guild, results[j][0].emote)
+                let emoteStr = UtilityFunctions.getEmoteDisplay(client, results[j][0].emote)
                 descStr += `\n${emoteStr} ${results[j][0].name}: **${results[j][1]}**`
             }
 

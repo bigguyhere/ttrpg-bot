@@ -1,5 +1,5 @@
 import mysql from 'mysql'
-import DiscordJS, { EmbedBuilder } from 'discord.js';
+import DiscordJS, { Client, EmbedBuilder } from 'discord.js';
 import { Inventory } from './inventory'
 import { ActiveGame } from './activegame';
 import { UtilityFunctions } from '../utility/general';
@@ -215,11 +215,11 @@ export class Character {
         })
     }
 
-    buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{
+    async buildViewEmbed(user : DiscordJS.User, client : Client<boolean>): Promise<EmbedBuilder>{
 
-        let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
-        const owner = guild?.members.cache.get(this.owner)
-        let color = owner?.displayHexColor as DiscordJS.ColorResolvable | undefined
+        let thumbnail = client.emojis.resolve(String(this.emote))?.url
+        const owner = await client.users.fetch(this.owner)
+        let color = owner.hexAccentColor as DiscordJS.ColorResolvable | undefined
 
         if(thumbnail == undefined){
             thumbnail = String(owner?.displayAvatarURL())
@@ -250,8 +250,8 @@ export class Character {
         return embedBuilder
     }
 
-    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame: ActiveGame,
-         chars : Array<Character> | null, paginationLimit : number = 10): EmbedBuilder[] | null{
+    static async buildSummaryEmbed(client : DiscordJS.Client, user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame: ActiveGame,
+         chars : Array<Character> | null, paginationLimit : number = 10): Promise<EmbedBuilder[] | null>{
 
         if(chars == null){
             return null
@@ -268,13 +268,13 @@ export class Character {
             .setThumbnail(String(guild?.iconURL()))
             .setTimestamp())
 
-            let descStr = `**DM:** ${guild?.members.cache.get(activeGame.DM)}\n`
+            let descStr = `**DM:** ${await client.users.fetch(activeGame.DM)}\n`
 
             const curLimit = paginationLimit * (i + 1)
             const limit = curLimit > chars.length ? chars.length : curLimit
             for(let j = paginationLimit * i; j < limit; ++j){
-                let emoteStr = UtilityFunctions.getEmoteDisplay(guild, chars[j].emote)
-                descStr += `\n${guild?.members.cache.get(chars[j].owner)}: ${chars[j].name} ${emoteStr}`
+                let emoteStr = UtilityFunctions.getEmoteDisplay(client, chars[j].emote)
+                descStr += `\n${await client.users.fetch(chars[j].owner)}: ${chars[j].name} ${emoteStr}`
             }
 
             embeds[i].setDescription(descStr)
@@ -283,8 +283,8 @@ export class Character {
         return embeds
     }
 
-    buildInventoryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, 
-        items : Array<Inventory> | null, paginationLimit : number = 10): EmbedBuilder[] | null{
+    async buildInventoryEmbed(user : DiscordJS.User, client : Client<boolean>, 
+        items : Array<Inventory> | null, paginationLimit : number = 10): Promise<EmbedBuilder[] | null>{
         
         if(items == null){
             return null
@@ -292,9 +292,11 @@ export class Character {
         let embeds : EmbedBuilder[] = []
         let weights : number[] = []
 
-        let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
-        const owner = guild?.members.cache.get(this.owner)
-        let color = owner?.displayHexColor as DiscordJS.ColorResolvable | undefined
+        let thumbnail = client.emojis.resolve(String(this.emote))?.url
+        const owner = await client.users.fetch(this.owner, {
+            force: true
+        })
+        let color = owner.hexAccentColor as DiscordJS.ColorResolvable | undefined
 
         if(thumbnail == undefined){
             thumbnail = String(owner?.displayAvatarURL())

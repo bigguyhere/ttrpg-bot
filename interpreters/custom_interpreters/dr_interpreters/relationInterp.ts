@@ -53,7 +53,7 @@ export class RelationshipInterpreter extends Interpreter {
         }
 
         this.interaction.channel?.send(
-            {embeds : [relationship.buildViewEmbed(this.interaction.user, this.interaction.guild)] });
+            {embeds : [await relationship.buildViewEmbed(this.interaction.user, this.interaction.guild, this.client)] });
 
         return `${charName1} and ${charName2}'s relationship has been successfully viewed`
     }

@@ -10,8 +10,9 @@ export class InventoryInterpreter extends Interpreter {
     constructor(gamedb : Connection, 
                 tableNameBase : string,
                 options : Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
+                client : Client<boolean>,
                 interaction : ChatInputCommandInteraction<CacheType>){
-            super(gamedb, tableNameBase, options, interaction)
+            super(gamedb, tableNameBase, options, client, interaction)
     }
 
     public async modify(chrName : string, bridge : Bridge) : Promise<string> {
@@ -73,7 +74,7 @@ export class InventoryInterpreter extends Interpreter {
         if(itemName == null){
             const chrItems = await chr.getAllChrItems(this.gamedb, this.tableNameBase)
 
-            const embeds = chr.buildInventoryEmbed(this.interaction.user, this.interaction.guild, chrItems)
+            const embeds = await chr.buildInventoryEmbed(this.interaction.user, this.client, chrItems)
             if(embeds == null){
                 return `Error building embed.`
             }
@@ -99,7 +100,7 @@ export class InventoryInterpreter extends Interpreter {
                 return 'Item does not exist.'
             }
 
-            const embedBuilder = item.buildViewEmbed(this.interaction.user, this.interaction.guild, activeGame)
+            const embedBuilder = await item.buildViewEmbed(this.interaction.user, this.interaction.guild, this.client, activeGame)
             if(embedBuilder == null){
                 return 'Error building embed.'
             }

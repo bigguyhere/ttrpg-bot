@@ -17,7 +17,7 @@ module CustomSetup{
                     type: 1,
                     options: [
                         {
-                            name: 'chr-name',
+                            name: 'char-name',
                             description: 'Name of character in game.',
                             required: true,
                             type: 3
@@ -65,7 +65,7 @@ module CustomSetup{
                             type: 3
                         },
                         {
-                            name: 'chr-owner',
+                            name: 'char-owner',
                             description: 'User who owns the character, defaults to the user who executed the command.',
                             required: false,
                             type: 6
@@ -557,7 +557,7 @@ module CustomSetup{
                     type: 1,
                     options: [
                         {
-                            name: 'voter-chr',
+                            name: 'voter-char',
                             description: 'Name of the character who is voting',
                             required: true,
                             type: 3

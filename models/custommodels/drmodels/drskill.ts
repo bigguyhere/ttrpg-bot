@@ -1,4 +1,4 @@
-import DiscordJS, { EmbedBuilder } from 'discord.js';
+import DiscordJS, { Client, EmbedBuilder } from 'discord.js';
 import mysql from 'mysql'
 import { ActiveGame } from '../../activegame';
 
@@ -116,13 +116,13 @@ export class DRSkill{
         })
     }
 
-    buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame): EmbedBuilder{
+    async buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, client : Client<boolean>, activeGame : ActiveGame): Promise<EmbedBuilder>{
         
         return new EmbedBuilder()
         .setColor(0x7852A9)
         .setTitle(`**${this.name} (ID: ${this.id}) Summary**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setDescription(`**DM:** ${guild?.members.cache.get(activeGame.DM)}\n
+        .setDescription(`**DM:** ${(await client.users.fetch(activeGame.DM))}\n
                         **Prerequisites:** ${this.prereqs}\n
                         **SP Cost:** ${this.spCost}\n
                         **Description:** ${this.desc}`)
@@ -130,8 +130,8 @@ export class DRSkill{
         .setTimestamp()
     }
 
-    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame,
-         skills : Array<DRSkill> | null, paginationLimit : number = 10): EmbedBuilder[] | null{
+    static async buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, client : Client<boolean>, activeGame : ActiveGame,
+         skills : Array<DRSkill> | null, paginationLimit : number = 10): Promise<EmbedBuilder[] | null>{
         if(skills == null){
             return null
         }
@@ -147,7 +147,7 @@ export class DRSkill{
             .setThumbnail(String(guild?.iconURL()))
             .setTimestamp())
 
-            let descStr = `**DM:** ${guild?.members.cache.get(activeGame.DM)}\n***(Cost) - Name:*** *Prereqs*\n`
+            let descStr = `**DM:** ${(await client.users.fetch(activeGame.DM))}\n***(Cost) - Name:*** *Prereqs*\n`
             
             const curLimit = paginationLimit * (i + 1)
             const limit = curLimit > skills.length ? skills.length : curLimit

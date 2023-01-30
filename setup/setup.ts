@@ -114,7 +114,7 @@ module SetupFunctions{
                     type: 1,
                     options: [
                         {
-                            name: 'chr-name',
+                            name: 'char-name',
                             description: 'Name of character in game.',
                             required: true,
                             type: 3
@@ -132,7 +132,7 @@ module SetupFunctions{
                             type: 3
                         },
                         {
-                            name: 'chr-owner',
+                            name: 'char-owner',
                             description: 'User who owns the character, defaults to the user who executed the command.',
                             required: false,
                             type: 6
@@ -169,7 +169,7 @@ module SetupFunctions{
                     type: 1,
                     options: [
                         {
-                            name: 'chr-name',
+                            name: 'char-name',
                             description: 'Name of character in game.',
                             required: true,
                             type: 3
@@ -188,7 +188,7 @@ module SetupFunctions{
                     type: 1,
                     options: [
                         {
-                            name: 'chr-name',
+                            name: 'char-name',
                             description: 'Name of character whose stat should be changed.',
                             required:true,
                             type: 3
@@ -225,7 +225,7 @@ module SetupFunctions{
                     type: 1,
                     options: [
                         {
-                            name: 'chr-name',
+                            name: 'char-name',
                             description: 'Name of character in game.',
                             required: true,
                             type: 3

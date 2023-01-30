@@ -1,5 +1,5 @@
 import mysql from 'mysql'
-import DiscordJS, { EmbedBuilder } from 'discord.js';
+import DiscordJS, { Client, EmbedBuilder } from 'discord.js';
 import { ActiveGame } from './activegame';
 
 export class Inventory{
@@ -72,13 +72,13 @@ export class Inventory{
         })
     }
 
-    buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame): EmbedBuilder{
+    async buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, client : Client<boolean>, activeGame : ActiveGame): Promise<EmbedBuilder>{
         
         return new EmbedBuilder()
         .setColor(0x7852A9)
         .setTitle(`**${this.itemName} (Character ID: ${this.chrId}) Summary**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setDescription(`**DM:** ${guild?.members.cache.get(activeGame.DM)}
+        .setDescription(`**DM:** ${(await client.users.fetch(activeGame.DM))}
                         ${ this.weight == null ? '' : `\n**Weight:** ${this.weight}`}
                         **Quantity:** ${this.quantity}
                         ${ this.desc == null ? '' : `**Description:** ${this.desc}`}`)

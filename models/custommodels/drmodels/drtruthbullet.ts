@@ -1,4 +1,4 @@
-import DiscordJS, { EmbedBuilder } from 'discord.js';
+import DiscordJS, { Client, EmbedBuilder } from 'discord.js';
 import mysql from 'mysql'
 import { ActiveGame } from '../../activegame';
 
@@ -88,21 +88,21 @@ export class DRTruthBullet{
         })
     }
 
-    buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame): EmbedBuilder{
+    async buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, client : Client<boolean>, activeGame : ActiveGame): Promise<EmbedBuilder>{
         
         return new EmbedBuilder()
         .setColor(0x7852A9)
         .setTitle(`**${this.name} (ID: ${this.id}) Summary**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setDescription(`**DM:** ${guild?.members.cache.get(activeGame.DM)}\n
+        .setDescription(`**DM:** ${(await client.users.fetch(activeGame.DM))}\n
                         **Trial:** ${this.trial == -1 ? '?': this.trial}\n
                         **Description:** ${this.desc}`)
         .setThumbnail(String(guild?.iconURL()))
         .setTimestamp()
     }
 
-    static buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, activeGame : ActiveGame, 
-        tbs : Array<DRTruthBullet> | null, paginationLimit : number = 10): EmbedBuilder[] | null{
+    static async buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, client : Client<boolean>, activeGame : ActiveGame, 
+        tbs : Array<DRTruthBullet> | null, paginationLimit : number = 10): Promise<EmbedBuilder[] | null>{
         if(tbs == null){
             return null
         }
@@ -121,7 +121,7 @@ export class DRTruthBullet{
             .setThumbnail(String(guild?.iconURL()))
             .setTimestamp())
 
-            let descStr = `**DM:** ${guild?.members.cache.get(activeGame.DM)}\n\n**Truth Bullets:**\n`
+            let descStr = `**DM:** ${(await client.users.fetch(activeGame.DM))}\n\n**Truth Bullets:**\n`
             const curLimit = paginationLimit * (i + 1)
             const limit = curLimit > tbs.length ? tbs.length : curLimit
             for(let j = paginationLimit * i; j < limit; ++j){

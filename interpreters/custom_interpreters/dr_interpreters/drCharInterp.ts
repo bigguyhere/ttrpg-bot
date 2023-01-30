@@ -33,23 +33,16 @@ export class DRCharacterInterpreter extends CharacterInterpreter {
     }
 
     public async viewHD (charName : string) : Promise<string> {
-        const chrName = UtilityFunctions.formatString(this.options.getString('char-name', true))
-        const chr = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, chrName)
+        const chr = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, charName)
 
         if(chr == null){
             return 'Issue getting character.'
         }
 
-        const client = this.interaction.guild?.client
+        (await this.client.users.fetch(chr.owner)).send(
+            `**${charName}'s Hope/Despair:**\n__Hope:__ ***${chr.hope}***\t__Despair:__ ***${chr.despair}***\n__Status:__ **${chr.status}**`)
 
-        if(client == undefined){
-            return 'Issue finding server.'
-        }
-
-        client.users.cache.get(chr.owner)?.send(
-            `**${chrName}'s Hope/Despair:**\n__Hope:__ ***${chr.hope}***\t__Despair:__ ***${chr.despair}***\n__Status:__ **${chr.status}**`)
-
-        return `${chrName}'s Hope/Despair has been viewed.`
+        return `${charName}'s Hope/Despair has been viewed.`
     }
 
 }

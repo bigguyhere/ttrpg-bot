@@ -1,4 +1,4 @@
-import { CacheType, ChatInputCommandInteraction, CommandInteractionOptionResolver, GuildMember} from "discord.js";
+import { CacheType, ChatInputCommandInteraction, Client, CommandInteractionOptionResolver, GuildMember} from "discord.js";
 import { Connection } from "mysql";
 import { ActiveGame } from "../../../models/activegame";
 import { DRCharacter } from "../../../models/custommodels/drmodels/drcharacter";
@@ -57,12 +57,13 @@ export class DRBridge extends Bridge {
         subcommandName : string | null,
         options: Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
         activeGame: ActiveGame | null,
+        client : Client<boolean>,
         interaction: ChatInputCommandInteraction<CacheType>) : Promise<string | null> 
     {
 
         if(commandName === 'dr-character'){   
-            const drCharInterpreter = new DRCharacterInterpreter(this.gamedb, this.tableNameBase, options, interaction)
-            const charName = UtilityFunctions.formatString(options.getString('chr-name', true))
+            const drCharInterpreter = new DRCharacterInterpreter(this.gamedb, this.tableNameBase, options, client, interaction)
+            const charName = UtilityFunctions.formatString(options.getString('char-name', true))
             switch(subcommandName) {
                 case ('add'):
                     return drCharInterpreter.add(charName)
@@ -77,7 +78,7 @@ export class DRBridge extends Bridge {
             }
         }
         else if(commandName === 'dr-relationship') {
-            const rsInterpreter = new RelationshipInterpreter(this.gamedb, this.tableNameBase, options, interaction)
+            const rsInterpreter = new RelationshipInterpreter(this.gamedb, this.tableNameBase, options, client, interaction)
             const charName1 = UtilityFunctions.formatString(options.getString('character-1', true))
             const charName2 = UtilityFunctions.formatString(options.getString('character-2', true))
             switch(subcommandName) {
@@ -88,7 +89,7 @@ export class DRBridge extends Bridge {
             }
         }
         else if(commandName === 'dr-skill') {
-            const skillInterpreter = new SkillInterpreter(this.gamedb, this.tableNameBase, options, interaction)
+            const skillInterpreter = new SkillInterpreter(this.gamedb, this.tableNameBase, options, client, interaction)
             switch(subcommandName) {
                 case ('add'):
                     return skillInterpreter.add()
@@ -104,7 +105,7 @@ export class DRBridge extends Bridge {
             }
         }
         else if(commandName === 'dr-tb') {
-            const tbInterpreter = new TBInterpreter(this.gamedb, this.tableNameBase, options, interaction)
+            const tbInterpreter = new TBInterpreter(this.gamedb, this.tableNameBase, options, client, interaction)
             switch(subcommandName) {
                 case ('add'):
                     return tbInterpreter.add()
@@ -125,7 +126,7 @@ export class DRBridge extends Bridge {
             }
         } 
         else if(commandName === 'dr-trial') {
-            const trialInterpreter = new TrialInterpreter(this.gamedb, this.tableNameBase, options, interaction)
+            const trialInterpreter = new TrialInterpreter(this.gamedb, this.tableNameBase, options, client, interaction)
 
             if(activeGame == null){
                 return 'Issue retrieving active game.'
@@ -139,11 +140,10 @@ export class DRBridge extends Bridge {
                 case ('add-character'):
                     return await trialInterpreter.addCharacter(activeGame, this)
                 case ('next'):
-                    const client = interaction.guild?.client
                     if(client == undefined){
                         return 'Issue finding server.'
                     }
-                    return await trialInterpreter.next(activeGame, client)
+                    return await trialInterpreter.next(activeGame)
                 case ('remove'):
                     return await trialInterpreter.removeCharacter(activeGame)
                 case ('active'):
@@ -151,6 +151,9 @@ export class DRBridge extends Bridge {
                 case ('hp'):
                     return await trialInterpreter.changeHP(activeGame, this)
                 case ('vote'):
+                    if(client == undefined){
+                        return 'Issue finding server.'
+                    }
                     return await trialInterpreter.vote(activeGame)
                 case ('hangman'):
                     return await trialInterpreter.hangman(activeGame)

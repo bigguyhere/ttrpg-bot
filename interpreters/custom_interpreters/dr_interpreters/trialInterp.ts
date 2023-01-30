@@ -269,7 +269,7 @@ export class TrialInterpreter extends InitInterpreter{
 
                 activeGame.updateInit(this.gamedb, null, null, '2d6', 0, 0, true)
 
-                const embeds = DRVote.buildSummaryEmbed(this.interaction.guild, results)
+                const embeds = DRVote.buildSummaryEmbed(this.client, this.interaction.guild, results)
 
                 if(embeds == undefined){
                     return `Issue finding Character.`
@@ -307,13 +307,9 @@ export class TrialInterpreter extends InitInterpreter{
 
         chr.updateHD(this.gamedb, this.tableNameBase, -1, 0)
 
-        const word = UtilityFunctions.formatString(this.options.getString('word', true))
+        const word = UtilityFunctions.formatString(this.options.getString('word', true));
 
-        const client = this.interaction.guild?.client
-        if(client == undefined){
-            return 'Issue finding server.'
-        }
-        client.users.cache.get(chr.owner)?.send(
+        (await this.client.users.fetch(chr.owner)).send(
             `**Hangman\'s Gambit Begin !**\nYour word is: __*${UtilityFunctions.scrambleString(word).toUpperCase()}*__`)
 
         return `${chrName} has initiated a hangman's gambit !`

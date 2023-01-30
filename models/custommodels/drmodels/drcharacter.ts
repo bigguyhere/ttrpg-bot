@@ -1,4 +1,4 @@
-import DiscordJS, { EmbedBuilder } from 'discord.js';
+import DiscordJS, { Client, EmbedBuilder } from 'discord.js';
 import mysql from 'mysql'
 import { Character } from '../../character';
 import { DRSkill } from './drskill';
@@ -114,6 +114,8 @@ export class DRCharacter extends Character {
                 retChr.status = res[0].Status
                 retChr.health = res[0].Health
                 retChr.dmgTaken = res[0].DmgTaken
+                retChr.spUsed = res[0].SPUsed
+                retChr.spTotal = res[0].SPTotal
                 
                 return resolve(retChr)
             })
@@ -182,11 +184,11 @@ export class DRCharacter extends Character {
         })  
     }
 
-    buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null): EmbedBuilder{
+    async buildViewEmbed(user : DiscordJS.User, client: Client<boolean>): Promise<EmbedBuilder>{
 
-        let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
-        const owner = guild?.members.cache.get(this.owner)
-        let color = owner?.displayHexColor as DiscordJS.ColorResolvable | undefined
+        let thumbnail = client.emojis.resolve(String(this.emote))?.url
+        const owner = await client.users.fetch(this.owner)
+        let color = owner.hexAccentColor as DiscordJS.ColorResolvable | undefined
 
         if(thumbnail == undefined){
             thumbnail = String(owner?.displayAvatarURL())
@@ -217,17 +219,17 @@ export class DRCharacter extends Character {
         .setTimestamp()
     }
 
-    buildSkillEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, skills : Array<DRSkill> | null, 
-        paginationLimit : number = 10): EmbedBuilder[] | null{
+    async buildSkillEmbed(user : DiscordJS.User, client : Client<boolean>, skills : Array<DRSkill> | null, 
+        paginationLimit : number = 10): Promise<EmbedBuilder[] | null>{
         
         if(skills == null){
             return null
         }
         let embeds : EmbedBuilder[] = []
 
-        let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
-        const owner = guild?.members.cache.get(this.owner)
-        let color = owner?.displayHexColor as DiscordJS.ColorResolvable | undefined
+        let thumbnail = client.emojis.resolve(String(this.emote))?.url
+        const owner = await client.users.fetch(this.owner)
+        let color = owner.hexAccentColor as DiscordJS.ColorResolvable | undefined
 
         if(thumbnail == undefined){
             thumbnail = String(owner?.displayAvatarURL())
@@ -272,17 +274,17 @@ export class DRCharacter extends Character {
         return embeds
     }
 
-    buildTBEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, tbs : Array<DRTruthBullet> | null,
-        paginationLimit : number = 10): EmbedBuilder[] | null{
+    async buildTBEmbed(user : DiscordJS.User, client : Client<boolean>, tbs : Array<DRTruthBullet> | null,
+        paginationLimit : number = 10): Promise<EmbedBuilder[] | null>{
         
         if(tbs == null){
             return null
         }
         let embeds : EmbedBuilder[] = []
 
-        let thumbnail = guild?.emojis.cache.get(String(this.emote))?.url
-        const owner = guild?.members.cache.get(this.owner)
-        let color = owner?.displayHexColor as DiscordJS.ColorResolvable | undefined
+        let thumbnail = client.emojis.resolve(String(this.emote))?.url
+        const owner = await client.users.fetch(this.owner)
+        let color = owner.hexAccentColor as DiscordJS.ColorResolvable | undefined
 
         if(thumbnail == undefined){
             thumbnail = String(owner?.displayAvatarURL())

@@ -1,4 +1,4 @@
-import { CacheType, ChatInputCommandInteraction, CommandInteractionOptionResolver } from "discord.js"
+import { CacheType, ChatInputCommandInteraction, Client, CommandInteractionOptionResolver } from "discord.js"
 import { Connection } from "mysql"
 import { Character } from "../../models/character"
 import { UtilityFunctions } from "../../utility/general"
@@ -10,8 +10,9 @@ export class CharacterInterpreter extends Interpreter{
     constructor(gamedb : Connection, 
                 tableNameBase : string,
                 options : Omit<CommandInteractionOptionResolver<CacheType>, "getMessage" | "getFocused">,
+                client : Client<boolean>,
                 interaction : ChatInputCommandInteraction<CacheType>){
-        super(gamedb, tableNameBase, options, interaction)
+        super(gamedb, tableNameBase, options, client, interaction)
         this.userID = interaction.user.id
     }
 
@@ -57,7 +58,7 @@ export class CharacterInterpreter extends Interpreter{
         }
 
         this.interaction.channel?.send(
-            {embeds : [char.buildViewEmbed(this.interaction.user, this.interaction.guild)] })
+            {embeds : [await char.buildViewEmbed(this.interaction.user, this.client)] })
 
         return `The character **\"${charName}\"** has been successfully viewed.`
     }

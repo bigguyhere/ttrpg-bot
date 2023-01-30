@@ -1,4 +1,4 @@
-import { Client, CacheType, ChatInputCommandInteraction, ChannelType, TextBasedChannel} from "discord.js"
+import { Client, CacheType, ChatInputCommandInteraction} from "discord.js"
 import { Connection } from "mysql"
 import { SelectBridge } from "./custom_interpreters/select_interpreter"
 import { ActiveGame } from "../models/activegame"
@@ -62,7 +62,7 @@ module CommandBridge {
         commandName = bridge.getOverrideCmd(commandName)
 
         if(commandName === 'game') {
-            const gameInterpreter = new GameInterpreter(gamedb, tableNameBase, options, interaction)
+            const gameInterpreter = new GameInterpreter(gamedb, tableNameBase, options, client, interaction)
             switch (subcommandName){
                 case ('create'):
                     return gameInterpreter.createGame()
@@ -72,7 +72,7 @@ module CommandBridge {
                     if(activeGame == null){
                         return 'Issue retrieving active game.'
                     }
-                    return gameInterpreter.changeDM(activeGame, client)
+                    return gameInterpreter.changeDM(activeGame)
                 case ('view-summary'):
                     if(activeGame == null){
                         return 'Issue retrieving active game.'
@@ -81,8 +81,8 @@ module CommandBridge {
             }
         } 
         else if(commandName === 'character') {
-            const chrInterpreter = new CharacterInterpreter(gamedb, tableNameBase, options, interaction)
-            const charName = UtilityFunctions.formatString(options.getString('chr-name', true))
+            const chrInterpreter = new CharacterInterpreter(gamedb, tableNameBase, options, client, interaction)
+            const charName = UtilityFunctions.formatString(options.getString('char-name', true))
             switch (subcommandName){
                 case ('add'):
                     return await chrInterpreter.add(charName)
@@ -106,7 +106,7 @@ module CommandBridge {
             return `${interaction.user} :game_die:\n**${identifier}** ${result?.[0]}\n**Total:** ${result?.[1]}`
         }
         else if(commandName === 'inventory') {
-            const invInterpreter = new InventoryInterpreter(gamedb, tableNameBase, options, interaction)
+            const invInterpreter = new InventoryInterpreter(gamedb, tableNameBase, options, client, interaction)
             const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
             switch (subcommandName){
                 case ('modify'):
@@ -119,7 +119,7 @@ module CommandBridge {
             }
         }
         else if (commandName === 'initiative') {
-            const initInterpreter = new InitInterpreter(gamedb, tableNameBase, options, interaction)
+            const initInterpreter = new InitInterpreter(gamedb, tableNameBase, options, client, interaction)
 
             if(activeGame == null){
                 return 'Issue retrieving active game.'
@@ -131,7 +131,7 @@ module CommandBridge {
                 case ('end'):
                     return await initInterpreter.end(activeGame)
                 case ('next'):
-                    return await initInterpreter.next(activeGame, client)
+                    return await initInterpreter.next(activeGame)
                 case ('add'):
                     return await initInterpreter.addCharacter(activeGame, bridge)
                 case ('remove'):
@@ -144,7 +144,7 @@ module CommandBridge {
         }
 
         // Calls custom interpreter if command is not within base commands
-        const retVal = bridge.parse(commandName, subcommandName, options, activeGame, interaction) 
+        const retVal = bridge.parse(commandName, subcommandName, options, activeGame, client, interaction) 
         return retVal == undefined ? 'Command Not Found.' : retVal
     }
     
