@@ -147,12 +147,12 @@ export class DRSkill{
             .setThumbnail(String(guild?.iconURL()))
             .setTimestamp())
 
-            let descStr = `**DM:** ${(await client.users.fetch(activeGame.DM))}\n***(Cost) - Name:*** *Prereqs*\n`
+            let descStr = `**DM:** ${(await client.users.fetch(activeGame.DM))}\n*Type |* ***(Cost) Name:*** *Prereqs*\n`
             
             const curLimit = paginationLimit * (i + 1)
             const limit = curLimit > skills.length ? skills.length : curLimit
             for(let j = paginationLimit * i; j < limit; ++j){
-                descStr += `\n**(${skills[j].spCost}) - ${skills[j].name}:** ${skills[j].prereqs}`
+                descStr += `\n${skills[j].Type} | **(${skills[j].spCost}) - ${skills[j].name}:** ${skills[j].prereqs}`
             }
     
             embeds[i].setDescription(descStr)

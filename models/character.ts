@@ -173,7 +173,7 @@ export class Character {
 
     static getAllCharacters(db : mysql.Connection, tableBaseName : string): Promise<Array<Character> | null>{
         return new Promise((resolve) =>{
-            db.query(`SELECT * FROM ${tableBaseName}_Characters;`, (err, res) =>  {
+            db.query(`SELECT * FROM ${tableBaseName}_Characters ORDER BY Name;`, (err, res) =>  {
                 if(err){
                     console.log(err)
                     return resolve(null)

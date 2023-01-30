@@ -124,8 +124,8 @@ export class DRCharacter extends Character {
 
     static getAllCharacters(db : mysql.Connection, tableBaseName : string, onlyAlive : boolean = false): Promise<Array<DRCharacter> | null>{
         return new Promise((resolve) =>{
-            let condStr = onlyAlive ? ' WHERE Status != \'Victim\' AND Status != \'Dead\';' : ''
-            db.query(`SELECT * FROM ${tableBaseName}_Characters${condStr};`, (err, res) =>  {
+            let condStr = onlyAlive ? ' WHERE Status != \'Victim\' AND Status != \'Dead\'' : ''
+            db.query(`SELECT * FROM ${tableBaseName}_Characters${condStr} ORDER BY Name;`, (err, res) =>  {
                 if(err){
                     console.log(err)
                     return resolve(null)
@@ -245,7 +245,7 @@ export class DRCharacter extends Character {
             spUsed += skill.spCost
         })
 
-        const totalStr = `\n\n**SP Total:** ${this.spTotal}\n**SP Used:** ${spUsed} ${spUsed > this.spTotal ? 
+        const totalStr = `\n\n**SP Used:** ${spUsed}\n**SP Total:** ${this.spTotal}${spUsed > this.spTotal ? 
             '\n**THIS CHARACTER HAS EXCEEDED THEIR SP TOTAL**': ''}` //TODO: Pronoun per character
 
         const numEmbeds = skills.length > 0 ? Math.ceil(skills.length / paginationLimit) : 1
@@ -258,12 +258,12 @@ export class DRCharacter extends Character {
             .setThumbnail(thumbnail)
             .setTimestamp())
 
-            let descStr = `**Skills:**\n***(Cost) - Name:*** *Prereqs*\n`
+            let descStr = `**Skills:**\n*Type |* ***(Cost) Name:*** *Prereqs*\n`
 
             const curLimit = paginationLimit * (i + 1)
             const limit = curLimit > skills.length ? skills.length : curLimit
             for(let j = paginationLimit * i; j < limit; ++j){
-                descStr += `\n**(${skills[j].spCost}) - ${skills[j].name}:** ${skills[j].prereqs}`
+                descStr += `\n${skills[j].Type} | **(${skills[j].spCost}) - ${skills[j].name}:** ${skills[j].prereqs}`
             }
 
             descStr += totalStr

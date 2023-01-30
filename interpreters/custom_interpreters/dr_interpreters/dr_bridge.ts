@@ -140,9 +140,6 @@ export class DRBridge extends Bridge {
                 case ('add-character'):
                     return await trialInterpreter.addCharacter(activeGame, this)
                 case ('next'):
-                    if(client == undefined){
-                        return 'Issue finding server.'
-                    }
                     return await trialInterpreter.next(activeGame)
                 case ('remove'):
                     return await trialInterpreter.removeCharacter(activeGame)
@@ -151,9 +148,6 @@ export class DRBridge extends Bridge {
                 case ('hp'):
                     return await trialInterpreter.changeHP(activeGame, this)
                 case ('vote'):
-                    if(client == undefined){
-                        return 'Issue finding server.'
-                    }
                     return await trialInterpreter.vote(activeGame)
                 case ('hangman'):
                     return await trialInterpreter.hangman(activeGame)
