@@ -144,8 +144,8 @@ module CommandBridge {
         }
 
         // Calls custom interpreter if command is not within base commands
-        const retVal = await bridge.parse(commandName, subcommandName, options, activeGame, client, interaction) 
-        return retVal == undefined ? 'Command Not Found.' : retVal
+        const retVal = await bridge.parse(commandName, subcommandName, options, activeGame, client, interaction)
+        return retVal === undefined ? 'Command Not Found.' : retVal
     }
     
 }
