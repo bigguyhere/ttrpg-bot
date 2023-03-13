@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "@discordjs/builders"
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, Interaction, Message } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, DiscordjsError, Interaction, Message } from "discord.js";
 
 module Pagination {
     let embeds: EmbedBuilder[] = []
@@ -42,6 +42,7 @@ module Pagination {
             components: [createButtons()]   
         })
 
+
         const collector = channel?.createMessageComponentCollector({
             time: 600000
         })
@@ -64,11 +65,15 @@ module Pagination {
                     ++curPage
                 }
 
-                await interaction.editReply({
-                    content: titleStr,
-                    embeds: [embeds[curPage]],
-                    components: [createButtons()]
-                })       
+                try{
+                    await interaction.editReply({
+                        content: titleStr,
+                        embeds: [embeds[curPage]],
+                        components: [createButtons()]
+                    })
+                }catch(e){
+                    console.log(e);
+                }
 
             } ) 
         }
