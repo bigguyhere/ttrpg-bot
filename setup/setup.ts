@@ -70,7 +70,7 @@ module SetupFunctions{
                 },
                 {
                     name: 'set-dm',
-                    description: 'Changes active game on server.',
+                    description: 'Changes DM for a given game.',
                     type: 1,
                     options: [
                         {
@@ -95,6 +95,19 @@ module SetupFunctions{
                         {
                             name: 'game-name',
                             description: 'Game for which summary should be found for. Defaults to currently active game.',
+                            required: false,
+                            type: 3
+                        }
+                    ]
+                },
+                {
+                    name: 'help',
+                    description: "Lists all commands if command name is not supplied. Otherwise lists command and it's parameters.",
+                    type: 1,
+                    options: [
+                        {
+                            name: 'command-name',
+                            description: 'Name of command to be retrieved.',
                             required: false,
                             type: 3
                         }
@@ -248,7 +261,7 @@ module SetupFunctions{
             options: [
                 {
                     name: 'query',
-                    description: 'Query for dice roll. Should be in the form of [Number]d[Sides of Dice] +/- [Modifierd]',
+                    description: 'Query for dice roll. Should be in the form of **[Number]**d**[Sides of Dice]** +/- **[Modifier]**',
                     required: true,
                     type: 3
                 },

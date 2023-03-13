@@ -1,3 +1,5 @@
+import { ApplicationCommand, ApplicationCommandOption, ApplicationCommandOptionType, ApplicationCommandSubCommand, Collection, GuildResolvable } from 'discord.js';
+import DiscordJS, { EmbedBuilder } from 'discord.js';
 import mysql from 'mysql'
 
 export class ActiveGame{
@@ -149,6 +151,82 @@ export class ActiveGame{
                                             res[0].MessageID))
             })
         })
+    }
+
+    static async buildSummaryEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, cmds : Collection<string,
+        ApplicationCommand<{guild: GuildResolvable;}>> | null, paginationLimit : number = 10): Promise<EmbedBuilder[] | null>{
+
+       if(cmds == null){
+           return null
+       }
+       let embeds : EmbedBuilder[] = []
+
+       for(let cmd of cmds){
+            const optLen = cmd[1].options.length
+            const numEmbeds = optLen > 0 ? Math.ceil(optLen / paginationLimit) : 1
+
+            for(let i = 0; i < numEmbeds; ++i){
+                let embed = new EmbedBuilder()
+                .setColor(0x7852A9)
+                .setTitle(`**${cmd[1].name[0].toUpperCase()}${cmd[1].name.substring(1)} Command Info:**`)
+                .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+                .setThumbnail(String(guild?.iconURL()))
+                .setTimestamp()
+
+                let descStr = `${cmd[1].description}\n`
+
+                const curLimit = paginationLimit * (i + 1)
+                const limit = curLimit > optLen ? optLen : curLimit
+                for(let j = paginationLimit * i; j < limit; ++j){
+                    const opt = cmd[1].options[j]
+                    descStr += `\n**${opt.type == 1 ? cmd[1].name + '-' : ''}${opt.name} (${ApplicationCommandOptionType[opt.type]})**: ${opt.description}`
+                }
+
+                embed.setDescription(descStr)
+
+                embeds.push(embed)
+            }
+       }
+
+       return embeds
+   }
+
+   static async buildViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, 
+    cmd : ApplicationCommand<{guild: GuildResolvable;}> | ApplicationCommandSubCommand, paginationLimit : number = 10)
+    : Promise<EmbedBuilder[] | null> {
+
+        let embeds : EmbedBuilder[] = []
+
+        if(cmd.options) {
+            const optLen = cmd.options.length;
+            const numEmbeds = optLen > 0 ? Math.ceil(optLen / paginationLimit) : 1
+
+            for(let i = 0; i < numEmbeds; ++i){
+                let embed = new EmbedBuilder()
+                .setColor(0x7852A9)
+                .setTitle(`**${cmd.name[0].toUpperCase()}${cmd.name.substring(1)} Command Info:**`)
+                .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+                .setThumbnail(String(guild?.iconURL()))
+                .setTimestamp()
+
+                let descStr = `${cmd.description}\n`
+
+                const curLimit = paginationLimit * (i + 1)
+                const limit = curLimit > optLen ? optLen : curLimit
+                for(let j = paginationLimit * i; j < limit; ++j){
+                    const opt = cmd.options[j]
+                    descStr += `\n**${opt.type == 1 ? cmd.name + '-' : ''}${opt.name} (${ApplicationCommandOptionType[opt.type]})**: ${opt.description}`
+                }
+
+                embed.setDescription(descStr)
+
+                embeds.push(embed)
+            }
+        }else{
+            return null
+        }
+
+        return embeds
     }
 
 }

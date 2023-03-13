@@ -30,25 +30,25 @@ module CustomSetup{
                         },
                         {
                             name: 'brawn',
-                            description: 'Brains stat value.',
+                            description: 'Brawn stat value. Also determines Stamina.',
                             required: true,
                             type: 10
                         },
                         {
                             name: 'nimble',
-                            description: 'Brains stat value.',
+                            description: 'Nimble stat value.',
                             required: true,
                             type: 10
                         },
                         {
                             name: 'social',
-                            description: 'Brains stat value.',
+                            description: 'Social stat value.',
                             required: true,
                             type: 10
                         },
                         {
                             name: 'intuition',
-                            description: 'Brains stat value.',
+                            description: 'Intuition stat value.',
                             required: true,
                             type: 10
                         },

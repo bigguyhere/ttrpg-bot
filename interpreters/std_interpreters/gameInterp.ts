@@ -1,4 +1,4 @@
-import { CacheType, ChatInputCommandInteraction, Client, CommandInteractionOptionResolver } from "discord.js"
+import { ApplicationCommand, ApplicationCommandOptionType, ApplicationCommandSubCommand, CacheType, ChatInputCommandInteraction, Client, CommandInteractionOptionResolver, GuildResolvable } from "discord.js"
 import { Connection } from "mysql"
 import { ActiveGame } from "../../models/activegame"
 import { Character } from "../../models/character"
@@ -94,4 +94,75 @@ export class GameInterpreter extends Interpreter {
 
         return replyStr
     }
+
+    public async help (): Promise<string | null> {
+        const commandName = this.options.getString('command-name')
+        let commandStr = ""
+        const commands = await this.interaction.client.application.commands.fetch({guildId: this.guildID})
+        console.log((commands.at(0)?.options[0] as ApplicationCommandSubCommand).options)
+
+        if(commandName == null){
+            let embeds = await ActiveGame.buildSummaryEmbed(
+                this.interaction.user, 
+                this.interaction.guild, 
+                commands)
+
+            if(embeds == null){
+                return 'Error finding all help messages and building embed.'
+            }
+
+            commandStr = 'Command List Successfully Viewed.'
+
+            if(embeds.length != 1){
+                await Pagination.getPaginatedMessage(embeds, this.interaction, commandStr)
+                return null
+            } 
+
+            await this.interaction.channel?.send({ embeds : [embeds[0]]});
+            
+        } else{
+            let command = null;
+            for(const cmd of commands) {
+                if(cmd[1].name === commandName){
+                    command = cmd[1]
+                }
+
+                for(let opt of cmd[1].options){
+                    if(opt.type == 1){
+                        const option = opt as ApplicationCommandSubCommand
+                        if(`${cmd[1].name}-${option.name}` === commandName){
+                            command = option
+                        }
+                    }
+                }
+            }
+
+            if(command == null) {
+                return `Error finding **${commandName}**.`
+            }
+            
+            let embeds = await ActiveGame.buildViewEmbed(
+                this.interaction.user, 
+                this.interaction.guild, 
+                command)
+
+            if(embeds == null){
+                return `Error creating help page for **${commandName}**.`
+            }
+
+            commandStr = 'Command Successfully Viewed.'
+
+            if(embeds.length != 1){
+                await Pagination.getPaginatedMessage(embeds, this.interaction, commandStr)
+                return null
+            } 
+
+            await this.interaction.channel?.send({ embeds : [embeds[0]]});
+        }
+
+        return commandStr;
+
+    }
+
+
 }

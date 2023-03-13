@@ -78,6 +78,8 @@ module CommandBridge {
                         return 'Issue retrieving active game.'
                     }
                     return await gameInterpreter.viewSummary(activeGame)
+                case ('help'):
+                    return await gameInterpreter.help()
             }
         } 
         else if(commandName === 'character') {
