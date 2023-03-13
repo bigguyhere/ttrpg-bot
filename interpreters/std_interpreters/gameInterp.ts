@@ -96,6 +96,7 @@ export class GameInterpreter extends Interpreter {
     }
 
     public async help (): Promise<string | null> {
+
         const commandName = UtilityFunctions.formatNullString(this.options.getString('command-name'), / /g, '-')
         let commandStr = ""
         const commands = await this.interaction.client.application.commands.fetch({guildId: this.guildID})

@@ -36,7 +36,7 @@ module Pagination {
 
         const embed = embeds[curPage]
 
-        await interaction.reply({
+        await interaction.editReply({
             content: titleStr,
             embeds: [embed],
             components: [createButtons()]   

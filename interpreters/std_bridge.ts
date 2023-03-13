@@ -20,9 +20,10 @@ module CommandBridge {
                                             gamedb: Connection,
                                             guildID: string,
                                             client: Client<boolean>) : Promise<void> {
+        await interaction.deferReply();
         const content = await bridge(interaction, gamedb, guildID, client)
         if(content != null){
-            await interaction.reply({
+            await interaction.editReply({
                 content: content
             })
         }
