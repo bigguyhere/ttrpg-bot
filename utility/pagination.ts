@@ -54,8 +54,11 @@ module Pagination {
                     return
                 }
                 
-                await wait(500);
-                await btnInteraction.deferUpdate()
+                try{
+                    await btnInteraction.deferUpdate()
+                }catch(e){
+                    console.log(e)
+                }
 
                 if(btnInteraction.customId !== 'prev_btn' && btnInteraction.customId !== 'next_btn'){
                     return
