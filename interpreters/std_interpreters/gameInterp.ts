@@ -96,10 +96,9 @@ export class GameInterpreter extends Interpreter {
     }
 
     public async help (): Promise<string | null> {
-        const commandName = this.options.getString('command-name')
+        const commandName = UtilityFunctions.formatNullString(this.options.getString('command-name'), / /g, '-')
         let commandStr = ""
         const commands = await this.interaction.client.application.commands.fetch({guildId: this.guildID})
-        console.log((commands.at(0)?.options[0] as ApplicationCommandSubCommand).options)
 
         if(commandName == null){
             let embeds = await ActiveGame.buildSummaryEmbed(
