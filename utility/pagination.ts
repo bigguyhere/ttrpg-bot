@@ -1,5 +1,6 @@
 import { EmbedBuilder } from "@discordjs/builders"
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, DiscordjsError, Interaction, Message } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction } from "discord.js";
+const wait = require('node:timers/promises').setTimeout;
 
 module Pagination {
     let embeds: EmbedBuilder[] = []
@@ -53,6 +54,7 @@ module Pagination {
                     return
                 }
                 
+                await wait(500);
                 await btnInteraction.deferUpdate()
 
                 if(btnInteraction.customId !== 'prev_btn' && btnInteraction.customId !== 'next_btn'){
@@ -65,15 +67,11 @@ module Pagination {
                     ++curPage
                 }
 
-                try{
-                    await interaction.editReply({
-                        content: titleStr,
-                        embeds: [embeds[curPage]],
-                        components: [createButtons()]
-                    })
-                }catch(e){
-                    console.log(e);
-                }
+                await interaction.editReply({
+                    content: titleStr,
+                    embeds: [embeds[curPage]],
+                    components: [createButtons()]
+                })
 
             } ) 
         }
