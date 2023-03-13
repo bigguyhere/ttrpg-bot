@@ -1,6 +1,5 @@
 import { EmbedBuilder } from "@discordjs/builders"
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction } from "discord.js";
-const wait = require('node:timers/promises').setTimeout;
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, Message } from "discord.js";
 
 module Pagination {
     let embeds: EmbedBuilder[] = []
@@ -35,49 +34,51 @@ module Pagination {
         titleStr = topStr
         embeds = ebs
 
+        if(curPage >= embeds.length){
+            curPage = embeds.length - 1;
+        }
+
         const embed = embeds[curPage]
 
         await interaction.editReply({
             content: titleStr,
             embeds: [embed],
-            components: [createButtons()]   
-        })
+            components: [createButtons()]
+        }).then((msg) => {
+            const collector = channel?.createMessageComponentCollector({
+                time: 600000,
+                filter: async ({message}) => {
+                    return message.id === msg.id;
+                },
+            })
 
-
-        const collector = channel?.createMessageComponentCollector({
-            time: 600000
-        })
-
-        if(collector != undefined){
-            collector.on('collect', async (btnInteraction) =>{
-                if(!btnInteraction){
-                    return
-                }
-                
-                try{
+            if(collector != undefined){
+                collector.on('collect', async (btnInteraction) =>{
+                    if(!btnInteraction){
+                        return
+                    }
+                    
                     await btnInteraction.deferUpdate()
-                }catch(e){
-                    console.log(e)
-                }
-
-                if(btnInteraction.customId !== 'prev_btn' && btnInteraction.customId !== 'next_btn'){
-                    return
-                }
-
-                if(btnInteraction.customId === 'prev_btn' && curPage > 0){
-                    --curPage
-                } else if (btnInteraction.customId === 'next_btn' && curPage < embeds.length - 1){
-                    ++curPage
-                }
-
-                await interaction.editReply({
-                    content: titleStr,
-                    embeds: [embeds[curPage]],
-                    components: [createButtons()]
-                })
-
-            } ) 
-        }
+    
+                    if(btnInteraction.customId !== 'prev_btn' && btnInteraction.customId !== 'next_btn'){
+                        return
+                    }
+    
+                    if(btnInteraction.customId === 'prev_btn' && curPage > 0){
+                        --curPage
+                    } else if (btnInteraction.customId === 'next_btn' && curPage < embeds.length - 1){
+                        ++curPage
+                    }
+    
+                    await interaction.editReply({
+                        content: titleStr,
+                        embeds: [embeds[curPage]],
+                        components: [createButtons()]
+                    })
+    
+                } )
+            }
+        })
     }
 }
 
