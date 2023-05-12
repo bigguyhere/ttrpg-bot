@@ -115,9 +115,8 @@ export class Character {
             if(statName.toUpperCase() === 'NAME'){
                 return resolve(false)
             }
-
             if(increment){
-                return this.incrementStat(db, tableBaseName, statName, statValue)
+                return resolve(this.incrementStat(db, tableBaseName, statName, statValue))
             }  
 
             db.query(`UPDATE ${tableBaseName}_Characters SET ${statName} = '${statValue}' WHERE Name = '${this.name}';`
