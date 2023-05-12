@@ -45,7 +45,7 @@ export class SkillInterpreter extends Interpreter {
         let newChrSkill = new DRChrSkills(chr.id, skill.id)
 
         let exists = await newChrSkill.ifExists(this.gamedb, this.tableNameBase)
-        console.log('hi');
+        
         if(exists == null){
             return `Error checking if ChrSkill exists.`
         }else if(exists){
@@ -57,7 +57,7 @@ export class SkillInterpreter extends Interpreter {
         }else{
             newChrSkill.addToTable(this.gamedb, this.tableNameBase)
             await chr.updateStat(this.gamedb, this.tableNameBase, 'SPUsed', String(skill.spCost), true)
-            
+
             return `Added skill **\"${skillName}\"** to character **\"${chrName}\"** successfully.`
         }
     }
