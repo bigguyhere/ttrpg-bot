@@ -94,7 +94,7 @@ module CommandBridge {
                 case ('view'):
                     return await chrInterpreter.view(charName, bridge)
                 case ('change-stat'):
-                    return chrInterpreter.changeStat(charName)
+                    return await chrInterpreter.changeStat(charName)
             }
         }
         else if(commandName === 'roll') {

@@ -56,22 +56,22 @@ export class CharacterInterpreter extends Interpreter{
         if(char == null){
             return `Finding character **\"${charName}\"** was unsuccessful.`
         }
-
+        console.log('Hi');
         await this.interaction.channel?.send(
             {embeds : [await char.buildViewEmbed(this.interaction.user, this.client)] })
 
         return `The character **\"${charName}\"** has been successfully viewed.`
     }
 
-    public changeStat(charName : string) : string {
+    public async changeStat(charName : string) : Promise<string> {
         const statName = UtilityFunctions.formatString(this.options.getString('stat-name', true))
         const statValue = UtilityFunctions.formatString(this.options.getString('stat-value', true))
         let increment = this.options.getBoolean('increment')
 
         increment ??= false
 
-        if(!new Character(charName).updateStat(this.gamedb, this.tableNameBase, statName, statValue, increment)){
-            return 'Issue updating stat. May be due to attempting to change name stat or incrementing a non-number.'
+        if(!(await new Character(charName).updateStat(this.gamedb, this.tableNameBase, statName, statValue, increment))){
+            return 'Issue updating stat. Please check your spelling and remember you cannot update the name stat.'
         }
 
         return `The character stat **\"${statName}\"** for **\"${charName}\"** has successfully `

@@ -206,7 +206,7 @@ export class InitInterpreter extends Interpreter{
             const isChrFindable = !initOnly && chr != null && chr != undefined
 
             if(isChrFindable){
-                if(!chr.updateStat(this.gamedb, this.tableNameBase, 'DmgTaken', String(value), true)){
+                if(! (await chr.updateStat(this.gamedb, this.tableNameBase, 'DmgTaken', String(value), true))){
                     return 'Error: Cannot increment a non-number.'
                 }
                 replyStr += 'Character '

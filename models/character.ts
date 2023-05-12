@@ -91,43 +91,43 @@ export class Character {
         })
     }
 
-    private incrementStat(db : mysql.Connection, tableBaseName : string, statName : string, statValue : string): boolean{
+    private incrementStat(db : mysql.Connection, tableBaseName : string, statName : string, statValue : string): Promise<boolean>{
+        return new Promise((resolve) =>{ 
+            const value = parseInt(statValue.replace(/,/g, ''))
 
-        const value = parseInt(statValue.replace(/,/g, ''))
-
-        if(isNaN(value)){
-            return false
-        }
-
-        db.query(`UPDATE ${tableBaseName}_Characters SET ${statName} = ${statName}+${value} WHERE Name = '${this.name}';`
-        , (err, res) => {
-            if(err){
-                console.log(err)
-                throw err
+            if(isNaN(value)){
+                return resolve(false)
             }
-        })  
 
-        return true
+            db.query(`UPDATE ${tableBaseName}_Characters SET ${statName} = ${statName}+${value} WHERE Name = '${this.name}';`
+            , (err, res) => {
+                if(err){
+                    //console.log(err)
+                    return resolve(false)
+                }
+                return resolve(true)
+            })  
+        })
     }
 
-    updateStat(db : mysql.Connection, tableBaseName : string, statName : string, statValue : string, increment : boolean = false): boolean{
-        if(statName.toUpperCase() === 'NAME'){
-            return false
-        }
-
-        if(increment){
-            return this.incrementStat(db, tableBaseName, statName, statValue)
-        }  
-
-        db.query(`UPDATE ${tableBaseName}_Characters SET ${statName} = '${statValue}' WHERE Name = '${this.name}';`
-        , (err, res) => {
-            if(err){
-                console.log(err)
-                throw err
+    updateStat(db : mysql.Connection, tableBaseName : string, statName : string, statValue : string, increment : boolean = false): Promise<boolean>{
+        return new Promise((resolve) =>{ 
+            if(statName.toUpperCase() === 'NAME'){
+                return resolve(false)
             }
-        })  
+            if(increment){
+                return resolve(this.incrementStat(db, tableBaseName, statName, statValue))
+            }  
 
-        return true
+            db.query(`UPDATE ${tableBaseName}_Characters SET ${statName} = '${statValue}' WHERE Name = '${this.name}';`
+            , (err, res) => {
+                if(err){
+                    console.log(err)
+                    return resolve(false)
+                }
+                return resolve(true)
+            })  
+        });
     }
 
     removeFromTable(db : mysql.Connection, tableBaseName : string){

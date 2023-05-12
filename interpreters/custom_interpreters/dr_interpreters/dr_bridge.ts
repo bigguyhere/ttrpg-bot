@@ -70,7 +70,7 @@ export class DRBridge extends Bridge {
                 case ('remove'):
                     return await drCharInterpreter.remove(charName)
                 case ('change-stat'):
-                    return drCharInterpreter.changeStat(charName)
+                    return await drCharInterpreter.changeStat(charName)
                 case ('view'):
                     return await drCharInterpreter.view(charName, this)
                 case ('view-hd'):

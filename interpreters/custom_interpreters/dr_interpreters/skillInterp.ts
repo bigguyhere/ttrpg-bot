@@ -45,18 +45,18 @@ export class SkillInterpreter extends Interpreter {
         let newChrSkill = new DRChrSkills(chr.id, skill.id)
 
         let exists = await newChrSkill.ifExists(this.gamedb, this.tableNameBase)
-
+        
         if(exists == null){
             return `Error checking if ChrSkill exists.`
         }else if(exists){
             newChrSkill.removeFromTable(this.gamedb, this.tableNameBase)
             const decrement = -1 * skill.spCost
-            chr.updateStat(this.gamedb, this.tableNameBase, 'SPUsed', String(decrement), true)
+            await chr.updateStat(this.gamedb, this.tableNameBase, 'SPUsed', String(decrement), true)
 
             return `Removed skill **\"${skillName}\"** to character **\"${chrName}\"** successfully.`
         }else{
             newChrSkill.addToTable(this.gamedb, this.tableNameBase)
-            chr.updateStat(this.gamedb, this.tableNameBase, 'SPUsed', String(skill.spCost), true)
+            await chr.updateStat(this.gamedb, this.tableNameBase, 'SPUsed', String(skill.spCost), true)
 
             return `Added skill **\"${skillName}\"** to character **\"${chrName}\"** successfully.`
         }
