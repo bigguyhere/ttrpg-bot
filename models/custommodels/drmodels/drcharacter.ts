@@ -332,16 +332,14 @@ export class DRCharacter extends Character {
             return true
         }
 
-        for(let charInd = 0; charInd < allChars.length - 2; ++charInd){
+        for(let charInd = 0; charInd < allChars.length - 1; ++charInd){
             let char = allChars[charInd]
 
             if(this.id != char.id){
                 queryStr += `(${this.id}, ${char.id}, 0),`
             }
         }
-
-        queryStr += `(${this.id}, ${allChars[allChars.length - 2].id}, 0);`
-
+        queryStr = queryStr.replace(/.$/,";")
         db.query(queryStr, (err, res) =>{
             if(err){
                 console.log(err)

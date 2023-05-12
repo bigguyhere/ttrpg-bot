@@ -32,7 +32,7 @@ export class TrialInterpreter extends InitInterpreter{
             return `Error finding character ${killer}.`
         }
 
-        killer.updateStat(this.gamedb, this.tableNameBase, 'Status', 'Blackened')
+        await killer.updateStat(this.gamedb, this.tableNameBase, 'Status', 'Blackened')
         killer.updateHD(this.gamedb, this.tableNameBase, 0, 3)
 
         const changes = await DRRelationship.getHDChange(this.gamedb, this.tableNameBase, 'Victim')
@@ -57,7 +57,7 @@ export class TrialInterpreter extends InitInterpreter{
                 return `Error finding character ${victim}}.`
             }
             
-            chr.updateStat(this.gamedb, this.tableNameBase, 'Status', 'Victim')
+            await chr.updateStat(this.gamedb, this.tableNameBase, 'Status', 'Victim')
 
         })
 
@@ -133,9 +133,9 @@ export class TrialInterpreter extends InitInterpreter{
             chr.updateHD(this.gamedb, this.tableNameBase, 3, 0)
         })
 
-        chrs.forEach(chr => {
+        chrs.forEach(async (chr) => {
             chr.updateHD(this.gamedb, this.tableNameBase, 1, 1)
-            chr.updateStat(this.gamedb, this.tableNameBase, 'SPTotal', '1', true)
+            await chr.updateStat(this.gamedb, this.tableNameBase, 'SPTotal', '1', true)
         })
 
         DRVote.createTable(this.gamedb, this.tableNameBase)

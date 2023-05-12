@@ -5,7 +5,7 @@ import { CharacterInterpreter } from "../../std_interpreters/charInterp"
 export class DRCharacterInterpreter extends CharacterInterpreter {
 
     public async add(charName : string) : Promise<string> {
-        const chrUser = this.options.getUser('chr-owner')
+        const chrUser = this.options.getUser('char-owner')
         const chrId = chrUser == null ? this.userID : String(chrUser.id)
 
         let newChar = new DRCharacter(charName, 

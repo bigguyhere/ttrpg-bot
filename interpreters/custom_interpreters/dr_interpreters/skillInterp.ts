@@ -51,12 +51,12 @@ export class SkillInterpreter extends Interpreter {
         }else if(exists){
             newChrSkill.removeFromTable(this.gamedb, this.tableNameBase)
             const decrement = -1 * skill.spCost
-            chr.updateStat(this.gamedb, this.tableNameBase, 'SPUsed', String(decrement), true)
+            await chr.updateStat(this.gamedb, this.tableNameBase, 'SPUsed', String(decrement), true)
 
             return `Removed skill **\"${skillName}\"** to character **\"${chrName}\"** successfully.`
         }else{
             newChrSkill.addToTable(this.gamedb, this.tableNameBase)
-            chr.updateStat(this.gamedb, this.tableNameBase, 'SPUsed', String(skill.spCost), true)
+            await chr.updateStat(this.gamedb, this.tableNameBase, 'SPUsed', String(skill.spCost), true)
 
             return `Added skill **\"${skillName}\"** to character **\"${chrName}\"** successfully.`
         }
