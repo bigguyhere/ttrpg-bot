@@ -158,7 +158,7 @@ export class DRBridge extends Bridge {
         else if(commandName === 'dr-body-discovery'){
 
             const witnesses = UtilityFunctions.parseMultStr(
-                    UtilityFunctions.formatNullString(options.getString('witnesses', true)))
+                    UtilityFunctions.formatNullString(options.getString('witnesses')))
             const discoverers = UtilityFunctions.parseMultStr(
                     UtilityFunctions.formatNullString(options.getString('discoverers', true)))
 

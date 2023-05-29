@@ -14,9 +14,11 @@ var Path = require("path");
 
 export module VoiceFunctions{
     export async function playAudio(file : string) : Promise<AudioPlayer>{
-        const resource = createAudioResource(Path.join(__dirname, file), {
+        const resource = createAudioResource(Path.join(Path.dirname(__dirname), file), {
             inputType: StreamType.Arbitrary,
         });
+        console.log(__dirname)
+        console.log(Path.join(__dirname, file))
 
         const audioPlayer = createAudioPlayer()
         audioPlayer.play(resource);
