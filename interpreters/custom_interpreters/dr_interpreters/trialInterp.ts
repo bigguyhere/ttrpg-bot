@@ -375,13 +375,13 @@ export class TrialInterpreter extends InitInterpreter{
         if(type != null){
             if(type == 0){
                 retStr += 'consents !'
-                gif = consentGifs[UtilityFunctions.getRandomNum(consentGifs.length)]
+                gif = consentGifs[UtilityFunctions.getRandomNum(consentGifs.length) - 1]
             }else if(type == 1){
                 retStr += 'counters !'
-                gif = counterGifs[UtilityFunctions.getRandomNum(counterGifs.length)]
+                gif = counterGifs[UtilityFunctions.getRandomNum(counterGifs.length) - 1]
             } else if(type == 2){
                 retStr += 'initaites a rebuttal showdown !'
-                gif =rebuttalGifs[UtilityFunctions.getRandomNum(rebuttalGifs.length)]
+                gif =rebuttalGifs[UtilityFunctions.getRandomNum(rebuttalGifs.length) - 1]
                 
                 const chr = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, chrName)
 
