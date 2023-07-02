@@ -200,7 +200,7 @@ export class TrialInterpreter extends InitInterpreter{
             return 'Error: Trial has not been ended yet.'
         }
 
-        const voterName = UtilityFunctions.formatString(this.options.getString('voter-chr', true))
+        const voterName = UtilityFunctions.formatString(this.options.getString('voter-char', true))
         const voteName = UtilityFunctions.formatString(this.options.getString('vote', true))
 
         const voter = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, voterName)
