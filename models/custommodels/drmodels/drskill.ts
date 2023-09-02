@@ -161,6 +161,30 @@ export class DRSkill{
         return embeds
     }
 
+    static async buildDynamicViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, client : Client<boolean>, 
+        activeGame : ActiveGame, skills : Array<DRSkill> | null): Promise<EmbedBuilder[] | null>{
+        if(skills == null){
+            return null;
+        }
+
+        let embeds : EmbedBuilder[] = [];
+ 
+        for(let i = 0; i < skills.length; ++i){
+            embeds.push(new EmbedBuilder()
+            .setColor(0x7852A9)
+            .setTitle(`**${skills[i].name} (ID: ${skills[i].id}) Summary**`)
+            .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+            .setDescription(`**DM:** ${(await client.users.fetch(activeGame.DM))}\n
+                            **Prerequisites:** ${skills[i].prereqs}\n
+                            **SP Cost:** ${skills[i].spCost}\n
+                            **Description:** ${skills[i].desc}`)
+            .setThumbnail(String(guild?.iconURL()))
+            .setTimestamp());
+        }
+
+        return embeds;
+    }
+
     addToTable(db : mysql.Connection, tableBaseName : string){
         db.query(`INSERT INTO ${tableBaseName}_Skills (Name, Prereqs, Description, SPCost, Type)
         VALUES ("${this.name}", "${this.prereqs}", "${this.desc}", "${this.spCost}", "${this.Type}");`, (err, res) =>  {

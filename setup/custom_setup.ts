@@ -292,6 +292,12 @@ module CustomSetup{
                             type: ApplicationCommandOptionType.String
                         },
                         {
+                            name: 'is-dynamic',
+                            description: 'Controls whether dynamic view is shown or not. Defaults to false for summary, true for char-name.',
+                            required: false,
+                            type: ApplicationCommandOptionType.Boolean
+                        },
+                        {
                             name: 'game-name',
                             description: 'Game for which the skills will be viewed. Defaults to currently active game.',
                             required: false,
@@ -450,7 +456,7 @@ module CustomSetup{
                         },
                         {
                             name: 'is-dynamic',
-                            description: 'Controls whether dynamic view is shown or not.',
+                            description: 'Controls whether dynamic view is shown or not. Defaults to false for summary, true for char-name.',
                             required: false,
                             type: ApplicationCommandOptionType.Boolean
                         },

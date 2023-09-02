@@ -135,6 +135,30 @@ export class DRTruthBullet{
         return embeds
     }
 
+    static async buildDynamicViewEmbed(user : DiscordJS.User, guild : DiscordJS.Guild | null, client : Client<boolean>, 
+        activeGame : ActiveGame, tbs : Array<DRTruthBullet> | null): Promise<EmbedBuilder[] | null>{
+        if(tbs == null){
+            return null;
+        }
+
+        let embeds : EmbedBuilder[] = [];
+ 
+        for(let i = 0; i < tbs.length; ++i){
+            embeds.push(new EmbedBuilder()
+            .setColor(0x7852A9)
+            .setTitle(`**${tbs[i].name} (ID: ${tbs[i].id}) Summary**`)
+            .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+            .setDescription(`**DM:** ${(await client.users.fetch(activeGame.DM))}\n
+                            **Trial:** ${tbs[i].trial == -1 ? '?': tbs[i].trial}\n
+                            **Description:** ${tbs[i].desc}\n\n
+                            **Total Truth Bullets:** ${tbs.length}`)
+            .setThumbnail(String(guild?.iconURL()))
+            .setTimestamp());
+        }
+
+        return embeds;
+    }
+
     isViewable(db: mysql.Connection, tableBaseName: string, owner: string) {
         return new Promise((resolve) =>{
             db.query(`SELECT DISTINCT TruthBullets.TB_ID FROM ${tableBaseName}_TruthBullets as TruthBullets
