@@ -134,7 +134,7 @@ module UtilityFunctions{
         return baseStr == null ? null : baseStr.trim().replace(findPattern, replacerChr)
     }
 
-    export async function getMessage(guild : Guild | null, channelID: string, msgID: string): Promise<Message<true> | Message<false> | undefined>{
+    export async function getMessage(guild : Guild | null, channelID: string, msgID: string): Promise<Message<boolean> | undefined>{
         const channel = guild?.channels.cache.find(
             channel => channel.id === channelID
             && channel.type === ChannelType.GuildText) as TextBasedChannel
