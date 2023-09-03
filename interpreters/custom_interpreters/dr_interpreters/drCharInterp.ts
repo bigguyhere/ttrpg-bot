@@ -45,4 +45,16 @@ export class DRCharacterInterpreter extends CharacterInterpreter {
         return `${charName}'s Hope/Despair has been viewed.`
     }
 
+    public async changeStat(charName : string) : Promise<string> {
+        
+        const retStr = await super.changeStat(charName);
+        let statName = UtilityFunctions.formatString(this.options.getString('stat-name', true)).trim().toLowerCase();
+    
+        if(statName == "hope" || statName == "despair") {
+            await (new DRCharacter(charName)).checkHDNotif(this.gamedb, this.tableNameBase, this.client);
+        }
+
+        return retStr;
+    }
+
 }

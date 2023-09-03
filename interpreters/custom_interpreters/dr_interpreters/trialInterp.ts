@@ -33,7 +33,7 @@ export class TrialInterpreter extends InitInterpreter{
         }
 
         await killer.updateStat(this.gamedb, this.tableNameBase, 'Status', 'Blackened')
-        killer.updateHD(this.gamedb, this.tableNameBase, 0, 3)
+        killer.updateHD(this.gamedb, this.client, this.tableNameBase, 0, 3)
 
         const changes = await DRRelationship.getHDChange(this.gamedb, this.tableNameBase, 'Victim')
 
@@ -45,8 +45,8 @@ export class TrialInterpreter extends InitInterpreter{
             if(change[1] != 0){
                 let chr = new DRCharacter(change[0])
                 change[1] > 0 
-                ? chr.updateHD(this.gamedb, this.tableNameBase, change[1], 0)
-                : chr.updateHD(this.gamedb, this.tableNameBase, 0, change[1] * -1)
+                ? chr.updateHD(this.gamedb, this.client, this.tableNameBase, change[1], 0)
+                : chr.updateHD(this.gamedb, this.client, this.tableNameBase, 0, change[1] * -1)
             }
         }) 
 
@@ -130,11 +130,11 @@ export class TrialInterpreter extends InitInterpreter{
         }
 
         csChrs.forEach(chr => {
-            chr.updateHD(this.gamedb, this.tableNameBase, 3, 0)
+            chr.updateHD(this.gamedb, this.client, this.tableNameBase, 3, 0)
         })
 
         chrs.forEach(async (chr) => {
-            chr.updateHD(this.gamedb, this.tableNameBase, 1, 1)
+            chr.updateHD(this.gamedb, this.client, this.tableNameBase, 1, 1)
             await chr.updateStat(this.gamedb, this.tableNameBase, 'SPTotal', '1', true)
         })
 
@@ -247,8 +247,8 @@ export class TrialInterpreter extends InitInterpreter{
                 if(change[1] != 0){
                     let chr = new DRCharacter(change[0])
                     change[1] > 0 
-                    ? chr.updateHD(this.gamedb, this.tableNameBase, change[1], 0)
-                    : chr.updateHD(this.gamedb, this.tableNameBase, 0, change[1] * -1)
+                    ? chr.updateHD(this.gamedb, this.client, this.tableNameBase, change[1], 0)
+                    : chr.updateHD(this.gamedb, this.client, this.tableNameBase, 0, change[1] * -1)
                 }
             }) 
 
@@ -305,7 +305,7 @@ export class TrialInterpreter extends InitInterpreter{
             return 'Issue getting character.'
         }
 
-        chr.updateHD(this.gamedb, this.tableNameBase, -1, 0)
+        chr.updateHD(this.gamedb, this.client, this.tableNameBase, -1, 0)
 
         const word = UtilityFunctions.formatString(this.options.getString('word', true));
 
@@ -386,7 +386,7 @@ export class TrialInterpreter extends InitInterpreter{
                 const chr = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, chrName)
 
                 if(chr != null){
-                    chr.updateHD(this.gamedb, this.tableNameBase, 1, 0)
+                    chr.updateHD(this.gamedb, this.client, this.tableNameBase, 1, 0)
                 }
             }else{
                 return 'Invalid type.'

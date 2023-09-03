@@ -171,11 +171,11 @@ export class DRBridge extends Bridge {
             }
 
             witnesses.forEach(async witness => {
-                new DRCharacter(witness).updateHD(this.gamedb, this.tableNameBase, 0, 2)
+                new DRCharacter(witness).updateHD(this.gamedb, client, this.tableNameBase, 0, 2)
             })
 
             discoverers.forEach(async discoverer => {
-                new DRCharacter(discoverer).updateHD(this.gamedb, this.tableNameBase, 0, 1)
+                new DRCharacter(discoverer).updateHD(this.gamedb, client, this.tableNameBase, 0, 1)
             })
 
             const audioPlayer = await VoiceFunctions.playAudio('media/body-discovery.mp3')

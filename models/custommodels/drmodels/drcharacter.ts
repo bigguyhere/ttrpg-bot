@@ -174,14 +174,36 @@ export class DRCharacter extends Character {
         }) 
     }
 
-    updateHD(db : mysql.Connection, tableBaseName : string, hope : number, despair : number){
+    async updateHD(db : mysql.Connection, client: Client<boolean>, tableBaseName : string, hope : number, despair : number){
         db.query(`UPDATE ${tableBaseName}_Characters SET Hope = Hope+${hope}, Despair = Despair+${despair}
                  WHERE Name = '${this.name}' AND (Status = 'Alive' OR Status = 'Blackened');`, (err, res) => {
             if(err){
                 console.log(err)
                 throw err
             }
-        })  
+        });
+
+        await this.checkHDNotif(db, tableBaseName, client);
+    }
+
+    public async checkHDNotif(db : mysql.Connection, tableBaseName : string, client: Client<boolean>){
+        if(this.hope == null || this.hope == -1 || this.despair == null ||  this.despair == -1){
+            let char = await DRCharacter.getCharacter(db, tableBaseName, this.name);
+
+            if(char == null){
+                return 'Issue getting character.'
+            }
+
+            this.hope = char.hope;
+            this.despair = char.despair;
+            this.owner = char.owner;
+            this.status = char.status;
+        }
+
+        if(this.hope > 9 || this.despair > 9) {
+            (await client.users.fetch(this.owner)).send(
+                `**${this.name}'s Hope or Despair has exceeded 10!**\n**Hope-Despair Summary:**\n__Hope:__ ***${this.hope}***\t__Despair:__ ***${this.despair}***\n__Status:__ **${this.status}**`)
+        }
     }
 
     async buildViewEmbed(user : DiscordJS.User, client: Client<boolean>): Promise<EmbedBuilder>{

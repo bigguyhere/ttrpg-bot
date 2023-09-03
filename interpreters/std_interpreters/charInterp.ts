@@ -56,7 +56,7 @@ export class CharacterInterpreter extends Interpreter{
         if(char == null){
             return `Finding character **\"${charName}\"** was unsuccessful.`
         }
-        console.log('Hi');
+
         await this.interaction.channel?.send(
             {embeds : [await char.buildViewEmbed(this.interaction.user, this.client)] })
 

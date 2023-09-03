@@ -28,8 +28,8 @@ export class RelationshipInterpreter extends Interpreter {
 
         const [hope, despair] = RelationshipInterpreter.getHD(value)
 
-        char1.updateHD(this.gamedb, this.tableNameBase, hope, despair)
-        char2.updateHD(this.gamedb, this.tableNameBase, hope, despair)
+        char1.updateHD(this.gamedb, this.client, this.tableNameBase, hope, despair)
+        char2.updateHD(this.gamedb, this.client, this.tableNameBase, hope, despair)
 
         relationship.changeRelationship(this.gamedb, this.tableNameBase, value)
 
