@@ -93,6 +93,12 @@ module SetupFunctions{
                     type: ApplicationCommandOptionType.Subcommand,
                     options:[
                         {
+                            name: 'is-hidden',
+                            description: 'Makes response hidden from rest of the channel (ephemeral). Defaults to false.',
+                            required: false,
+                            type: ApplicationCommandOptionType.Boolean
+                        },
+                        {
                             name: 'game-name',
                             description: 'Game for which summary should be found for. Defaults to currently active game.',
                             required: false,
@@ -110,6 +116,12 @@ module SetupFunctions{
                             description: 'Name of command to be retrieved.',
                             required: false,
                             type: ApplicationCommandOptionType.String
+                        },
+                        {
+                            name: 'is-hidden',
+                            description: 'Makes response hidden from rest of the channel (ephemeral). Defaults to false.',
+                            required: false,
+                            type: ApplicationCommandOptionType.Boolean
                         }
                     ]
                 }
@@ -244,6 +256,12 @@ module SetupFunctions{
                             type: ApplicationCommandOptionType.String
                         },
                         {
+                            name: 'is-hidden',
+                            description: 'Makes response hidden from rest of the channel (ephemeral). Defaults to false.',
+                            required: false,
+                            type: ApplicationCommandOptionType.Boolean
+                        },
+                        {
                             name: 'game-name',
                             description: 'Game for which character should be viewed resides. Defaults to currently active game.',
                             required: false,
@@ -338,6 +356,12 @@ module SetupFunctions{
                             description: 'Name of the item to be viewed from the character\'s inventory.',
                             required: false,
                             type: ApplicationCommandOptionType.String
+                        },
+                        {
+                            name: 'is-hidden',
+                            description: 'Makes response hidden from rest of the channel (ephemeral). Defaults to false.',
+                            required: false,
+                            type: ApplicationCommandOptionType.Boolean
                         },
                         {
                             name: 'game-name',

@@ -129,6 +129,12 @@ module CustomSetup{
                             type: ApplicationCommandOptionType.String
                         },
                         {
+                            name: 'is-hidden',
+                            description: 'Makes response hidden from rest of the channel (ephemeral). Defaults to false.',
+                            required: false,
+                            type: ApplicationCommandOptionType.Boolean
+                        },
+                        {
                             name: 'game-name',
                             description: 'Game for which the relationship should be viewed. Defaults to currently active game.',
                             required: false,
@@ -294,6 +300,12 @@ module CustomSetup{
                         {
                             name: 'is-dynamic',
                             description: 'Controls whether dynamic view is shown or not. Defaults to false for summary, true for char-name.',
+                            required: false,
+                            type: ApplicationCommandOptionType.Boolean
+                        },
+                        {
+                            name: 'is-hidden',
+                            description: 'Makes response hidden from rest of the channel (ephemeral). Defaults to false.',
                             required: false,
                             type: ApplicationCommandOptionType.Boolean
                         },
