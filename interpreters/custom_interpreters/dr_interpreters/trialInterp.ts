@@ -274,6 +274,8 @@ export class TrialInterpreter extends InitInterpreter{
                 if(embeds == undefined){
                     return `Issue finding Character.`
                 }
+
+                await message?.channel.send(replyStr);
             
                 if(embeds.length != 1){
                     await Pagination.getPaginatedMessage(embeds, this.interaction, replyStr)
