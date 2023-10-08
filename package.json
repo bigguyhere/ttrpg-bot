@@ -20,6 +20,7 @@
   "dependencies": {
     "@discordjs/voice": "^0.14.0",
     "@types/mysql": "^2.15.21",
+    "axios": "^1.5.1",
     "csv-parse": "^5.3.3",
     "discord.js": "^14.7.1",
     "dotenv": "^16.0.3",

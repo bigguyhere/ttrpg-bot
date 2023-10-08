@@ -1,6 +1,7 @@
 import { Connection } from "mysql"
 import { BaseBridge, Bridge } from "../interpreter_model"
 import { DRBridge } from "./dr_interpreters/dr_bridge"
+import { PkmBridge } from "./pkm_interpreters/pkm_bridge"
 
 export class SelectBridge{
     /**
@@ -14,6 +15,8 @@ export class SelectBridge{
         switch(gameType){
             case 'dr':
                 return new DRBridge(gamedb, tableNameBase)
+            case 'pkm':
+                return new PkmBridge(gamedb, tableNameBase)
         }
 
         return new BaseBridge(gamedb, tableNameBase)

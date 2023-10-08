@@ -6,6 +6,10 @@ import { ChannelType, Guild, Message, TextBasedChannel, Client } from "discord.j
 
 //ToDo -> Refactor to convert into postfix to all for paranthesis, multiplication, and division
 module UtilityFunctions{
+    export function errorCheck (cond : boolean, msg : string) {
+        if (cond) { throw `Error: ${msg}`};
+    }
+
     export function parseRoll(query: string): [string, number] | undefined{
         query = query.trim()
         const sections = query.split(/([+|-])/g)
@@ -87,14 +91,13 @@ module UtilityFunctions{
     }
 
     export function getEmojiID(emoji : string | null): string | null{
-        let matches = emoji?.match(/[0-9]+/)
+        let matches = emoji?.match(/[0-9]+/);
 
         if(matches != null){
             return String(matches[0])
         }
 
-        return emoji
-
+        return emoji;
     }
 
     export function getEmoteDisplay(client : Client, emote :string | null): string{

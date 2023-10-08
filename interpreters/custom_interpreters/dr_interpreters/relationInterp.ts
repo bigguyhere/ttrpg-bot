@@ -37,8 +37,8 @@ export class RelationshipInterpreter extends Interpreter {
     }
 
     public async view(charName1 : string, charName2 : string) : Promise<string> {    
-        let char1 = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, charName1)
-        let char2 = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, charName2)
+        let char1 = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, charName1);
+        let char2 = await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, charName2);
 
         if(char1 == null){
             return 'Error obtaining character 1.'
@@ -53,7 +53,7 @@ export class RelationshipInterpreter extends Interpreter {
         }
 
         await this.interaction.channel?.send(
-            {embeds : [await relationship.buildViewEmbed(this.interaction.user, this.interaction.guild, this.client)] });
+            {embeds : [await relationship.buildViewEmbed(this.interaction.user, this.interaction.guild, this.client)]});
 
         return `${charName1} and ${charName2}'s relationship has been successfully viewed`
     }
