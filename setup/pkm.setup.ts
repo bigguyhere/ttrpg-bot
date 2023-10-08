@@ -22,8 +22,8 @@ module PkmSetup {
                                 type: ApplicationCommandOptionType.String
                             },
                             {
-                                name: 'region',
-                                description: 'Name of region for regional form. Do not put in original region for original forms.',
+                                name: 'form',
+                                description: 'Name of region or form for pokemon forms. Don\'t put in original region for original region forms.',
                                 required: false,
                                 type: ApplicationCommandOptionType.String
                             },

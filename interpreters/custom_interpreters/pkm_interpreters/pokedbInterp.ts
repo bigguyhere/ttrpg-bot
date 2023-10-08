@@ -10,7 +10,7 @@ export class PokeDBInterpreter extends Interpreter {
 
     public async view(pkmName : string, activeGame : ActiveGame) : Promise<string | null> { 
 
-        let region = UtilityFunctions.formatNullString(this.options.getString('region'));
+        let region = UtilityFunctions.formatNullString(this.options.getString('form'));
 
         UtilityFunctions.errorCheck(!pkmName, 'Name must exist');
         UtilityFunctions.errorCheck(typeof pkmName !== 'string', 'Name must be a string');

@@ -12,7 +12,7 @@ module SetupFunctions{
             commands = client.application?.commands;
         }
 
-        commands?.set([]);
+        //commands?.set([]);
 
         // Game Commands
         commands?.create({
