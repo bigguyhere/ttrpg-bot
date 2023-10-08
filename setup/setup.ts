@@ -2,17 +2,17 @@ import { ApplicationCommandOptionType, Client, Guild } from "discord.js"
 import { CustomSetup } from "./custom_setup"
 
 module SetupFunctions{
-    export function commandSetup(guild: Guild | undefined, client: Client<boolean>) : void {
+    export function commandSetup(testGuild: Guild | undefined, client: Client<boolean>) : void {
     
         let commands
 
-        if(guild){
-            commands = guild.commands
+        if(testGuild){
+            commands = testGuild.commands;
         } else{
-            commands = client.application?.commands
+            commands = client.application?.commands;
         }
 
-        //commands?.set([])
+        commands?.set([]);
 
         // Game Commands
         commands?.create({

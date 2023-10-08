@@ -22,9 +22,9 @@ const guildID = String(process.env.TESTGUILD)
 client.on(Events.ClientReady, () => {
     console.log('Bot is ready.')
 
-    const guild = client.guilds.cache.get(guildID)
+    const guild = client.guilds.cache.get(guildID);
     
-    SetupFunctions.commandSetup(guild, client);
+    SetupFunctions.commandSetup(undefined, client);
 
     console.log('Bot has completed setup.')
 })
