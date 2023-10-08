@@ -1,7 +1,7 @@
 import DiscordJS, { Client, EmbedBuilder } from 'discord.js';
 import { ActiveGame } from "../../activegame";
 import { AxiosResponse } from 'axios';
-import { PkmUtilityFunctions, Type, Games} from '../../../utility/custom_utility/pkm_utility';
+import { PkmUtilityFunctions, Type, Games, EmojiTypeMap} from '../../../utility/custom_utility/pkm_utility';
 import { PokeDBMove } from './pokedbmoves';
 
 export class PokeDBPKM {
@@ -16,8 +16,8 @@ export class PokeDBPKM {
         public region: string | null,
         response : AxiosResponse | null){
         
-        this.name = PkmUtilityFunctions.formatStrNoDashes(name);
-        this.region = region;
+        this.name = PkmUtilityFunctions.formatTitle(name);
+        this.region = region ? PkmUtilityFunctions.formatUpperCase(region) : region;
         const data = response?.data;
         if(data){
             if(data["moves"] && Array.isArray(data["moves"])){
@@ -84,26 +84,37 @@ export class PokeDBPKM {
     public async buildViewEmbed(user : DiscordJS.User, client : Client<boolean>, 
         activeGame : ActiveGame): Promise<EmbedBuilder[] | null>{
 
-        let decStr = `**DM:** ${(await client.users.fetch(activeGame.DM))}\n
-                        **Type(s):** ${Type[this.types[0]]}${this.types[1] !== Type.NONE ? ` - ${Type[this.types[1]]}` : ''}\n
+        const type1 = Type[this.types[0]], type2 = Type[this.types[1]];
+        let descStr = `**DM:** ${(await client.users.fetch(activeGame.DM))}\n
+                        **Type(s):** ${EmojiTypeMap[type1]} ${type1} ${EmojiTypeMap[type1]}${this.types[1] !== Type.NONE ? ` - ${EmojiTypeMap[type2]} ${type2} ${EmojiTypeMap[type2]}` : ''}
                         **Abilities:**`;
 
         if(this.abilties){
             for(let ability of this.abilties){
-                decStr += ` ${ability} -`
+                descStr += ` ${ability} -`
             }
 
-            if(decStr.length > 2){
-                decStr = decStr.substring(0, decStr.length - 2);
+            if(descStr.length > 2){
+                descStr = descStr.substring(0, descStr.length - 2);
             }
         }
-        decStr += `\n**Weaknesses:**${PkmUtilityFunctions.getWeaknesses(this.types)}`;
+
+        descStr += '\n\n**Weaknesses:** ';
+        const weaknesses = PkmUtilityFunctions.getWeaknesses(this.types);
+
+        for(let weakness of weaknesses){
+            descStr += `${EmojiTypeMap[weakness[0]]} ${weakness[0]} (${weakness[1]}x), `
+        }
+
+        if(descStr.length > 2){
+            descStr = descStr.substring(0, descStr.length - 2);
+        }
 
         const summaryEmbed = new EmbedBuilder()
         .setColor(0x7852A9)
-        .setTitle(`**${this.name}**`)
+        .setTitle(`**${this.name}${this.region ? ` (${this.region})` : ''}**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setDescription(decStr)
+        .setDescription(descStr)
         .setThumbnail(this.imageURL)
         .setTimestamp();
 

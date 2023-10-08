@@ -136,16 +136,15 @@ export const TypeEffectMatrix : number[][] =
 
 module PkmUtilityFunctions{
 
-    export function formatStrNoDashes(name : string) : string {
-        let retStr = formatStr(name);
+    export function formatTitle(str : string) : string {
+        str = formatUpperCase(str);
+        const splitStr = str.split('-');
 
-        const dashInd = retStr.indexOf('-');
-        if(dashInd !== -1 && dashInd + 1 < retStr.length) {
-            retStr = retStr.replace('-', ' ');
-            retStr = retStr.substring(0, dashInd + 1) + '(' + retStr[dashInd + 1].toUpperCase() + retStr.substring(dashInd + 2) + ')';
-        }
+        if(splitStr.length !== 2){
+            return str;
+        } 
 
-        return retStr;
+        return `${splitStr[0]} (${splitStr[1]})`;
     }
 
     export function formatStr(str : string) : string {
@@ -196,15 +195,15 @@ module PkmUtilityFunctions{
         return effectiveness;
     }
 
-    export function getWeaknesses(types: [type1 : Type, type2 : Type]): string[]{
+    export function getWeaknesses(types: [type1 : Type, type2 : Type]): [string, number][]{
 
         const keys = Object.keys(Type).filter((k) => !isNaN(Number(k)));
-        let weaknesses : string[] = [];
+        let weaknesses : [string, number][] = [];
 
         keys.forEach((key, ind) => {
                 const value = typeCalculate(ind, types);
                 if(value > 1){
-                    weaknesses.push(` ${Type[ind]}`);
+                    weaknesses.push([Type[ind], value]);
                 } 
         });
 
