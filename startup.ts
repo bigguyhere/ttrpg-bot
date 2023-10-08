@@ -16,17 +16,17 @@ const client = new DiscordJS.Client({
     ]
 })
 
-const gamesDBName = process.env.DATABASE
-const guildID = String(process.env.TESTGUILD)
+const gamesDBName = process.env.DATABASE;
+const guildID = String(process.env.TESTGUILD);
 
 client.on(Events.ClientReady, () => {
-    console.log('Bot is ready.')
+    console.log('Bot is ready.');
 
-    const guild = client.guilds.cache.get(guildID);
+    const guild = process.env.MODE === 'test' ? client.guilds.cache.get(guildID) : undefined;
     
-    SetupFunctions.commandSetup(undefined, client);
+    SetupFunctions.commandSetup(guild, client);
 
-    console.log('Bot has completed setup.')
+    console.log('Bot has completed setup.');
 })
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -34,11 +34,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return
     }
 
-    const gamedb = DatabaseFunctions.connect(process.env.HOST, process.env.USER, process.env.PASSWORD, gamesDBName)
+    const gamedb = DatabaseFunctions.connect(process.env.HOST, process.env.USER, process.env.PASSWORD, gamesDBName);
 
-    await CommandBridge.reply(interaction, gamedb, guildID, client).then(() => {
+    let id = process.env.MODE === 'test' ? guildID : String(interaction.guild?.id); 
+    
+    await CommandBridge.reply(interaction, gamedb, id, client).then(() => {
         DatabaseFunctions.disconnect(gamedb)
-    })
+    });
 })
 
 client.login(process.env.TOKEN)

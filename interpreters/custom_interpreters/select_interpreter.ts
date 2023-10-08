@@ -14,11 +14,11 @@ export class SelectBridge{
     static select(gameType: string | null | undefined, gamedb : Connection, tableNameBase: string): Bridge {
         switch(gameType){
             case 'dr':
-                return new DRBridge(gamedb, tableNameBase)
+                return new DRBridge(gamedb, tableNameBase);
             case 'pkm':
-                return new PkmBridge(gamedb, tableNameBase)
+                return new PkmBridge(gamedb, tableNameBase);
         }
 
-        return new BaseBridge(gamedb, tableNameBase)
+        return new BaseBridge(gamedb, tableNameBase);
     }
 }

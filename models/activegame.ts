@@ -125,12 +125,12 @@ export class ActiveGame{
 
     static getCurrentGame(db : mysql.Connection, dbName : string, serverID : string | null, gameName : string | null) : Promise<ActiveGame | null>{
         return new Promise((resolve) =>{
-            let queryParam
+            let queryParam;
 
             if(gameName == null){
-                queryParam = 'isActive = 1'
+                queryParam = 'isActive = 1';
             }else{
-                queryParam = `GameName = '${gameName}'`
+                queryParam = `GameName = '${gameName}'`;
             }
 
             db.query(`SELECT * FROM ${dbName}.ActiveGames WHERE ${queryParam} AND SERV_ID = '${serverID}';`, (err, res) =>  {
