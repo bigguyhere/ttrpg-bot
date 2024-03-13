@@ -43,6 +43,11 @@ export class PkmBridge extends Bridge {
                         return 'Issue retrieving active game.';
                     }
                     return pokeDBInterpreter.view(pkmName, activeGame);
+                case('moves'):
+                    if(activeGame == null){
+                        return 'Issue retrieving active game.';
+                    }
+                    return pokeDBInterpreter.viewMoves(pkmName, activeGame);
             }
         }
 

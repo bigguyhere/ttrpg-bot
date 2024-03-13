@@ -4,7 +4,7 @@ import { CustomSetup } from "./custom_setup"
 module SetupFunctions{
     export function commandSetup(testGuild: Guild | undefined, client: Client<boolean>) : void {
     
-        let commands
+        let commands;
 
         if(testGuild){
             commands = testGuild.commands;

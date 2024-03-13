@@ -1,34 +1,34 @@
 import DiscordJS, { Client, EmbedBuilder } from 'discord.js';
 import axios, { AxiosResponse } from 'axios';
-import { EmojiTypeMap, PkmUtilityFunctions, Status, StatusEffect, Type } from '../../../utility/custom_utility/pkm_utility'
+import { EmojiTypeMap, MoveLearnMethod, PkmUtilityFunctions, Status, StatusEffect, Type } from '../../../utility/custom_utility/pkm_utility'
 import { PokeDBPKM } from './pokedbpkm';
 import { ActiveGame } from '../../activegame';
+import { UtilityFunctions } from '../../../utility/general';
 
 export class PokeDBMove {
     public statusList : Status[] = [];
     public effect : string | null = null;
-    public type : Type = Type.NONE;
+    public type : string = "NONE";
 
     constructor(
         public name : string,
-        response : AxiosResponse,
+        data : any | null,
         public label? : string | null){
         
         this.name = PkmUtilityFunctions.formatStr(name);
         this.label = label;
-        const data = response.data;
         if(data){
             const entries = data["effect_entries"];
             if(entries && Array.isArray(entries) && entries.length > 0){
                 this.effect = entries[0]["short_effect"] as string;
             }
 
-            if(data["type"] && data["type"]["name"]){
-                this.type = Type[data["type"]["name"].toUpperCase() as keyof typeof Type];
+            if(data["type_id"]){
+                this.type = Type[data["type_id"] - 1];
             }
 
-            if(data["meta"]){
-                const metadata = data["meta"];
+            if(data["meta"] && data["meta"][0]){
+                const metadata = data["meta"][0];
                 if(metadata["ailment"] && metadata["ailment"]["name"]){
                     const key = metadata["ailment"]["name"];
                     const value = StatusEffect[key];
@@ -83,6 +83,21 @@ export class PokeDBMove {
         } 
     }
 
+    public static async getMoveList(data : any | null) : Promise<PokeDBMove[]> {
+        
+        let movesList : PokeDBMove[] = [];
+        if(data["moves"] && Array.isArray(data["moves"])){
+            for(let i = 0; i < data["moves"].length; ++i){
+                const move = data["moves"][i]["move"];
+                const method = data["moves"][i]["move_learn_method_id"] as number;
+
+                movesList.push(new PokeDBMove(move["name"], move, MoveLearnMethod[method - 1]));
+            }
+        }
+
+        return movesList;
+    }
+
     public static async fetchMoves(moveList : [name : string, label: string | null, url: string][]) : Promise<PokeDBMove[]>{
         let moves : PokeDBMove[] = []; 
         for(let move of moveList){
@@ -132,7 +147,7 @@ export class PokeDBMove {
             const curLimit = paginationLimit * (i + 1)
             const limit = curLimit > moves.length ? moves.length : curLimit
             for(let j = paginationLimit * i; j < limit; ++j){
-                const typeEmoji = EmojiTypeMap[Type[moves[j].type]]
+                const typeEmoji = EmojiTypeMap[moves[j].type]
                 descStr += `\n${typeEmoji} **${moves[j].name}** - ${PkmUtilityFunctions.formatStr(String(moves[j].label))}`;
                 if(moves[j].statusList.length > 0){
                     descStr += ' - ';

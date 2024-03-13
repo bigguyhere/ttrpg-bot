@@ -1,8 +1,9 @@
 import DiscordJS, { Client, EmbedBuilder } from 'discord.js';
 import { ActiveGame } from "../../activegame";
 import { AxiosResponse } from 'axios';
-import { PkmUtilityFunctions, Type, Games, EmojiTypeMap} from '../../../utility/custom_utility/pkm_utility';
+import { PkmUtilityFunctions, Type, EmojiTypeMap} from '../../../utility/custom_utility/pkm_utility';
 import { PokeDBMove } from './pokedbmoves';
+import { UtilityFunctions } from '../../../utility/general';
 
 export class PokeDBPKM {
     public imageURL : string | null = null;
@@ -10,14 +11,46 @@ export class PokeDBPKM {
     private movesList : [name : string, label: string | null, url: string][] = [];
     private moves : PokeDBMove[] = [];
     public types : [type1 : Type, type2 : Type] = [Type.NONE, Type.NONE];
+    //private evolutionChain : string []
 
     constructor(
         public name : string,
-        public region: string | null,
+        public form: string | null,
+        pkmData? : any | null){
+        
+        this.name = PkmUtilityFunctions.formatTitle(name);
+        this.form = form ? PkmUtilityFunctions.formatUpperCase(form) : form;
+
+        if(pkmData) {
+            const data = pkmData["pokemon"][0];
+
+            if(data["types"] && Array.isArray(data["types"])){
+                for(let i = 0; i < data["types"].length; ++i){
+                    const typeStr = data["types"][i]["pokemon_v2_type"]["name"] as string;
+                    this.types[i] = Type[typeStr.toUpperCase() as keyof typeof Type];
+                }
+            }
+
+            if(data["abilities"] && Array.isArray(data["abilities"])){
+                for(let i = 0; i < data["abilities"].length; ++i){
+                    const abilityStr = data["abilities"][i]["pokemon_v2_ability"]["name"] as string;
+                    this.abilties.push(PkmUtilityFunctions.formatStr(abilityStr));
+                }
+            }
+
+            if(data["sprites"] && data["sprites"][0] &&  data["sprites"][0]["sprites"]) {
+                this.imageURL = data["sprites"][0]["sprites"];
+            }
+        }
+    }
+
+    /*constructor(
+        public name : string,
+        public form: string | null,
         response : AxiosResponse | null){
         
         this.name = PkmUtilityFunctions.formatTitle(name);
-        this.region = region ? PkmUtilityFunctions.formatUpperCase(region) : region;
+        this.form = form ? PkmUtilityFunctions.formatUpperCase(form) : form;
         const data = response?.data;
         if(data){
             if(data["moves"] && Array.isArray(data["moves"])){
@@ -71,7 +104,7 @@ export class PokeDBPKM {
                 this.imageURL = data["sprites"]["front_default"];
             }
         }
-    }
+    }*/
 
     public async getMoves() : Promise<PokeDBMove[]>{
         if(this.moves.length > 0){
@@ -81,8 +114,45 @@ export class PokeDBPKM {
         }
     }
 
+    public static async getPokemonFromSpecies(response : AxiosResponse | null, name : string, form : string | null) : Promise<PokeDBPKM> {
+        UtilityFunctions.errorCheck(!response 
+            || !response.data 
+            || !response.data.data 
+            || !response.data.data.species 
+            || !Array.isArray(response.data.data.species) 
+            || response.data.data.species.length !== 1
+            , "Response is not valid");
+        const data = response?.data.data.species[0];
+        
+        return new PokeDBPKM(name, form, data);
+    }
+
+    /*public static async getPokemonFromSpecies(response : AxiosResponse | null, fullName? : string | null) : Promise<AxiosResponse>{
+        UtilityFunctions.errorCheck(!response || !response.data, "Response is not valid");
+        const data = response && response.data;
+        UtilityFunctions.errorCheck(!data["varieties"] || !Array.isArray(data["varieties"]), "Varieties are not valid");
+        const varieties = data["varieties"] as Array<any>;
+        
+        const variety = fullName ? 
+        varieties.filter((elem) => {
+            return elem["pokemon"]["name"] === fullName;
+        })
+        :
+        varieties.filter((elem) => {
+            return elem["is_default"];
+        });
+
+        UtilityFunctions.errorCheck(variety.length !== 1, "Invalid data in database");
+
+        return variety[0]["pokemon"]["url"];
+    }*/
+
+    /*public getEvolutionChain(url) : Promise<string[]> {
+        
+    }*/
+
     public async buildViewEmbed(user : DiscordJS.User, client : Client<boolean>, 
-        activeGame : ActiveGame): Promise<EmbedBuilder[] | null>{
+        activeGame : ActiveGame): Promise<EmbedBuilder>{
 
         const type1 = Type[this.types[0]], type2 = Type[this.types[1]];
         let descStr = `**DM:** ${(await client.users.fetch(activeGame.DM))}\n
@@ -110,15 +180,15 @@ export class PokeDBPKM {
             descStr = descStr.substring(0, descStr.length - 2);
         }
 
-        const summaryEmbed = new EmbedBuilder()
+        return new EmbedBuilder()
         .setColor(0x7852A9)
-        .setTitle(`**${this.name}${this.region ? ` (${this.region})` : ''}**`)
+        .setTitle(`**${this.name}${this.form ? ` (${this.form})` : ''}**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
         .setDescription(descStr)
         .setThumbnail(this.imageURL)
         .setTimestamp();
 
-        let embeds : EmbedBuilder[] = [summaryEmbed];
+        /*let embeds : EmbedBuilder[] = [summaryEmbed];
 
         const moves = await this.getMoves();
         let moveEmbeds = await PokeDBMove.buildSummaryEmbed(user, client, activeGame, this, moves);
@@ -129,7 +199,7 @@ export class PokeDBPKM {
             }
         }
 
-        return embeds;
+        return embeds;*/
     }
 
 }

@@ -1,74 +1,34 @@
+import { UtilityFunctions } from "../general"
+
 export enum Type {
     NORMAL,
-    FIRE,
-    WATER,
-    ELECTRIC,
-    GRASS,
-    ICE,
     FIGHTING,
+    FLYING,
     POISON,
     GROUND,
-    FLYING,
-    PSYCHIC,
-    BUG,
     ROCK,
+    BUG,
     GHOST,
+    STEEL,
+    FIRE,
+    WATER,
+    GRASS,
+    ELECTRIC,
+    PSYCHIC,
+    ICE,
     DRAGON,
     DARK,
-    STEEL,
     FAIRY,
     NONE
 };
 
-// I tried to do this with an enum but enums in js aren't working with me at the moment
-export const Games : {[id : string] : number} = {
-    'red-blue': 0,
-    'yellow': 1,
-    'gold-silver': 2,
-    'crystal': 3,
-    'ruby-sapphire': 4,
-    'emerald': 5,
-    'firered-leafgreen': 6,
-    'diamond-pearl': 7,
-    'platinum': 8,
-    'heartgold-soulsilver': 9,
-    'black-white': 10,
-    'colosseum': 11,
-    'xd': 12,
-    'black-2-white-2': 13,
-    'x-y': 14,
-    'omega-ruby-alpha-sapphire': 15,
-    'sun-moon': 16,
-    'ultra-sun-ultra-moon': 17,
-    'lets-go-pikachu-lets-go-eevee': 18,
-    'sword-shield': 19,
-    'the-isle-of-armor': 20,
-    'the-crown-tundra': 21,
-    'brilliant-diamond-and-shining-pearl': 22,
-    'legends-arceus': 23,
-    'scarlet-violet': 24,
-    'the-teal-mask': 25,
-    'the-indigo-disk': 26
-};
-
-/*export type Status = {
-    names: string[];
-    emoji: string;
-};
-export const StatusEffect : {[id : string] : Status} = {
-    BURN : {names: ["burn", "burned"], emoji: "🔥"},
-    FROZEN : {names: ["frozen", "freeze", "froze"], emoji: "❄️"},
-    FROSTBITE : {names: ["frostbite", "frosbitten"], emoji: "🧊"},
-    PARALYSIS : {names: ["paralysis", "paralyzed", "paralyze"], emoji: "⚡"},
-    POISONED : {names: ["poisoned", "poison"], emoji: "☠️"},
-    BADLY_POISONED : {names: ["badly poisoned", "badly poison"], emoji: "🤮"},
-    ASLEEP : {names: ["asleep", "sleep", "unconscious", "sleeping"], emoji: "💤"},
-    DROWSY : {names: ["sleepy", "drowsy", "yawning", "tired"], emoji: "🥱"},
-    CONFUSION : {names: ["confuse", "confusion", "confused", "dizzy"], emoji: "💫"},
-    FLINCHING : {names: ["flinch", "flinching", "flinched"], emoji: "❌"},
-    INCREASESTAT : {names: ["up", "increase", "boost"], emoji:"🔺"},
-    DECREASESTAT : {names: ["down", "decrease", "lower"], emoji: "🔻"}
-};*/
+export const MoveLearnMethod : string[] = [
+    'level-up',
+    'egg',
+    'tutor',
+    'machine',
+    'none'
+];
 
 export type Status = {
     name: string;
@@ -114,24 +74,24 @@ export const EmojiTypeMap : {[id : string] : string} = {
 
 export const TypeEffectMatrix : number[][] = 
 [
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 0, 1, 1, 0.5, 1], //Normal
-    [1, 0.5, 0.5, 1, 2, 2, 1, 1, 1, 1, 1, 2, 0.5, 1, 0.5, 1, 2, 1], //Fire
-    [1, 2, 0.5, 1, 0.5, 1, 1, 1, 2, 1, 1, 1, 2, 1, 0.5, 1, 1, 1], //Water
-    [1, 1, 2, 0.5, 0.5, 1, 1, 1, 0, 2, 1, 1, 1, 1, 0.5, 1, 1, 1], //Electric
-    [1, 0.5, 2, 1, 0.5, 1, 1, 0.5, 2, 0.5, 0, 0.5, 2, 1, 0.5, 1, 0.5, 1], //Grass
-    [0, 0.5, 0.5, 1, 2, 0.5, 1, 1, 2, 2, 1, 1, 1, 1, 2, 1, 0.5, 1], //Ice
-    [2, 1, 1, 1, 1, 2, 1, 0.5, 1, 0.5, 0.5, 0.5, 2, 0, 1, 2, 2, 0.5], //Fighting
-    [1, 1, 1, 1, 2, 1, 1, 0.5, 0.5, 1, 1, 1, 0.5, 0.5, 1, 1, 0, 2], //Poison
-    [1, 2, 1, 2, 0.5, 1, 1, 2, 1, 0, 1, 0.5, 2, 1, 1, 1, 2, 1], //Ground
-    [1, 1, 1, 0.5, 2, 1, 2, 1, 1, 1, 1, 2, 0.5, 1, 1, 1, 0.5, 1], //Flying
-    [1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 0.5, 1, 1, 1, 1, 0, 0.5, 1], //Psychic
-    [1, 0.5, 1, 1, 2, 1, 0.5, 0.5, 1, 0.5, 2, 1, 1, 0.5, 1, 2, 0.5, 0.5], //Bug
-    [1, 2, 1, 1, 1, 2, 0.5, 1, 0.5, 2, 1, 2, 1, 1, 1, 1, 0.5, 1], //Rock
-    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 0.5, 1, 1], //Ghost
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 0.5, 0], //Dragon
-    [1, 1, 1, 1, 1, 1, 0.5, 1, 1, 1, 2, 1, 1, 2, 1, 0.5, 1, 0.5], //Dark
-    [1, 0.5, 0.5, 0.5, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 0.5, 2], //Steel
-    [1, 0.5, 1, 1, 1, 1, 2, 0.5, 1, 1, 1, 1, 1, 1, 2, 2, 0.5, 1] //Fairy
+    [1, 1, 1, 1, 1, 0.5, 1, 0, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1], //Normal
+    [2, 1, 0.5, 0.5, 1, 2, 0.5, 0, 2, 1, 1, 1, 1, 0.5, 2, 1, 2, 0.5], //Fighting
+    [1, 2, 1, 1, 1, 0.5, 2, 1, 0.5, 1, 1, 2, 0.5, 1, 1, 1, 1, 1], //Flying
+    [1, 1, 1, 0.5, 0.5, 0.5, 1, 0.5, 0, 1, 1, 2, 1, 1, 1, 1, 1, 2], //Poison
+    [1, 1, 0, 2, 1, 2, 0.5, 1, 2, 2, 1, 0.5, 2, 1, 1, 1, 1, 1], //Ground
+    [1, 0.5, 2, 1, 0.5, 1, 2, 1, 0.5, 2, 1, 1, 1, 1, 2, 1, 1, 1], //Rock
+    [1, 0.5, 0.5, 0.5, 1, 1, 1, 0.5, 0.5, 0.5, 1, 2, 1, 2, 1, 1, 2, 0.5], //Bug
+    [0, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 0.5, 1], //Ghost
+    [1, 1, 1, 1, 1, 2, 1, 1, 0.5, 0.5, 0.5, 1, 0.5, 1, 2, 1, 1, 2], //Steel
+    [1, 1, 1, 1, 1, 0.5, 2, 1, 2, 0.5, 0.5, 2, 1, 1, 2, 0.5, 1, 1], //Fire
+    [1, 1, 1, 1, 2, 2, 1, 1, 1, 2, 0.5, 0.5, 1, 1, 1, 0.5, 1, 1], //Water
+    [1, 1, 0.5, 0.5, 2, 2, 0.5, 1, 0.5, 0.5, 2, 0.5, 1, 1, 1, 0.5, 1, 1], //Grass
+    [1, 1, 2, 1, 0, 1, 1, 1, 1, 1, 2, 0.5, 0.5, 1, 1, 0.5, 1, 1], //Electric
+    [1, 2, 1, 2, 1, 1, 1, 1, 0.5, 1, 1, 1, 1, 0.5, 1, 1, 0, 1], //Psychic
+    [1, 1, 2, 1, 2, 1, 1, 1, 0.5, 0.5, 0.5, 2, 1, 1, 0.5, 2, 1, 1], //Ice
+    [1, 1, 1, 1, 1, 1, 1, 1, 0.5, 1, 1, 1, 1, 1, 1, 2, 1, 0], //Dragon
+    [1, 0.5, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 0.5, 0.5], //Dark
+    [1, 2, 1, 0.5, 1, 1, 1, 1, 0.5, 0.5, 1, 1, 1, 1, 1, 2, 2, 1] //Fairy
 ];
 
 module PkmUtilityFunctions{
@@ -208,6 +168,96 @@ module PkmUtilityFunctions{
         });
 
         return weaknesses;
+    }
+
+    const sanitized_forms : string[] = ['paldea', 'alola', 'galar', 'hisui', 'mega-x', 'mega-y', 'mega'];
+
+    export function sanitizeFormInput (input : string, name : string) : string {
+        UtilityFunctions.errorCheck(!input, `${name} must exist`);
+        UtilityFunctions.errorCheck(typeof input !== 'string', `${name} must be a string`);
+        input = input.trim().toLowerCase();
+        UtilityFunctions.errorCheck(input.length === 0, `${name} cannot be empty`);
+
+        for(var form of sanitized_forms) {
+            if(input.includes(form)){
+                return form;
+            }
+        }
+
+        return input;
+        
+    }
+
+    export function getPkmFormQuery(queryName : string, name : string, param : string) : any {
+        const query = `query ${queryName} {
+            species: pokemon_v2_pokemonspecies(where: {name: {_eq: "${name}"}}) {
+            name
+            id
+            pokemon: pokemon_v2_pokemons(limit: 1, ${param}) {
+                id
+                name
+                is_default
+                types: pokemon_v2_pokemontypes {
+                slot
+                pokemon_v2_type {
+                    name
+                }
+                }
+                sprites: pokemon_v2_pokemonsprites(limit: 1) {
+                sprites(path: "front_default")
+                }
+                abilities: pokemon_v2_pokemonabilities {
+                pokemon_v2_ability {
+                    name
+                }
+                }
+            }
+        }
+      }`;
+
+      return JSON.stringify({
+        query: query,
+        operationName: queryName
+      });
+    }
+
+    export function getPkmMoveQuery(queryName : string, name : string, param : string) : any {
+        const query = `query ${queryName} {
+            species: pokemon_v2_pokemonspecies(where: {name: {_eq: "${name}"}}) {
+              name
+              id
+              pokemon: pokemon_v2_pokemons(limit: 1, ${param}) {
+                id
+                name
+                is_default
+                sprites: pokemon_v2_pokemonsprites(limit: 1) {
+                  sprites(path: "front_default")
+                }
+                moves: pokemon_v2_pokemonmoves(order_by: {move_id: asc}, distinct_on: move_id) {
+                  id
+                  move_learn_method_id
+                  move: pokemon_v2_move {
+                    type_id
+                    name
+                    meta: pokemon_v2_movemeta {
+                      ailment: pokemon_v2_movemetaailment {
+                        name
+                      }
+                      flinch_chance
+                    }
+                    stat_changes: pokemon_v2_movemetastatchanges {
+                      change
+                    }
+                  }
+                }
+              }
+            }
+          }`;
+
+      return JSON.stringify({
+        query: query,
+        operationName: queryName
+      });
     }
 }
 
