@@ -221,7 +221,7 @@ module PkmUtilityFunctions{
       });
     }
 
-    export function getPkmMoveQuery(queryName : string, name : string, param : string) : any {
+    export function getPkmMoveQuery(queryName : string, name : string, param : string, moveParam : string) : any {
         const query = `query ${queryName} {
             species: pokemon_v2_pokemonspecies(where: {name: {_eq: "${name}"}}) {
               name
@@ -233,7 +233,7 @@ module PkmUtilityFunctions{
                 sprites: pokemon_v2_pokemonsprites(limit: 1) {
                   sprites(path: "front_default")
                 }
-                moves: pokemon_v2_pokemonmoves(order_by: {move_id: asc}, distinct_on: move_id) {
+                moves: pokemon_v2_pokemonmoves(order_by: {move_id: asc}, distinct_on: move_id ${moveParam}) {
                   id
                   move_learn_method_id
                   move: pokemon_v2_move {

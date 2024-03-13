@@ -48,6 +48,7 @@ export class PokeDBInterpreter extends Interpreter {
     public async viewMoves(pkmName : string, activeGame : ActiveGame) : Promise<string | null> { 
 
         let form = UtilityFunctions.formatNullString(this.options.getString('form'));
+        let learnType = this.options.getNumber('learn-type');
 
         UtilityFunctions.errorCheck(!pkmName, 'Name must exist');
         UtilityFunctions.errorCheck(typeof pkmName !== 'string', 'Name must be a string');
@@ -61,9 +62,14 @@ export class PokeDBInterpreter extends Interpreter {
             searchParam =  `where: {name: {_eq: "${pkmName}-${form}"}}`;
         }
 
+
         let result : AxiosResponse | null = null;
         try{
-            result = await axios.post(this.apiURL, PkmUtilityFunctions.getPkmMoveQuery('moveQuery', pkmName, searchParam));
+            result = await axios.post(this.apiURL, PkmUtilityFunctions.getPkmMoveQuery(
+                'moveQuery', 
+                pkmName, 
+                searchParam, 
+                learnType === null ? "" : `, where: {move_learn_method_id: {_eq: ${learnType}}}`));
             if(result !== null && result["data"]["errors"])
                 throw result["data"]["errors"];
         } catch(e){
