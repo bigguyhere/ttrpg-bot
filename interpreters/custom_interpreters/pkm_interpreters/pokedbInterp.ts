@@ -29,8 +29,16 @@ export class PokeDBInterpreter extends Interpreter {
         let result : AxiosResponse | null = null;
         try{
             result = await axios.post(this.apiURL, PkmUtilityFunctions.getPkmFormQuery('formQuery', pkmName, searchParam));
-            if(result !== null && result["data"]["errors"])
-                throw result["data"]["errors"];
+
+            if(result !== null && result["data"]) {
+                if(result["data"]["errors"]) {
+                    throw result["data"]["errors"];
+                } else if(result["data"]["data"] && 
+                            result["data"]["data"]["species"] && 
+                            result["data"]["data"]["species"].length == 0) {
+                    throw "No data returned.";
+                }
+            }
         } catch(e){
             console.log(e);
             return `Pokemon **\"${pkmName}\"** could not be found.`
@@ -70,8 +78,16 @@ export class PokeDBInterpreter extends Interpreter {
                 pkmName, 
                 searchParam, 
                 learnType === null ? "" : `, where: {move_learn_method_id: {_eq: ${learnType}}}`));
-            if(result !== null && result["data"]["errors"])
-                throw result["data"]["errors"];
+                
+            if(result !== null && result["data"]) {
+                if(result["data"]["errors"]) {
+                    throw result["data"]["errors"];
+                } else if(result["data"]["data"] && 
+                            result["data"]["data"]["species"] && 
+                            result["data"]["data"]["species"].length == 0) {
+                    throw "No data returned.";
+                }
+            }
         } catch(e){
             console.log(e);
             return `Pokemon **\"${pkmName}\"** could not be found.`
