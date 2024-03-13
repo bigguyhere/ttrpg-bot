@@ -18,9 +18,9 @@ export class PokeDBMove {
         this.name = PkmUtilityFunctions.formatStr(name);
         this.label = label;
         if(data){
-            const entries = data["effect_entries"];
-            if(entries && Array.isArray(entries) && entries.length > 0){
-                this.effect = entries[0]["short_effect"] as string;
+            const flavor = data["flavor"];
+            if(flavor && Array.isArray(flavor) && flavor.length == 1){
+                this.effect = flavor[0]["flavor_text"] as string;
             }
 
             if(data["type_id"]){
@@ -121,6 +121,32 @@ export class PokeDBMove {
                 return 0;
             }
         });
+    }
+
+    public async buildViewEmbed(user : DiscordJS.User, client : Client<boolean>, 
+        activeGame : ActiveGame): Promise<EmbedBuilder>{
+
+        const emoji = EmojiTypeMap[this.type];
+        let descStr = `**DM:** ${(await client.users.fetch(activeGame.DM))}\n
+                        **Type:** ${emoji} ${this.type} ${emoji}\n
+                        **Description:** ${this.effect}\n`;
+
+        if(this.statusList.length > 0) {
+
+            descStr += '\n**Statuses:**\n';
+
+            for(let status of this.statusList) {
+                descStr += `${status.emoji} ${PkmUtilityFunctions.formatUpperCase(status.name)} ${status.emoji} `;
+            }
+        }
+
+
+        return new EmbedBuilder()
+        .setColor(0x7852A9)
+        .setTitle(`**${this.name}**`)
+        .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
+        .setDescription(descStr)
+        .setTimestamp();
     }
 
     public static async buildSummaryEmbed(user : DiscordJS.User, client : Client<boolean>, activeGame : ActiveGame,

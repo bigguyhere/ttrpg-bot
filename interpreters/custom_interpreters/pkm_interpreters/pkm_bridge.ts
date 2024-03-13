@@ -36,18 +36,23 @@ export class PkmBridge extends Bridge {
     {
         if(commandName === 'poke-db'){
             const pokeDBInterpreter = new PokeDBInterpreter(this.gamedb, this.tableNameBase, options, client, interaction);
-            const pkmName = UtilityFunctions.formatString(options.getString('pkm-name', true));
+            const name = UtilityFunctions.formatString(options.getString('name', true));
             switch(subcommandName) {
-                case('view'):
+                case('pkm-view'):
                     if(activeGame == null){
                         return 'Issue retrieving active game.';
                     }
-                    return pokeDBInterpreter.view(pkmName, activeGame);
-                case('moves'):
+                    return pokeDBInterpreter.viewPkm(name, activeGame);
+                case('pkm-moves'):
                     if(activeGame == null){
                         return 'Issue retrieving active game.';
                     }
-                    return pokeDBInterpreter.viewMoves(pkmName, activeGame);
+                    return pokeDBInterpreter.viewMoves(name, activeGame);
+                case('move'):
+                    if(activeGame == null){
+                        return 'Issue retrieving active game.';
+                    }
+                    return pokeDBInterpreter.viewMove(name, activeGame);
             }
         }
 

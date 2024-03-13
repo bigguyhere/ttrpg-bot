@@ -10,7 +10,7 @@ import { PokeDBMove } from "../../../models/custommodels/pkmmodels/pokedbmoves";
 export class PokeDBInterpreter extends Interpreter {
     protected apiURL : string = 'https://beta.pokeapi.co/graphql/v1beta/'
 
-    public async view(pkmName : string, activeGame : ActiveGame) : Promise<string | null> { 
+    public async viewPkm(pkmName : string, activeGame : ActiveGame) : Promise<string | null> { 
 
         let form = UtilityFunctions.formatNullString(this.options.getString('form'));
 
@@ -127,6 +127,49 @@ export class PokeDBInterpreter extends Interpreter {
         await this.interaction.channel?.send({ embeds : [embeds[0]]});
 
         return replyStr;
+    }
+
+    public async viewMove(moveName : string, activeGame : ActiveGame) : Promise<string | null> { 
+
+        UtilityFunctions.errorCheck(!moveName, 'Name must exist');
+        UtilityFunctions.errorCheck(typeof moveName !== 'string', 'Name must be a string');
+        moveName = UtilityFunctions.formatString(moveName, /\s/g, '-').toLowerCase();
+        UtilityFunctions.errorCheck(moveName.length === 0, 'Name cannot be empty');
+        
+        let result : AxiosResponse | null = null;
+        try{
+            result = await axios.post(this.apiURL, PkmUtilityFunctions.getMoveQuery('moveViewQuery', moveName));
+                
+            if(result !== null && result["data"]) {
+                if(result["data"]["errors"]) {
+                    throw result["data"]["errors"];
+                } else if(result["data"]["data"] && 
+                            result["data"]["data"]["move"] && 
+                            result["data"]["data"]["move"].length == 0) {
+                    throw "No data returned.";
+                }
+            }
+        } catch(e){
+            console.log(e);
+            return `Move **\"${moveName}\"** could not be found.`
+        }
+
+        UtilityFunctions.errorCheck(!result
+            || !result.data 
+            || !result.data.data 
+            || !result.data.data.move
+            || !Array.isArray(result.data.data.move) 
+            || result.data.data.move.length !== 1
+            , "Response is not valid");
+
+        const response = result?.data.data.move[0];
+        const move = new PokeDBMove(moveName, response);
+
+        const embed = await move.buildViewEmbed(this.interaction.user, this.interaction.client, activeGame);
+
+        await this.interaction.channel?.send({ embeds : [embed]});
+
+        return `Move **${move.name}** has been successfully viewed.`;
     }
 
 }

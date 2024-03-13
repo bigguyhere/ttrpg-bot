@@ -259,6 +259,36 @@ module PkmUtilityFunctions{
         operationName: queryName
       });
     }
+
+    export function getMoveQuery(queryName : string, name : string) : any {
+        const query = `query ${queryName} {
+            move: pokemon_v2_move(where: {name: {_eq: "${name}"}}) {
+              type_id
+              name
+              meta: pokemon_v2_movemeta {
+                ailment: pokemon_v2_movemetaailment {
+                  name
+                }
+                flinch_chance
+              }
+              stat_changes: pokemon_v2_movemetastatchanges {
+                change
+              }
+              move_target_id
+              flavor: pokemon_v2_moveflavortexts(where: {_and: {language_id: {_eq: 9}, flavor_text: {_niregex: ".*recommended that this move is forgotten.*"}}}, order_by: {id: desc}, limit: 1) {
+                flavor_text
+                language_id
+                id
+              }
+            }
+          }
+          `;
+
+      return JSON.stringify({
+        query: query,
+        operationName: queryName
+      });
+    }
 }
 
 export { PkmUtilityFunctions }

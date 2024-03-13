@@ -5,18 +5,18 @@ module PkmSetup {
         ApplicationCommandManager<ApplicationCommand<
         {guild: GuildResolvable;}>, {guild: GuildResolvable;}, null> 
         | undefined) : void {
-
+            
             commands?.create({
                 name: 'poke-db',
                 description: 'Faciliates interacting with general pokemon information.',
                 options: [
                     {
-                        name: 'view',
+                        name: 'pkm-view',
                         description: 'View a pokemon from within the database.',
                         type: ApplicationCommandOptionType.Subcommand,
                         options: [ 
                             {
-                                name: 'pkm-name',
+                                name: 'name',
                                 description: 'Name of the Pokemon to be viewed.',
                                 required: true,
                                 type: ApplicationCommandOptionType.String
@@ -36,12 +36,12 @@ module PkmSetup {
                         ]
                     },
                     {
-                        name: 'moves',
+                        name: 'pkm-moves',
                         description: 'View a pokemon\'s moves from within the database.',
                         type: ApplicationCommandOptionType.Subcommand,
                         options: [ 
                             {
-                                name: 'pkm-name',
+                                name: 'name',
                                 description: 'Name of the Pokemon to be viewed.',
                                 required: true,
                                 type: ApplicationCommandOptionType.String
@@ -63,6 +63,25 @@ module PkmSetup {
                                     {name: 'Move Tutor', value: 3},
                                     {name: 'Egg', value: 2}
                                 ]
+                            },
+                            {
+                                name: 'game-name',
+                                description: 'Game for which the relationship should be viewed. Defaults to currently active game.',
+                                required: false,
+                                type: ApplicationCommandOptionType.String
+                            }
+                        ]
+                    },
+                    {
+                        name: 'move',
+                        description: 'View a move\'s stats from within the database.',
+                        type: ApplicationCommandOptionType.Subcommand,
+                        options: [ 
+                            {
+                                name: 'name',
+                                description: 'Name of the move to be viewed.',
+                                required: true,
+                                type: ApplicationCommandOptionType.String
                             },
                             {
                                 name: 'game-name',
