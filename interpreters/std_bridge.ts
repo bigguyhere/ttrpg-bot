@@ -1,12 +1,12 @@
 import { Client, CacheType, ChatInputCommandInteraction} from "discord.js"
 import { Connection } from "mysql"
-import { SelectBridge } from "./custom_interpreters/select_interpreter"
+import { SelectBridge } from "../modules/select_interpreter"
 import { ActiveGame } from "../models/activegame"
 import { UtilityFunctions }  from '../utility/general'
-import { GameInterpreter } from "./std_interpreters/gameInterp"
-import { CharacterInterpreter } from "./std_interpreters/charInterp"
-import { InventoryInterpreter } from "./std_interpreters/invInterp"
-import { InitInterpreter } from "./std_interpreters/initInterp"
+import { GameInterpreter } from "./gameInterp"
+import { CharacterInterpreter } from "./charInterp"
+import { InventoryInterpreter } from "./invInterp"
+import { InitInterpreter } from "./initInterp"
 
 module CommandBridge {
     /**

@@ -1,4 +1,4 @@
-import { ApplicationCommand, ApplicationCommandOption, ApplicationCommandOptionType, ApplicationCommandSubCommand, Collection, GuildResolvable } from 'discord.js';
+import { ApplicationCommand, ApplicationCommandOptionType, ApplicationCommandSubCommand, Collection, GuildResolvable } from 'discord.js';
 import DiscordJS, { EmbedBuilder } from 'discord.js';
 import mysql from 'mysql'
 
