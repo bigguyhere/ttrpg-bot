@@ -73,8 +73,52 @@ module PkmSetup {
                         ]
                     },
                     {
+                        name: 'pkm-abilities',
+                        description: 'View a pokemon\'s abilities from within the database.',
+                        type: ApplicationCommandOptionType.Subcommand,
+                        options: [ 
+                            {
+                                name: 'name',
+                                description: 'Name of the Pokemon to be viewed.',
+                                required: true,
+                                type: ApplicationCommandOptionType.String
+                            },
+                            {
+                                name: 'form',
+                                description: 'Name of region or form for pokemon forms. Don\'t put in original region for original region forms.',
+                                required: false,
+                                type: ApplicationCommandOptionType.String
+                            },
+                            {
+                                name: 'game-name',
+                                description: 'Game for which the relationship should be viewed. Defaults to currently active game.',
+                                required: false,
+                                type: ApplicationCommandOptionType.String
+                            }
+                        ]
+                    },
+                    {
                         name: 'move',
                         description: 'View a move\'s stats from within the database.',
+                        type: ApplicationCommandOptionType.Subcommand,
+                        options: [ 
+                            {
+                                name: 'name',
+                                description: 'Name of the move to be viewed.',
+                                required: true,
+                                type: ApplicationCommandOptionType.String
+                            },
+                            {
+                                name: 'game-name',
+                                description: 'Game for which the relationship should be viewed. Defaults to currently active game.',
+                                required: false,
+                                type: ApplicationCommandOptionType.String
+                            }
+                        ]
+                    },
+                    {
+                        name: 'ability',
+                        description: 'View a ability\'s stats from within the database.',
                         type: ApplicationCommandOptionType.Subcommand,
                         options: [ 
                             {

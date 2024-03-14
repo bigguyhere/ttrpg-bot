@@ -1,5 +1,4 @@
 import DiscordJS, { Client, EmbedBuilder } from 'discord.js';
-import axios from 'axios';
 import { EmojiTypeMap, MoveLearnMethod, PkmUtilityFunctions, Status, StatusEffect, Type } from '../pkm_utility'
 import { PokeDBPKM } from './pokedbpkm';
 import { ActiveGame } from '../../../models/activegame';
@@ -95,14 +94,6 @@ export class PokeDBMove {
         }
 
         return movesList;
-    }
-
-    public static async fetchMoves(moveList : [name : string, label: string | null, url: string][]) : Promise<PokeDBMove[]>{
-        let moves : PokeDBMove[] = []; 
-        for(let move of moveList){
-            moves.push(new PokeDBMove(move[0], await axios.get(move[2]), move[1]));
-        }
-        return moves;
     }
 
     private static pruneMoves(moves : Array<PokeDBMove>){

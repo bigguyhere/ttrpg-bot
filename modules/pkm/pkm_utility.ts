@@ -198,18 +198,18 @@ module PkmUtilityFunctions{
                 name
                 is_default
                 types: pokemon_v2_pokemontypes {
-                slot
-                pokemon_v2_type {
-                    name
-                }
+                  slot
+                  type: pokemon_v2_type {
+                      name
+                  }
                 }
                 sprites: pokemon_v2_pokemonsprites(limit: 1) {
-                sprites(path: "front_default")
+                  sprites(path: "front_default")
                 }
                 abilities: pokemon_v2_pokemonabilities {
-                pokemon_v2_ability {
-                    name
-                }
+                  ability: pokemon_v2_ability {
+                      name
+                  }
                 }
             }
         }
@@ -260,6 +260,49 @@ module PkmUtilityFunctions{
       });
     }
 
+    export function getPkmAbilityQuery(queryName : string, name : string, param : string) : any {
+      const query = `query ${queryName} {
+        species: pokemon_v2_pokemonspecies(where: {name: {_eq: "${name}"}}) {
+          name
+          id
+          pokemon: pokemon_v2_pokemons(limit: 1, ${param}) {
+            id
+            name
+            is_default
+            sprites: pokemon_v2_pokemonsprites(limit: 1) {
+              sprites(path: "front_default")
+            }
+            abilities: pokemon_v2_pokemonabilities {
+              ability_id
+              id
+              is_hidden
+              slot
+              ability: pokemon_v2_ability {
+                name
+                id
+                effect: pokemon_v2_abilityeffecttexts(where: {language_id: {_eq: 9}}, limit: 1, order_by: {id: desc}) {
+                  id
+                  language_id
+                  short_effect
+                }
+                flavor: pokemon_v2_abilityflavortexts(where: {language_id: {_eq: 9}}, limit: 1, order_by: {id: desc}) {
+                  language_id
+                  id
+                  flavor_text
+                }
+              }
+            }
+          }
+        }
+      }
+      `;
+
+      return JSON.stringify({
+        query: query,
+        operationName: queryName
+      });
+    }
+
     export function getMoveQuery(queryName : string, name : string) : any {
         const query = `query ${queryName} {
             move: pokemon_v2_move(where: {name: {_eq: "${name}"}}) {
@@ -283,6 +326,30 @@ module PkmUtilityFunctions{
             }
           }
           `;
+
+      return JSON.stringify({
+        query: query,
+        operationName: queryName
+      });
+    }
+
+    export function getAbilityQuery(queryName : string, name : string) : any {
+      const query = `query ${queryName} {
+          ability: pokemon_v2_ability(where: {name: {_eq: "${name}"}}) {
+            name
+            id
+            effect: pokemon_v2_abilityeffecttexts(limit: 1, where: {language_id: {_eq: 9}}, order_by: {id: desc}) {
+              language_id
+              id
+              short_effect
+            }
+            flavor: pokemon_v2_abilityflavortexts(limit: 1, where: {language_id: {_eq: 9}}, order_by: {id: desc}) {
+              flavor_text
+              id
+              language_id
+            }
+          }
+        }`;
 
       return JSON.stringify({
         query: query,

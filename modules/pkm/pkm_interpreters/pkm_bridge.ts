@@ -18,10 +18,6 @@ export class PkmBridge extends Bridge {
             ]
     }
 
-    /*async getCharacter(char_name: string): Promise<DRCharacter | null>{
-        return await DRCharacter.getCharacter(this.gamedb, this.tableNameBase, char_name)
-    }*/
-
     initializeTables() {
         return true;
     }
@@ -48,11 +44,21 @@ export class PkmBridge extends Bridge {
                         return 'Issue retrieving active game.';
                     }
                     return pokeDBInterpreter.viewMoves(name, activeGame);
+                case('pkm-abilities'):
+                    if(activeGame == null){
+                        return 'Issue retrieving active game.';
+                    }
+                    return pokeDBInterpreter.viewAbilities(name, activeGame);
                 case('move'):
                     if(activeGame == null){
                         return 'Issue retrieving active game.';
                     }
                     return pokeDBInterpreter.viewMove(name, activeGame);
+                case('ability'):
+                    if(activeGame == null){
+                        return 'Issue retrieving active game.';
+                    }
+                    return pokeDBInterpreter.viewAbility(name, activeGame);
             }
         }
 
