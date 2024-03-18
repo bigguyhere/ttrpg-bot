@@ -55,15 +55,12 @@ export class Character {
             }
 
             queryStr += 'PRIMARY KEY (CHR_ID));';
-
-            console.log(queryStr);
         
         db.query(queryStr, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err
             }
-            console.log(res);
         })
     }
 

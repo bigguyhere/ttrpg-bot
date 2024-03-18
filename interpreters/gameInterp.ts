@@ -23,7 +23,7 @@ export class GameInterpreter extends Interpreter {
         this.gameName = UtilityFunctions.formatNullString(options.getString('game-name'), / /g, '_')
     }
 
-    public createGame<T extends Character>() : string {
+    public createGame() : string {
         const gameType = UtilityFunctions.formatNullString(this.options.getString('game-type'));
 
         let DM = this.options.getUser('dm-name')?.id;
