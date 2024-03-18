@@ -39,7 +39,7 @@ export class Character {
         }
     }
 
-    static createTable(db : mysql.Connection, tableNameBase : string, additionalStats : Array<[string, string]>){
+    static createTable(db : mysql.Connection, tableNameBase : string, additionalStats : Array<string>){
         let queryStr = `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Characters ( 
             CHR_ID INT NOT NULL AUTO_INCREMENT,
             Name varchar(255) NOT NULL UNIQUE,
@@ -51,7 +51,7 @@ export class Character {
             Status varchar(255),`
 
             additionalStats.forEach(stat =>{
-                queryStr += `${stat[0]} ${stat[1]},\n`
+                queryStr += `${stat},\n`
             })
 
             queryStr += '\nPRIMARY KEY (CHR_ID));'
@@ -64,18 +64,11 @@ export class Character {
         })
     }
 
-    addToTable(db : mysql.Connection, tableBaseName : string): Promise<boolean>{
+    addToTable(db : mysql.Connection, tableBaseName : string, addQuery? : string, addValue? : string): Promise<boolean>{
         return new Promise((resolve) =>{
-            let queryStr = `INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, DmgTaken, Status`
-            let valuesStr = `VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health}, ${this.dmgTaken}, "${this.status}"`
-
-            this.otherStats.forEach(stat =>{
-                queryStr += `, ${stat[0]}`
-                valuesStr += `, "${stat[1]}"`
-            })
-
-            queryStr += ')'
-            valuesStr += ');'
+            let queryStr = `INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, DmgTaken, Status${addQuery === undefined ? "" : `, ${addQuery}`})`
+            let valuesStr = `VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health}, ${this.dmgTaken}, 
+                            "${this.status}"${addValue === undefined ? "" : `, ${addValue}`})`
             
             db.query(`${queryStr}\n${valuesStr}`, (err, res) =>  {
                 if(err){
@@ -85,6 +78,8 @@ export class Character {
                     console.log(err)
                     throw err
                 }
+
+                this.id = res.insertId;
 
                 return resolve(true)
             })
