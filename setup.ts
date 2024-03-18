@@ -14,6 +14,7 @@ module SetupFunctions{
         }
 
         //commands?.set([]);
+
         defs.push({name: 'Other', value: ''});
 
         // Game Commands

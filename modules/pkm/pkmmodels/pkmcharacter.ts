@@ -39,8 +39,8 @@ export class PokeCharacter extends Character {
             "Fitness TINYINT NOT NULL",
             "Research TINYINT NOT NULL",
             "Tactics TINYINT NOT NULL",
-            "Advancement UNSIGNED TINYINT NOT NULL",
-            "Exp UNSIGNED SMALLINT NOT NULL",
+            "Advancement TINYINT UNSIGNED NOT NULL",
+            "Exp SMALLINT UNSIGNED NOT NULL",
             "Money SMALLINT NOT NULL",
             "FirstImp varchar(255)",
             "Calling varchar(255)"

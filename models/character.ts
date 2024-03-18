@@ -39,7 +39,7 @@ export class Character {
         }
     }
 
-    static createTable(db : mysql.Connection, tableNameBase : string, additionalStats : Array<string>){
+    static createTable(db : mysql.Connection, tableNameBase : string, additionalStats : string[]){
         let queryStr = `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Characters ( 
             CHR_ID INT NOT NULL AUTO_INCREMENT,
             Name varchar(255) NOT NULL UNIQUE,
@@ -48,19 +48,22 @@ export class Character {
             Owner varchar(255),
             Health SMALLINT,
             DmgTaken SMALLINT,
-            Status varchar(255),`
+            Status varchar(255),\n`
 
-            additionalStats.forEach(stat =>{
-                queryStr += `${stat},\n`
-            })
+            for(let stat of additionalStats){
+                queryStr += `\t${stat},\n`;
+            }
 
-            queryStr += '\nPRIMARY KEY (CHR_ID));'
+            queryStr += 'PRIMARY KEY (CHR_ID));';
+
+            console.log(queryStr);
         
         db.query(queryStr, (err, res) =>  {
             if(err){
                 console.log(err)
                 throw err
             }
+            console.log(res);
         })
     }
 

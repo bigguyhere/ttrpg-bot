@@ -23,29 +23,29 @@ export class GameInterpreter extends Interpreter {
         this.gameName = UtilityFunctions.formatNullString(options.getString('game-name'), / /g, '_')
     }
 
-    public createGame() : string {
-        const gameType = UtilityFunctions.formatNullString(this.options.getString('game-type'))
+    public createGame<T extends Character>() : string {
+        const gameType = UtilityFunctions.formatNullString(this.options.getString('game-type'));
 
-        let DM = this.options.getUser('dm-name')?.id
+        let DM = this.options.getUser('dm-name')?.id;
 
-        DM ??= this.userID
+        DM ??= this.userID;
 
-        const newGame = new ActiveGame(this.guildID, this.gameName, gameType, DM)
+        const newGame = new ActiveGame(this.guildID, this.gameName, gameType, DM);
 
-        newGame.addToTable(this.gamedb)
+        newGame.addToTable(this.gamedb);
         
-        let additionalStats = UtilityFunctions.parseColsStr(
-            UtilityFunctions.formatNullString(this.options.getString('additional-stats')))
+        let additionalStats = UtilityFunctions.parseColStr(
+            UtilityFunctions.formatNullString(this.options.getString('additional-stats')));
         
         if(additionalStats == undefined){
-            return 'Issue parsing additional columns.'
+            return 'Issue parsing additional columns.';
         }
 
-        Character.createTable(this.gamedb, this.tableNameBase, additionalStats)
-        Inventory.createTable(this.gamedb, this.tableNameBase)
-        SelectBridge.select(gameType, this.gamedb, this.tableNameBase).initializeTables()
+        SelectBridge.select(gameType, this.gamedb, this.tableNameBase).initializeTables();
+        Character.createTable(this.gamedb, this.tableNameBase, additionalStats);
+        Inventory.createTable(this.gamedb, this.tableNameBase);
 
-        return `The game **\"${this.gameName}\"** has been successfully created.`
+        return `The game **\"${this.gameName}\"** has been successfully created.`;
     }
 
     public changeGame() : string {

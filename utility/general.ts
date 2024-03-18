@@ -143,37 +143,36 @@ module UtilityFunctions{
             && channel.type === ChannelType.GuildText) as TextBasedChannel
         return await channel.messages.fetch(msgID).catch( (e) => {return undefined})
     }
-    
 
     export function parseColumns(columns : string | null): Array<[string,string]> | undefined{
         if(columns == null || columns === 'null'){
-            return []
+            return [];
         }
         
-        let retArr = new Array<[string, string]>
+        let retArr = new Array<[string, string]>;
 
-        let colsArr = columns.split(',')
+        let colsArr = columns.split(',');
 
         colsArr.forEach(col =>{
-            col = col.trim()
+            col = col.trim();
 
-            let statData = col.split('|')
+            let statData = col.split('|');
 
             if(statData.length == 1){
-                statData.push('varchar(255)')
+                statData.push('varchar(255)');
             } 
 
             if(statData.length != 2){
-                return undefined
+                return undefined;
             }
 
-            retArr.push([statData[0].trim().replace(/ /g, '_'), statData[1]])
+            retArr.push([statData[0].trim().replace(/ /g, '_'), statData[1]]);
         })
 
-        return retArr
+        return retArr;
     }
 
-    export function parseColsStr(columns : string | null): Array<string> | undefined{
+    export function parseColStr(columns : string | null): Array<string> | undefined{
         if(columns == null || columns === 'null'){
             return [];
         }
