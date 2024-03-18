@@ -14,9 +14,9 @@ export class PokeCharacter extends Character {
         public fitness : number = -1,
         public research : number = -1,
         public tactics : number = -1,
-        public advancement : number = 0,
-        public exp : number  = 0,
-        public money : number = 0,
+        public advancement : number | null = null,
+        public exp : number | null = null,
+        public money : number | null = null,
         public firstImpression? : string | null,
         public calling? : string | null) {
             super(name, emote, prounouns, owner, fitness / 2, 0);
@@ -26,9 +26,9 @@ export class PokeCharacter extends Character {
             this.fitness = fitness;
             this.research = research;
             this.tactics = tactics;
-            this.advancement = advancement;
-            this.exp = exp;
-            this.money = money;
+            this.advancement = advancement === null ? 0 : advancement;
+            this.exp = exp === null ? 0 : exp;
+            this.money = money === null ? 0 : money;
             this.firstImpression = firstImpression;
             this.calling = calling;
     }

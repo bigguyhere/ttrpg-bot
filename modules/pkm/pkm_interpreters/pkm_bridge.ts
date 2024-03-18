@@ -4,6 +4,8 @@ import { CacheType, ChatInputCommandInteraction, Client, CommandInteractionOptio
 import { ActiveGame } from "../../../models/activegame";
 import { PokeDBInterpreter } from "./pokedbInterp";
 import { UtilityFunctions } from "../../../utility/general";
+import { PokeCharacter } from "../pkmmodels/pkmcharacter";
+import { PokeCharacterInterpreter } from "./pkmCharInterp";
 
 export class PkmBridge extends Bridge {
     protected disabledCmds: DisabledCommand[];
@@ -13,12 +15,19 @@ export class PkmBridge extends Bridge {
             tableNameBase: string){
            super(gamedb, tableNameBase)
            this.disabledCmds = [
-            ]
-            this.overridenCmds = [
-            ]
+            new DisabledCommand('character', 
+                                new Map<string, string>([['add','pkm-character add-character']]))
+        ]
+        this.overridenCmds = [
+            new OverridedCommand('character', 'pkm-character')
+        ]
+    }
+    async getCharacter(char_name: string): Promise<PokeCharacter | null>{
+        return await PokeCharacter.getCharacter(this.gamedb, this.tableNameBase, char_name)
     }
 
     initializeTables() {
+        PokeCharacter.createTable(this.gamedb, this.tableNameBase);
         return true;
     }
 
@@ -59,6 +68,19 @@ export class PkmBridge extends Bridge {
                         return 'Issue retrieving active game.';
                     }
                     return pokeDBInterpreter.viewAbility(name, activeGame);
+            }
+        } else if(commandName === 'pkm-character') {
+            const pkmCharInterpreter = new PokeCharacterInterpreter(this.gamedb, this.tableNameBase, options, client, interaction)
+            const charName = UtilityFunctions.formatString(options.getString('char-name', true))
+            switch(subcommandName) {
+                case ('add'):
+                    return await pkmCharInterpreter.add(charName);
+                case ('remove'):
+                    return await pkmCharInterpreter.remove(charName);
+                case ('change-stat'):
+                    return await pkmCharInterpreter.changeStat(charName);
+                case ('view'):
+                    return await pkmCharInterpreter.view(charName, this);
             }
         }
 

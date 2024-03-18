@@ -34,7 +34,7 @@ export class GameInterpreter extends Interpreter {
 
         newGame.addToTable(this.gamedb)
         
-        let additionalStats = UtilityFunctions.parseColumns(
+        let additionalStats = UtilityFunctions.parseColsStr(
             UtilityFunctions.formatNullString(this.options.getString('additional-stats')))
         
         if(additionalStats == undefined){

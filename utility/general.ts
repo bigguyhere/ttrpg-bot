@@ -173,6 +173,32 @@ module UtilityFunctions{
         return retArr
     }
 
+    export function parseColsStr(columns : string | null): Array<string> | undefined{
+        if(columns == null || columns === 'null'){
+            return [];
+        }
+        
+        let retArr = new Array<string>;
+
+        let colsArr = columns.split(',');
+
+        colsArr.forEach(col =>{
+            col = col.trim();
+
+            if(col.length === 0){
+                return undefined;
+            }
+
+            if(!col.includes('*.\s*.')){
+                col += ' varchar(255)';
+            }
+
+            retArr.push(col);
+        })
+
+        return retArr;
+    }
+
     export function parseMultStr(multStr : string | null): Array<string> | undefined{
         if(multStr == null || multStr === 'null'){
             return []
