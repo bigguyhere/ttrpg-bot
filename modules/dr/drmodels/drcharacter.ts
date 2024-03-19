@@ -37,22 +37,20 @@ export class DRCharacter extends Character {
     }
 
     static createTable(db : mysql.Connection, tableNameBase : string) {
-        db.query(`ALTER TABLE ${tableNameBase}_Characters 
-            ADD Talent varchar(255),
-            ADD Hope TINYINT NOT NULL,
-            ADD Despair TINYINT NOT NULL,
-            ADD Brains TINYINT NOT NULL,
-            ADD Brawn TINYINT NOT NULL,
-            ADD Nimble TINYINT NOT NULL,
-            ADD Social TINYINT NOT NULL,
-            ADD Intuition TINYINT NOT NULL,
-            ADD SPTotal TINYINT NOT NULL,
-            ADD SPUsed TINYINT NOT NULL`, (err, res) => {
-                if(err){
-                    console.log(err)
-                    throw err
-                }
-            })
+        const drCols : string[] = [
+            "Talent varchar(255)",
+            "Hope TINYINT NOT NULL",
+            "Despair TINYINT NOT NULL",
+            "Brains TINYINT NOT NULL",
+            "Brawn TINYINT NOT NULL",
+            "Nimble TINYINT NOT NULL",
+            "Social TINYINT NOT NULL",
+            "Intuition TINYINT NOT NULL",
+            "SPTotal TINYINT NOT NULL",
+            "SPUsed TINYINT NOT NULL"
+        ];
+
+        super.createTable(db, tableNameBase, drCols);
     }
 
     /*
@@ -60,7 +58,6 @@ export class DRCharacter extends Character {
       dr columns as additional cols (Will allow for less commands)
     */
     addToTable(db : mysql.Connection, tableBaseName : string): Promise<boolean>{
-        return new Promise((resolve) =>{
             let talent
             if(this.talent != null){
                 talent = `"${this.talent}"` 
@@ -68,24 +65,10 @@ export class DRCharacter extends Character {
                 talent = "null"
             }
 
-            db.query(`INSERT INTO ${tableBaseName}_Characters (Name, Emote, Pronouns, Owner, Health, 
-                DmgTaken, Status, Talent, Hope, Despair, Brains, Brawn, Nimble, Social, Intuition, SPTotal, SPUsed)
-                VALUES ("${this.name}", "${this.emote}", "${this.prounouns}", "${this.owner}", ${this.health},
-                    ${this.dmgTaken}, "${this.status}", ${talent}, ${this.hope}, ${this.despair}, ${this.brains}, ${this.brawn}, 
-                    ${this.nimble}, ${this.social}, ${this.intuition}, ${this.spTotal}, ${this.spUsed});`, (err, res) =>  {
-                if(err){
-                    if(err.errno == 1062){ // Duplicate Character
-                        return resolve(false)
-                    }
-                    console.log(err)
-                    throw err
-                }
-                
-                this.id = res.insertId
+            const queryStr = "Talent, Hope, Despair, Brains, Brawn, Nimble, Social, Intuition, SPTotal, SPUsed";
+            const valueStr = `${talent}, ${this.hope}, ${this.despair}, ${this.brains}, ${this.brawn}, ${this.nimble}, ${this.social}, ${this.intuition}, ${this.spTotal}, ${this.spUsed}`;
 
-                return resolve(true)
-            })
-        })
+            return super.addToTable(db, tableBaseName, queryStr, valueStr);
     }
 
     static getCharacter(db : mysql.Connection, tableBaseName : string, char_name: string): Promise<DRCharacter | null>{

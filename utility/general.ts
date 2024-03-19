@@ -143,34 +143,59 @@ module UtilityFunctions{
             && channel.type === ChannelType.GuildText) as TextBasedChannel
         return await channel.messages.fetch(msgID).catch( (e) => {return undefined})
     }
-    
 
     export function parseColumns(columns : string | null): Array<[string,string]> | undefined{
         if(columns == null || columns === 'null'){
-            return []
+            return [];
         }
         
-        let retArr = new Array<[string, string]>
+        let retArr = new Array<[string, string]>;
 
-        let colsArr = columns.split(',')
+        let colsArr = columns.split(',');
 
         colsArr.forEach(col =>{
-            col = col.trim()
+            col = col.trim();
 
-            let statData = col.split('|')
+            let statData = col.split('|');
 
             if(statData.length == 1){
-                statData.push('varchar(255)')
+                statData.push('varchar(255)');
             } 
 
             if(statData.length != 2){
-                return undefined
+                return undefined;
             }
 
-            retArr.push([statData[0].trim().replace(/ /g, '_'), statData[1]])
+            retArr.push([statData[0].trim().replace(/ /g, '_'), statData[1]]);
         })
 
-        return retArr
+        return retArr;
+    }
+
+    export function parseColStr(columns : string | null): Array<string> | undefined{
+        if(columns == null || columns === 'null'){
+            return [];
+        }
+        
+        let retArr = new Array<string>;
+
+        let colsArr = columns.split(',');
+
+        colsArr.forEach(col =>{
+            col = col.trim();
+
+            if(col.length === 0){
+                return undefined;
+            }
+
+            if(!col.includes('*.\s*.')){
+                col += ' varchar(255)';
+            }
+
+            retArr.push(col);
+        })
+
+        return retArr;
     }
 
     export function parseMultStr(multStr : string | null): Array<string> | undefined{
