@@ -191,7 +191,7 @@ export class DRCharacter extends Character {
 
     async buildViewEmbed(user : DiscordJS.User, client: Client<boolean>): Promise<EmbedBuilder>{
 
-        let thumbnail = client.emojis.resolve(String(this.emote))?.url
+        let thumbnail = client.emojis.resolve(String(this.emote))?.imageURL()
         const owner = await client.users.fetch(this.owner)
         let color = owner.hexAccentColor as DiscordJS.ColorResolvable | undefined
 
@@ -232,7 +232,7 @@ export class DRCharacter extends Character {
         }
         let embeds : EmbedBuilder[] = []
 
-        let thumbnail = client.emojis.resolve(String(this.emote))?.url
+        let thumbnail = client.emojis.resolve(String(this.emote))?.imageURL()
         const owner = await client.users.fetch(this.owner)
         let color = owner.hexAccentColor as DiscordJS.ColorResolvable | undefined
 
@@ -287,7 +287,7 @@ export class DRCharacter extends Character {
         }
         let embeds : EmbedBuilder[] = []
 
-        let thumbnail = client.emojis.resolve(String(this.emote))?.url
+        let thumbnail = client.emojis.resolve(String(this.emote))?.imageURL()
         const owner = await client.users.fetch(this.owner)
         let color = owner.hexAccentColor as DiscordJS.ColorResolvable | undefined
 
