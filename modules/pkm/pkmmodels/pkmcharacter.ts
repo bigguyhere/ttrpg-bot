@@ -134,7 +134,7 @@ export class PokeCharacter extends Character {
 
     async buildViewEmbed(user : DiscordJS.User, client: Client<boolean>): Promise<EmbedBuilder>{
 
-        let thumbnail = client.emojis.resolve(String(this.emote))?.url
+        let thumbnail = client.emojis.resolve(String(this.emote))?.imageURL()
         const owner = await client.users.fetch(this.owner)
         let color = owner.hexAccentColor as DiscordJS.ColorResolvable | undefined
 
@@ -150,7 +150,8 @@ export class PokeCharacter extends Character {
         .setColor(color)
         .setTitle(`**${this.name}**`)
         .setAuthor({ name: `${user.username}`, iconURL: String(user.displayAvatarURL()) })
-        .setDescription(`${this.calling == null ? '' : this.calling + '\n'}${this.prounouns}${this.firstImpression == null ? '' : `\n${this.firstImpression}`}`)
+        .setDescription(`${this.calling == null ? '' : `__**Calling:**__ ${this.calling}\n`}${this.firstImpression == null 
+            ? '' : `__**First Impression:**__ ${this.firstImpression}\n`}${this.prounouns}`)
         .setThumbnail(thumbnail)
         .addFields(
             { name: '**Owner:**', value: String(owner) },
@@ -160,7 +161,7 @@ export class PokeCharacter extends Character {
             { name: 'Fitness', value: String(this.fitness), inline: true },
             { name: 'Research', value: String(this.research), inline: true },
             { name: 'Tactics', value: String(this.tactics), inline: true },
-            { name: 'Advancement', value: String(this.advancement), inline: true },
+            { name: 'Current Adv.', value: String(this.advancement), inline: true },
             { name: 'Current EXP', value: String(this.exp), inline: true },
             { name: 'Money', value: String(this.money), inline: true }
         )

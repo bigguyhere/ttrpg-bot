@@ -228,12 +228,6 @@ module PkmSetup {
                             type: ApplicationCommandOptionType.User
                         },
                         {
-                            name: 'ult-talent',
-                            description: 'Character\'s ultimate talent.',
-                            required: false,
-                            type: ApplicationCommandOptionType.String
-                        },
-                        {
                             name: 'game-name',
                             description: 'Game for which character should be added to. Defaults to currently active game.',
                             required: false,
