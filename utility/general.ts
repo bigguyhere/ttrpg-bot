@@ -39,7 +39,7 @@ module UtilityFunctions{
     function evaluate(value : string) : [string, number] {
         if (value.includes('d')){ // Die Format
             const splitArr = value.split('d');
-            const numRolls = parseInt(splitArr[0]); // Number of dice to roll
+            const numRolls = splitArr[0].length === 0 ? 1 : parseInt(splitArr[0]); // Number of dice to roll
             const diceValue = parseInt(splitArr[1]); // Number of faces on die
 
             let retStr = `${value} (`;
@@ -76,6 +76,8 @@ module UtilityFunctions{
 
         // Matches operators, dice format (XdY), or numerical constants
         const sections = query.match(/(\+|-|-|\^|\(|\)|\/|\*)|([0-9]*d[0-9]+)|([0-9]+)/g) as Array<string>;
+
+        errorCheck(sections == null || sections.length == 0, 'Roll query is invalid');
 
         let retArr : (string | number)[] = [];
         let retStr = '';
@@ -166,6 +168,8 @@ module UtilityFunctions{
                 }
             }
         });
+
+        errorCheck(operandStack.length != 1, 'Roll query is invalid');
 
         return [postfix[1].trim(), operandStack.pop() as number]
     }
