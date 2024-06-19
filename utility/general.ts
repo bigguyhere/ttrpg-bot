@@ -22,6 +22,8 @@ module UtilityFunctions{
                 return 1;
             case '*':
             case '/':
+            case '//':
+            case '%':
                 return 2;
             case '+':
             case '-':
@@ -167,7 +169,7 @@ module UtilityFunctions{
         query = query.replace(/ +/g, ''); // Removes whitespace
 
         // Matches operators, dice format (XdY), or numerical constants
-        const sections = query.match(/\+|-|-|\^|\(|\)|\/|\*|1?d[0-9]+(adv|dis)|[0-9]*d[0-9]+[[t|b|e]?[0-9]+]?|[0-9]+/g) as Array<string>;
+        const sections = query.match(/\+|-|-|\^|\(|\)|\/\/|\%|\/|\*|1?d[0-9]+(adv|dis)|[0-9]*d[0-9]+[[t|b|e]?[0-9]+]?|[0-9]+/g) as Array<string>;
 
         errorCheck(sections == null || sections.length == 0, 'Roll query is invalid');
 
@@ -231,6 +233,7 @@ module UtilityFunctions{
         let operandStack : number[] = [];
 
         postfix[0].forEach(elem => {
+
             if(typeof elem == 'number'){ // Pushes numerical operands onto the stack
                 operandStack.push(elem);
             } else { // When an operator string appears, pops two operands and performs the operator's function on them
@@ -256,6 +259,12 @@ module UtilityFunctions{
                         break;
                     case '^':
                         operandStack.push(Math.pow(operand2, operand1));
+                        break;
+                    case '//':
+                        operandStack.push(Math.floor(operand2 / operand1));
+                        break;
+                    case '%':
+                        operandStack.push(operand2 % operand1);
                         break;
                 }
             }
