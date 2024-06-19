@@ -98,15 +98,18 @@ module CommandBridge {
             }
         }
         else if(commandName === 'roll') {
-            const query = options.getString('query', true)
-            let identifier = options.getString('identifier')
+            const query = options.getString('query', true);
+            let identifier = options.getString('identifier');
 
-            identifier ??= 'Result'
-            identifier += ': '
+            identifier ??= 'Result';
+            identifier += ': ';
     
-            const result = UtilityFunctions.parseRoll(query)
-            
-            return `${interaction.user} :game_die:\n**${identifier}** ${result?.[0]}\n**Total:** ${result?.[1]}`
+            try {
+                const result = UtilityFunctions.parseRoll(query);
+                return `${interaction.user} :game_die:\n**${identifier}** ${result?.[0]}\n**Total:** ${result?.[1]}`;
+            } catch(e) {
+                return String(e);
+            }
         }
         else if(commandName === 'inventory') {
             const invInterpreter = new InventoryInterpreter(gamedb, tableNameBase, options, client, interaction)

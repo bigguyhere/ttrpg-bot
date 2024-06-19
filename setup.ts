@@ -278,7 +278,7 @@ module SetupFunctions{
             options: [
                 {
                     name: 'query',
-                    description: 'Query for dice roll. Should be in the form of **[Number]**d**[Sides of Dice]** +/- **[Modifier]**',
+                    description: 'Dice roll query. Should contain die format (**[NumRolls]**d**[Die Sides]**), operators or constants.',
                     required: true,
                     type: ApplicationCommandOptionType.String
                 },
