@@ -30,6 +30,41 @@ module UtilityFunctions{
                 return -1;
         }
     }    
+
+    /**
+     * Returns a boolean array indicating an arbitrary amount of minima/maxima locations in a given rolls array 
+     * @param rolls Array of rolls to find the extrema for
+     * @param amnt  Amount of extrema to find in the rolls array
+     * @param findMax If true, finds the maxima of the array. Otherwise finds minima
+     * @returns A boolean array of the same length as rolls, indicating the highest/lowest indexes of the rolls away with true values
+     */
+    function findMaxMin(rolls : Array<number>, amnt : number, findMax : boolean) : Array<boolean>{
+
+        if(amnt == 0) { 
+            return [];
+        }
+
+        let extrema : Array<boolean> = [];
+        const compFunc : Function = findMax ? (a : number, b : number) => a > b : (a : number, b : number) => a < b; // Finds max or min depending on input
+
+        for(let ind = 0; ind < rolls.length; ++ind){ // Instantiate all values in extrema array
+            extrema[ind] = false;
+        }
+
+        for (let ind = 0; ind < amnt; ++ind) {
+            let extInd : number = 0;
+
+            for(let rollInd = 0; rollInd < rolls.length; ++rollInd) {
+                if((compFunc(rolls[rollInd], rolls[extInd]) && !extrema[rollInd]) || extrema[extInd]){ // If is an extrema and not a duplicate extrema
+                    extInd = rollInd;
+                }
+            }
+            extrema[extInd] = true; // Prevents processing duplicate extrema
+        }
+
+        return extrema;
+
+    }
     
     /**
      * Evaluates a numerical or dice format string into an integer. 
@@ -38,22 +73,79 @@ module UtilityFunctions{
      */
     function evaluate(value : string) : [string, number] {
         if (value.includes('d')){ // Die Format
-            const splitArr = value.split('d');
-            const numRolls = splitArr[0].length === 0 ? 1 : parseInt(splitArr[0]); // Number of dice to roll
+            const splitArr = value.split(/d|t|b|e/g);
+            let numRolls : number; // Number of dice to roll
             const diceValue = parseInt(splitArr[1]); // Number of faces on die
+            let op : string | undefined = undefined;
+            let opValue : number = -1;
 
+            if(value.endsWith('adv')){ // Equivalent to 2dYt1
+                numRolls = 2;
+                op = 't';
+                opValue = 1;
+                value = `1d${diceValue}t2`;
+            } else if (value.endsWith('dis')){ // Equivalent 2dYb1
+                numRolls = 2;
+                op = 'b';
+                opValue = 1;
+                value = `1d${diceValue}b2`;
+            } else if (value.includes('b')){ // Takes the bottom Z dice (XdYbZ)
+                numRolls = splitArr[0].length === 0 ? 1 : parseInt(splitArr[0]);
+                op = 'b';
+                opValue = parseInt(splitArr[2]);
+            } else if (value.includes('t')){ // Takes the top Z dice (XdYtZ)
+                numRolls = splitArr[0].length === 0 ? 1 : parseInt(splitArr[0]);
+                op = 't';
+                opValue = parseInt(splitArr[2]);
+            } else if (value.includes('e')){ // Explodes dice that meet the value Z by rolling another die with value Y (XdYeZ)
+                numRolls = splitArr[0].length === 0 ? 1 : parseInt(splitArr[0]);
+                op = 'e';
+                opValue = parseInt(splitArr[2]);
+            } else {
+                numRolls = numRolls = splitArr[0].length === 0 ? 1 : parseInt(splitArr[0]);
+            }
+
+            errorCheck(opValue > diceValue, `Value for **${op}** (*${opValue}*) cannot exceed the diceValue value (*${diceValue}*)`);
+
+            let rolls : number[] = [];
             let retStr = `${value} (`;
             let total = 0;
             for(let roll = 0; roll < numRolls; ++roll){
-                const rollValue = getRandomNum(diceValue); // Rolls die
+                const rollValue = getRandomNum(diceValue); // Rolls die 
 
-                if(rollValue == 1 || rollValue == diceValue){ // If die is min or max value, bold the value
-                    retStr += `**${rollValue}**, `;
-                } else {
-                    retStr += `${rollValue}, `;
+                rolls.push(rollValue);
+
+                if(op == 'e' && rollValue == opValue) { // Explodes dice if value to explode is met
+                    numRolls++;
                 }
 
-                total += rollValue;
+            }
+
+            let extrema : Array<boolean> = [];
+            if(op == 't' || op == 'b') { // Finds extrema for keeping top/bottom amount of dice
+                extrema = findMaxMin(rolls, opValue, op === 't');
+            }
+            
+            // Formats each roll in output string
+            for(let rollInd = 0; rollInd < rolls.length; ++rollInd) {
+                const roll = rolls[rollInd];
+                let strBuilder = String(roll);
+
+                if(op == 'e' && roll == opValue) { // Adds ! for dice that explode
+                    strBuilder += '!';
+                }
+
+                if((op == 't' || op == 'b') && !extrema[rollInd]){ // Adds strikethrough to rolls not being considered
+                    strBuilder = `~~${strBuilder}~~`
+                }  else { // Rolls that are being considered are added to total
+                    total += roll;
+                }
+
+                if(roll == 1 || roll == diceValue){ // If die is min or max value, bold the value
+                    strBuilder = `**${strBuilder}**`;
+                }
+
+                retStr += `${strBuilder}, `
             }
             
             if(retStr[retStr.length - 1] == ' ') { // Removes trailing comma if exists
@@ -71,11 +163,11 @@ module UtilityFunctions{
      * @param query Infix mathematical statement that includes either operators (+, -, *, /, ^), die format (i.e. 1d20), or numerical constants (i.e. 20)
      * @returns Postfix representation of the infix statement inputted
      */
-    function infixToPostfix(query: string): [(string | number)[], string] {
+    export function infixToPostfix(query: string): [(string | number)[], string] {
         query = query.replace(/ +/g, ''); // Removes whitespace
 
         // Matches operators, dice format (XdY), or numerical constants
-        const sections = query.match(/(\+|-|-|\^|\(|\)|\/|\*)|([0-9]*d[0-9]+)|([0-9]+)/g) as Array<string>;
+        const sections = query.match(/\+|-|-|\^|\(|\)|\/|\*|1?d[0-9]+(adv|dis)|[0-9]*d[0-9]+[[t|b|e]?[0-9]+]?|[0-9]+/g) as Array<string>;
 
         errorCheck(sections == null || sections.length == 0, 'Roll query is invalid');
 

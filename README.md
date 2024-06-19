@@ -278,7 +278,13 @@ Mainly used to make error checking more visually distinct and take up less lines
 
 #### parseRoll
 
-Parses a roll given to the bot as input through a rolling command. Is able to parse any amount of dice in various valid formats. Soon to be replaced with a version that works using postfix to allow for more complex queries. Does not support multiplication or division.
+Parses a roll given to the bot as input through a rolling command. Is able to parse any mathematical expression provided which includes only die format, numerical constants, and operators. Die format is expressed in the form **XdY** where **X** is the number of rolls and **Y** is the amount of faces/sides on the dice. For example, to roll three standard six-sided die you would format it as 3d6 in dice format. If number of rolls is not specified, than it will default to 1 (i.e. d20 = 1d20). Valid operators include addition [+], subtraction [-], multiplication [*], division [/], parenthesis [()], and exponents [^]. Currently does not have advantage or disadvantage implemented. Examples of valid rolls are provided below:
+
+(3d20 / 2) + 2d6 - ((5 * 2d3) + 5)
+
+8d6 / 2
+
+2d20 * (3d6 + 1)
 
 #### getEmojiID
 
