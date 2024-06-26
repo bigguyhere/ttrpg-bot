@@ -42,13 +42,13 @@ The .env file contains a lot of fields that should not be shared with others or 
 
 ### Valid Fields
 
-* TOKEN *[REQUIRED]* - Token generated for discord bot generated upon creation of discord bot application.
-* HOST *[REQUIRED]* - Hostname of the server  where database is being stored. Enter "localhost" for locally hosted database.
-* USER *[REQUIRED]* - Username of the database user intended to access the database through.
-* PASSWORD - Password of the database user described in the USER field on the host HOST.
-* DATABASE *[REQUIRED]* - Name of the database used in the MySQL instance.
-* TESTGUILD - ID of the Discord Server (Guild) intended for testing. Obtained by right-clicking on a Discord Server and clicking Copy Server ID. Only required when testing mode is active.
-* MODE *[Options: test - any string/undefinedvalue]* - Establishes whether or not the bot will be running in test mode or not. Test mode allows for the bot to update/add/delete commands much quicker but requires the specification of a test-guild in the TESTGUILD field for it to function.
+-   TOKEN _[REQUIRED]_ - Token generated for discord bot generated upon creation of discord bot application.
+-   HOST _[Defaults to "localhost"]_ - Hostname of the server where database is being stored.
+-   USER _[REQUIRED]_ - Username of the database user intended to access the database through.
+-   PASSWORD - Password of the database user described in the USER field on the host HOST.
+-   DATABASE _[REQUIRED]_ - Name of the database used in the MySQL instance.
+-   TESTGUILD - ID of the Discord Server (Guild) intended for testing. Obtained by right-clicking on a Discord Server and clicking Copy Server ID. Only required when testing mode is active.
+-   MODE _[Options: test - any string/undefined value]_ - Establishes whether or not the bot will be running in test mode or not. Test mode allows for the bot to update/add/delete commands much quicker but requires the specification of a test-guild in the TESTGUILD field for it to function.
 
 ## Installation/Setup
 
@@ -62,6 +62,12 @@ npm i
 
 ```
 ts-node .\startup.ts
+```
+
+Or if ts-node is not installed globally
+
+```
+npx ts-node .\startup.ts
 ```
 
 NOTE: Most functionality will not work if a came for the current server is not created. Make sure to create a game in the server you are in before attempting to test any functionality.
@@ -148,7 +154,7 @@ Once the setup file has been created and configured, make sure to add the follow
 ```typescript
 import { SetupName } from "./modulename/modulename.setup";
 
-SetupName.setup(commands)
+SetupName.setup(commands);
 ```
 
 ### Custom Bridge File
@@ -164,7 +170,11 @@ This constructor will often be used to call the constructor of the parent class 
 The getCharacter function is meant for use in situations where you have generated a module-specific character type and want to use that over the basic character type. This is useful because it allows you to not have to redefine the basic functions provided to you that will not need to change and will work automatically with your new character type out of the box. The standard body of a getCharacter function appears as follows:
 
 ```typescript
-return await NameCharacter.getCharacter(this.gamedb, this.tableNameBase, char_name)
+return await NameCharacter.getCharacter(
+    this.gamedb,
+    this.tableNameBase,
+    char_name
+);
 ```
 
 #### initializeTables
@@ -176,32 +186,47 @@ The initializeTables function essentially runs all of your startup commands, suc
 The parse method is used to act as the actual custom bridge for your bridge file. This function should first check to make sure what command is being called (i.e. character, inventory, roll) and then call the proper interpreter based on what command is called (i.e. CharacterInterpreter or InventoryInterpreter). I also tend to put calls for input fields that are called by all of the functions in an interpreter in here and pass them in as parameters to all the interpreter functions, but this is not a requirement. From there you should determine which subcommand is being called (i.e. add, remove, view) and use that to call the proper interpreter function. A sample parse method is shown below:
 
 ```typescript
-if(commandName === 'character') {
-	const chrInterpreter = new CharacterInterpreter(gamedb, tableNameBase, options, client, interaction)
-	const charName = UtilityFunctions.formatString(options.getString('char-name', true))
-	switch (subcommandName){
-		case ('add'):
-			return await chrInterpreter.add(charName)
-		case ('remove'):
-			return await chrInterpreter.remove(charName)
-		case ('view'):
-			return await chrInterpreter.view(charName, bridge)
-		case ('change-stat'):
-			return await chrInterpreter.changeStat(charName)
-	}
-}
-else if(commandName === 'inventory') {
-	const invInterpreter = new InventoryInterpreter(gamedb, tableNameBase, options, client, interaction)
-	const chrName = UtilityFunctions.formatString(options.getString('char-name', true))
-	switch (subcommandName){
-		case ('modify'):
-			return await invInterpreter.modify(chrName, bridge)
-		case ('view'):
-			if(activeGame == null){
-				return 'Issue retrieving active game.'
-			}
-			return await invInterpreter.view(chrName, bridge, activeGame)
-	}
+if (commandName === "character") {
+    const chrInterpreter = new CharacterInterpreter(
+        gamedb,
+        tableNameBase,
+        options,
+        client,
+        interaction
+    );
+    const charName = UtilityFunctions.formatString(
+        options.getString("char-name", true)
+    );
+    switch (subcommandName) {
+        case "add":
+            return await chrInterpreter.add(charName);
+        case "remove":
+            return await chrInterpreter.remove(charName);
+        case "view":
+            return await chrInterpreter.view(charName, bridge);
+        case "change-stat":
+            return await chrInterpreter.changeStat(charName);
+    }
+} else if (commandName === "inventory") {
+    const invInterpreter = new InventoryInterpreter(
+        gamedb,
+        tableNameBase,
+        options,
+        client,
+        interaction
+    );
+    const chrName = UtilityFunctions.formatString(
+        options.getString("char-name", true)
+    );
+    switch (subcommandName) {
+        case "modify":
+            return await invInterpreter.modify(chrName, bridge);
+        case "view":
+            if (activeGame == null) {
+                return "Issue retrieving active game.";
+            }
+            return await invInterpreter.view(chrName, bridge, activeGame);
+    }
 }
 ```
 
@@ -228,15 +253,19 @@ Disabling a command should follow a very specific process as established by the 
 
 ```typescript
 this.disabledCmds = [
-	new DisabledCommand('character', 
-		new Map<string, string>([['add','dr-character add-character']])),
-	new DisabledCommand('init',
-		new Map<string, string>([
-			['begin', 'dr-trial begin'],
-			['end', 'dr-trial end'],
-			['add', 'dr-trial add-character']
-	]))
-]
+    new DisabledCommand(
+        "character",
+        new Map<string, string>([["add", "dr-character add-character"]])
+    ),
+    new DisabledCommand(
+        "init",
+        new Map<string, string>([
+            ["begin", "dr-trial begin"],
+            ["end", "dr-trial end"],
+            ["add", "dr-trial add-character"],
+        ])
+    ),
+];
 ```
 
 In the above example, we are attempting to disable the **character add** command and instead direct users to the **dr-character add-character** command. This means the "character add" command will not be able to be used and will direct users to use the "dr-character add-character" command instead.
@@ -249,9 +278,9 @@ Overriding a command should follow a very specific process as established by the
 
 ```typescript
 this.overridenCmds = [
-	new OverridedCommand('character', 'dr-character'),
-	new OverridedCommand('init', 'dr-trial')
-]
+    new OverridedCommand("character", "dr-character"),
+    new OverridedCommand("init", "dr-trial"),
+];
 ```
 
 The above example allows functions using the **character** or **init** commands to still work even on **dr-character** or **dr-trial** respectively. For example, since remove and view functions are already implemented for "character" and don't need to be changed at all to work with "dr-character", I now do not re-implement them to be used with the "dr-character command". This has been done because, for example, it may confuse some users to use the "character" command for deleting and viewing but the separate "dr-character" command for adding.
@@ -280,17 +309,17 @@ Mainly used to make error checking more visually distinct and take up less lines
 
 Parses a roll given to the bot as input through a rolling command. Is able to parse any mathematical expression provided which includes only die format, numerical constants, and operators. Die format is expressed in the form **XdY** where **X** is the number of rolls and **Y** is the amount of faces/sides on the dice. For example, to roll three standard six-sided die you would format it as 3d6 in dice format. If number of rolls is not specified, than it will default to 1 (i.e. d20 = 1d20). Valid operators include addition [+], subtraction [-], multiplication [*], division [/], integer division [//], modulo/remainder [%], parenthesis [()], and exponents [^]. Currently also has additional features such as advantage, disadvantage, retaining the top N dice, retaining the bottom N dice, and exploding dice implemented.
 
-(3d20 / 2) + 2d6 - ((5 * 2d3) + 5)
+(3d20 / 2) + 2d6 - ((5 \* 2d3) + 5)
 
 8d6 / 2
 
-2d20 * (3d6 + 1)
+2d20 \* (3d6 + 1)
 
 1d20adv
 
 d8dis + 2d8e8
 
-20d20b10 * (2 + 3d8t2)
+20d20b10 \* (2 + 3d8t2)
 
 #### getEmojiID
 

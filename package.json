@@ -1,36 +1,34 @@
 {
-  "name": "ttrpg-bot",
-  "version": "1.0.0",
-  "description": "Codebase for TTRPG Bot Personal Project",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/liamsusername/ttrpg-bot.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/liamsusername/ttrpg-bot/issues"
-  },
-  "homepage": "https://github.com/liamsusername/ttrpg-bot#readme",
-  "dependencies": {
-    "@discordjs/voice": "^0.14.0",
-    "@types/mysql": "^2.15.21",
-    "axios": "^1.5.1",
-    "csv-parse": "^5.3.3",
-    "discord.js": "^14.7.1",
-    "dotenv": "^16.0.3",
-    "ffmpeg-static": "^5.1.0",
-    "graphql": "^16.8.1",
-    "libsodium-wrappers": "^0.7.10",
-    "mysql": "^2.18.1",
-    "mysql2": "^3.0.1"
-  },
-  "devDependencies": {
-    "ts-node": "^10.9.1"
-  }
+    "name": "ttrpg-bot",
+    "version": "1.0.0",
+    "description": "Codebase for TTRPG Bot Personal Project",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/liamsusername/ttrpg-bot.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/liamsusername/ttrpg-bot/issues"
+    },
+    "homepage": "https://github.com/liamsusername/ttrpg-bot#readme",
+    "dependencies": {
+        "@discordjs/voice": "^0.14.0",
+        "axios": "^1.5.1",
+        "csv-parse": "^5.3.3",
+        "discord.js": "^14.7.1",
+        "dotenv": "^16.0.3",
+        "ffmpeg-static": "^5.1.0",
+        "libsodium-wrappers": "^0.7.10",
+        "mysql2": "^3.10.1"
+    },
+    "devDependencies": {
+        "@types/node": "^20.14.9",
+        "ts-node": "^10.9.1"
+    }
 }

@@ -1,4 +1,4 @@
-import { UtilityFunctions } from "../../utility/general"
+import { UtilityFunctions } from "../../utility/general";
 
 export enum Type {
     NORMAL,
@@ -19,15 +19,15 @@ export enum Type {
     DRAGON,
     DARK,
     FAIRY,
-    NONE
-};
+    NONE,
+}
 
-export const MoveLearnMethod : string[] = [
-    'level-up',
-    'egg',
-    'tutor',
-    'machine',
-    'none'
+export const MoveLearnMethod: string[] = [
+    "level-up",
+    "egg",
+    "tutor",
+    "machine",
+    "none",
 ];
 
 export type Status = {
@@ -36,21 +36,21 @@ export type Status = {
     emoji: string;
 };
 
-export const StatusEffect : {[id : string] : string} = {
-    burn : "🔥",
-    freeze : "❄️",
-    paralysis : "⚡",
-    poison : "☠️",
-    sleep : "💤",
-    confusion : "💫",
-    infatuation : "😍",
+export const StatusEffect: { [id: string]: string } = {
+    burn: "🔥",
+    freeze: "❄️",
+    paralysis: "⚡",
+    poison: "☠️",
+    sleep: "💤",
+    confusion: "💫",
+    infatuation: "😍",
     trap: "🪤",
     flinch: "❌",
-    increaseStat : "🔺",
-    decreaseStat : "🔻"
+    increaseStat: "🔺",
+    decreaseStat: "🔻",
 };
 
-export const EmojiTypeMap : {[id : string] : string} = {
+export const EmojiTypeMap: { [id: string]: string } = {
     NORMAL: "◽",
     FIRE: "🔥",
     WATER: "🌊",
@@ -69,11 +69,10 @@ export const EmojiTypeMap : {[id : string] : string} = {
     DARK: "😈",
     STEEL: "⚔️",
     FAIRY: "🧚",
-    NONE: "❌"
+    NONE: "❌",
 };
 
-export const TypeEffectMatrix : number[][] = 
-[
+export const TypeEffectMatrix: number[][] = [
     [1, 1, 1, 1, 1, 0.5, 1, 0, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1], //Normal
     [2, 1, 0.5, 0.5, 1, 2, 0.5, 0, 2, 1, 1, 1, 1, 0.5, 2, 1, 2, 0.5], //Fighting
     [1, 2, 1, 1, 1, 0.5, 2, 1, 0.5, 1, 1, 2, 0.5, 1, 1, 1, 1, 1], //Flying
@@ -91,33 +90,32 @@ export const TypeEffectMatrix : number[][] =
     [1, 1, 2, 1, 2, 1, 1, 1, 0.5, 0.5, 0.5, 2, 1, 1, 0.5, 2, 1, 1], //Ice
     [1, 1, 1, 1, 1, 1, 1, 1, 0.5, 1, 1, 1, 1, 1, 1, 2, 1, 0], //Dragon
     [1, 0.5, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 0.5, 0.5], //Dark
-    [1, 2, 1, 0.5, 1, 1, 1, 1, 0.5, 0.5, 1, 1, 1, 1, 1, 2, 2, 1] //Fairy
+    [1, 2, 1, 0.5, 1, 1, 1, 1, 0.5, 0.5, 1, 1, 1, 1, 1, 2, 2, 1], //Fairy
 ];
 
-module PkmUtilityFunctions{
-
-    export function formatTitle(str : string) : string {
+module PkmUtilityFunctions {
+    export function formatTitle(str: string): string {
         str = formatUpperCase(str);
-        const splitStr = str.split('-');
+        const splitStr = str.split("-");
 
-        if(splitStr.length !== 2){
+        if (splitStr.length !== 2) {
             return str;
-        } 
+        }
 
         return `${splitStr[0]} (${splitStr[1]})`;
     }
 
-    export function formatStr(str : string) : string {
+    export function formatStr(str: string): string {
         str = str.trim();
-        let retStr = '';
+        let retStr = "";
         let nextUpper = true;
 
-        for(let c of str){
-            if(c === '-'){
-                retStr += ' ';
+        for (let c of str) {
+            if (c === "-") {
+                retStr += " ";
                 nextUpper = true;
             } else {
-                if(nextUpper){
+                if (nextUpper) {
                     retStr += c.toUpperCase();
                 } else {
                     retStr += c;
@@ -129,66 +127,86 @@ module PkmUtilityFunctions{
         return retStr;
     }
 
-    export function formatUpperCase(name : string) : string {
+    export function formatUpperCase(name: string): string {
         name = name.trim();
 
-        if(name.length < 1){
+        if (name.length < 1) {
             return name;
         }
 
         return name[0].toUpperCase() + name.substring(1, name.length);
     }
 
-    export function typeCalculate(attack : Type, defender: [type1 : Type, type2 : Type]) : number{
-
-        if(attack === Type.NONE || defender[0] === Type.NONE){
-            return -1
+    export function typeCalculate(
+        attack: Type,
+        defender: [type1: Type, type2: Type]
+    ): number {
+        if (attack === Type.NONE || defender[0] === Type.NONE) {
+            return -1;
         }
 
         const length = defender[1] === Type.NONE ? 1 : 2;
 
         let effectiveness = 1;
-        for(let i = 0; i < length; ++i){
+        for (let i = 0; i < length; ++i) {
             effectiveness *= TypeEffectMatrix[attack][defender[i]];
         }
 
         return effectiveness;
     }
 
-    export function getWeaknesses(types: [type1 : Type, type2 : Type]): [string, number][]{
-
+    export function getWeaknesses(
+        types: [type1: Type, type2: Type]
+    ): [string, number][] {
         const keys = Object.keys(Type).filter((k) => !isNaN(Number(k)));
-        let weaknesses : [string, number][] = [];
+        let weaknesses: [string, number][] = [];
 
         keys.forEach((key, ind) => {
-                const value = typeCalculate(ind, types);
-                if(value > 1){
-                    weaknesses.push([Type[ind], value]);
-                } 
+            const value = typeCalculate(ind, types);
+            if (value > 1) {
+                weaknesses.push([Type[ind], value]);
+            }
         });
 
         return weaknesses;
     }
 
-    const sanitized_forms : string[] = ['paldea', 'alola', 'galar', 'hisui', 'mega-x', 'mega-y', 'mega'];
+    const sanitized_forms: string[] = [
+        "paldea",
+        "alola",
+        "galar",
+        "hisui",
+        "mega-x",
+        "mega-y",
+        "mega",
+    ];
 
-    export function sanitizeFormInput (input : string, name : string) : string {
+    export function sanitizeFormInput(input: string, name: string): string {
         UtilityFunctions.errorCheck(!input, `${name} must exist`);
-        UtilityFunctions.errorCheck(typeof input !== 'string', `${name} must be a string`);
+        UtilityFunctions.errorCheck(
+            typeof input !== "string",
+            `${name} must be a string`
+        );
         input = input.trim().toLowerCase();
-        UtilityFunctions.errorCheck(input.length === 0, `${name} cannot be empty`);
+        UtilityFunctions.errorCheck(
+            input.length === 0,
+            `${name} cannot be empty`
+        );
 
-        for(var form of sanitized_forms) {
-            if(input.includes(form)){
+        for (var form of sanitized_forms) {
+            if (input.includes(form)) {
                 return form;
             }
         }
 
         return input;
-        
     }
 
-    export function getPkmFormQuery(queryName : string, name : string, param : string) : any {
+    export function getPkmFormQuery(
+        queryName: string,
+        name: string,
+        param: string
+    ): any {
         const query = `query ${queryName} {
             species: pokemon_v2_pokemonspecies(where: {name: {_eq: "${name}"}}) {
             name
@@ -215,13 +233,18 @@ module PkmUtilityFunctions{
         }
       }`;
 
-      return JSON.stringify({
-        query: query,
-        operationName: queryName
-      });
+        return JSON.stringify({
+            query: query,
+            operationName: queryName,
+        });
     }
 
-    export function getPkmMoveQuery(queryName : string, name : string, param : string, moveParam : string) : any {
+    export function getPkmMoveQuery(
+        queryName: string,
+        name: string,
+        param: string,
+        moveParam: string
+    ): any {
         const query = `query ${queryName} {
             species: pokemon_v2_pokemonspecies(where: {name: {_eq: "${name}"}}) {
               name
@@ -254,14 +277,18 @@ module PkmUtilityFunctions{
             }
           }`;
 
-      return JSON.stringify({
-        query: query,
-        operationName: queryName
-      });
+        return JSON.stringify({
+            query: query,
+            operationName: queryName,
+        });
     }
 
-    export function getPkmAbilityQuery(queryName : string, name : string, param : string) : any {
-      const query = `query ${queryName} {
+    export function getPkmAbilityQuery(
+        queryName: string,
+        name: string,
+        param: string
+    ): any {
+        const query = `query ${queryName} {
         species: pokemon_v2_pokemonspecies(where: {name: {_eq: "${name}"}}) {
           name
           id
@@ -297,13 +324,13 @@ module PkmUtilityFunctions{
       }
       `;
 
-      return JSON.stringify({
-        query: query,
-        operationName: queryName
-      });
+        return JSON.stringify({
+            query: query,
+            operationName: queryName,
+        });
     }
 
-    export function getMoveQuery(queryName : string, name : string) : any {
+    export function getMoveQuery(queryName: string, name: string): any {
         const query = `query ${queryName} {
             move: pokemon_v2_move(where: {name: {_eq: "${name}"}}) {
               type_id
@@ -327,14 +354,14 @@ module PkmUtilityFunctions{
           }
           `;
 
-      return JSON.stringify({
-        query: query,
-        operationName: queryName
-      });
+        return JSON.stringify({
+            query: query,
+            operationName: queryName,
+        });
     }
 
-    export function getAbilityQuery(queryName : string, name : string) : any {
-      const query = `query ${queryName} {
+    export function getAbilityQuery(queryName: string, name: string): any {
+        const query = `query ${queryName} {
           ability: pokemon_v2_ability(where: {name: {_eq: "${name}"}}) {
             name
             id
@@ -351,11 +378,11 @@ module PkmUtilityFunctions{
           }
         }`;
 
-      return JSON.stringify({
-        query: query,
-        operationName: queryName
-      });
+        return JSON.stringify({
+            query: query,
+            operationName: queryName,
+        });
     }
 }
 
-export { PkmUtilityFunctions }
+export { PkmUtilityFunctions };
