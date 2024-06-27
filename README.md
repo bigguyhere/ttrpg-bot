@@ -47,8 +47,10 @@ The .env file contains a lot of fields that should not be shared with others or 
 -   USER _[REQUIRED]_ - Username of the database user intended to access the database through.
 -   PASSWORD - Password of the database user described in the USER field on the host HOST.
 -   DATABASE _[REQUIRED]_ - Name of the database used in the MySQL instance.
+-   PORT _[Defaults to 3306]_ - Port to connect to the database with.
+-   CONNECTIONMODE _[Options: pool - any string/undefined value]_ - Connects to database via pool or via multiple connections. Defaults to Pool due to its greater efficiency.
 -   TESTGUILD - ID of the Discord Server (Guild) intended for testing. Obtained by right-clicking on a Discord Server and clicking Copy Server ID. Only required when testing mode is active.
--   MODE _[Options: test - any string/undefined value]_ - Establishes whether or not the bot will be running in test mode or not. Test mode allows for the bot to update/add/delete commands much quicker but requires the specification of a test-guild in the TESTGUILD field for it to function.
+-   EXECUTIONMODE _[Options: test - any string/undefined value]_ - Establishes whether or not the bot will be running in test mode or not. Test mode allows for the bot to update/add/delete commands much quicker but requires the specification of a test-guild in the TESTGUILD field for it to function.
 
 ## Installation/Setup
 

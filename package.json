@@ -8,15 +8,15 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/liamsusername/ttrpg-bot.git"
+        "url": "git+https://github.com/bigguyhere/ttrpg-bot.git"
     },
     "keywords": [],
     "author": "",
     "license": "ISC",
     "bugs": {
-        "url": "https://github.com/liamsusername/ttrpg-bot/issues"
+        "url": "https://github.com/bigguyhere/ttrpg-bot/issues"
     },
-    "homepage": "https://github.com/liamsusername/ttrpg-bot#readme",
+    "homepage": "https://github.com/bigguyhere/ttrpg-bot#readme",
     "dependencies": {
         "@discordjs/voice": "^0.14.0",
         "axios": "^1.5.1",

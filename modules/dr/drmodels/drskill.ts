@@ -1,5 +1,10 @@
 import DiscordJS, { Client, EmbedBuilder } from "discord.js";
-import mysql, { ResultSetHeader, RowDataPacket } from "mysql2";
+import mysql, {
+    Connection,
+    Pool,
+    ResultSetHeader,
+    RowDataPacket,
+} from "mysql2";
 import { ActiveGame } from "../../../models/activegame";
 import { IDRSkillObj } from "./dr_objectDefs";
 
@@ -22,8 +27,8 @@ export class DRSkill {
         this.prereqs = prereqs == null ? "None" : prereqs;
     }
 
-    static createTables(db: mysql.Connection, tableNameBase: string) {
-        db.query(
+    static createTables(db: Connection | Pool, tableNameBase: string) {
+        db.execute(
             `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Skills ( 
             SKL_ID INT NOT NULL AUTO_INCREMENT,
             Name varchar(255) NOT NULL,
@@ -44,12 +49,12 @@ export class DRSkill {
     }
 
     static getSkill(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         skill_name: string
     ): Promise<DRSkill | null> {
         return new Promise((resolve) => {
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT * FROM ${tableBaseName}_Skills WHERE Name = "${skill_name}";`,
                 (err, res) => {
                     if (err || res.length != 1) {
@@ -72,7 +77,7 @@ export class DRSkill {
     }
 
     static getAllSkills(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         startIndex: number | null = null,
         endIndex: number | null = null
@@ -87,7 +92,7 @@ export class DRSkill {
             }
             queryStr += ";";
 
-            db.query<IDRSkillObj[]>(queryStr, (err, res) => {
+            db.execute<IDRSkillObj[]>(queryStr, (err, res) => {
                 if (err) {
                     console.log(err);
                     return resolve(null);
@@ -95,27 +100,18 @@ export class DRSkill {
 
                 let retArr = new Array<DRSkill>();
 
-                res.forEach(
-                    (skill: {
-                        Name: string;
-                        Prereqs: string | null | undefined;
-                        Description: string | undefined;
-                        SPCost: number | undefined;
-                        Type: string | null | undefined;
-                        SKL_ID: number;
-                    }) => {
-                        let retSkill = new DRSkill(
-                            skill.Name,
-                            skill.Prereqs,
-                            skill.Description,
-                            skill.SPCost,
-                            skill.Type
-                        );
-                        retSkill.id = skill.SKL_ID;
+                res.forEach((skill) => {
+                    let retSkill = new DRSkill(
+                        skill.Name,
+                        skill.Prereqs,
+                        skill.Description,
+                        skill.SPCost,
+                        skill.Type
+                    );
+                    retSkill.id = skill.SKL_ID;
 
-                        retArr.push(retSkill);
-                    }
-                );
+                    retArr.push(retSkill);
+                });
 
                 return resolve(retArr);
             });
@@ -123,12 +119,12 @@ export class DRSkill {
     }
 
     isViewable(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         owner: string
     ): Promise<boolean | null> {
         return new Promise((resolve) => {
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT DISTINCT Skills.SKL_ID FROM ${tableBaseName}_Skills as Skills 
                         JOIN ${tableBaseName}_ChrSkills as ChrSkills
                         JOIN ${tableBaseName}_Characters as Characters 
@@ -262,8 +258,8 @@ export class DRSkill {
         return embeds;
     }
 
-    addToTable(db: mysql.Connection, tableBaseName: string) {
-        db.query<ResultSetHeader>(
+    addToTable(db: Connection | Pool, tableBaseName: string) {
+        db.execute<ResultSetHeader>(
             `INSERT INTO ${tableBaseName}_Skills (Name, Prereqs, Description, SPCost, Type)
         VALUES ("${this.name}", "${this.prereqs}", "${this.desc}", "${this.spCost}", "${this.Type}");`,
             (err, res) => {
@@ -277,8 +273,8 @@ export class DRSkill {
         );
     }
 
-    removeFromTable(db: mysql.Connection, tableBaseName: string) {
-        db.query(
+    removeFromTable(db: Connection | Pool, tableBaseName: string) {
+        db.execute(
             `DELETE FROM ${tableBaseName}_Skills WHERE Name = '${this.name}';`,
             (err, res) => {
                 if (err) {
@@ -296,8 +292,8 @@ export class DRChrSkills {
         this.sklId = sklId;
     }
 
-    static createTables(db: mysql.Connection, tableNameBase: string) {
-        db.query(
+    static createTables(db: Connection | Pool, tableNameBase: string) {
+        db.execute(
             `CREATE TABLE IF NOT EXISTS ${tableNameBase}_ChrSkills (
             CHR_ID INT NOT NULL,
             SKL_ID INT NOT NULL,
@@ -312,8 +308,8 @@ export class DRChrSkills {
         );
     }
 
-    addToTable(db: mysql.Connection, tableBaseName: string) {
-        db.query(
+    addToTable(db: Connection | Pool, tableBaseName: string) {
+        db.execute(
             `INSERT INTO ${tableBaseName}_ChrSkills (CHR_ID, SKL_ID)
         VALUES ("${this.chrId}", "${this.sklId}");`,
             (err, res) => {
@@ -325,8 +321,8 @@ export class DRChrSkills {
         );
     }
 
-    removeFromTable(db: mysql.Connection, tableBaseName: string) {
-        db.query(
+    removeFromTable(db: Connection | Pool, tableBaseName: string) {
+        db.execute(
             `DELETE FROM ${tableBaseName}_ChrSkills WHERE CHR_ID = '${this.chrId}' AND SKL_ID = '${this.sklId}';`,
             (err, res) => {
                 if (err) {
@@ -339,11 +335,11 @@ export class DRChrSkills {
 
     //TODO: See if you can make a SQL query in future that can delete if exists and add if doesn't
     ifExists(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string
     ): Promise<boolean | null> {
         return new Promise((resolve) => {
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT * FROM ${tableBaseName}_ChrSkills WHERE CHR_ID = '${this.chrId}' AND SKL_ID = '${this.sklId}';`,
                 (err, res) => {
                     if (err || res.length > 1) {

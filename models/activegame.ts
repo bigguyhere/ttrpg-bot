@@ -6,7 +6,7 @@ import {
     GuildResolvable,
 } from "discord.js";
 import DiscordJS, { EmbedBuilder } from "discord.js";
-import mysql, { RowDataPacket } from "mysql2";
+import mysql, { RowDataPacket, Connection, Pool } from "mysql2";
 
 export class ActiveGame {
     constructor(
@@ -35,8 +35,8 @@ export class ActiveGame {
         this.messageID = messageID;
     }
 
-    public static createTable(db: mysql.Connection) {
-        db.query(
+    public static createTable(db: Connection | Pool) {
+        db.execute(
             `CREATE TABLE IF NOT EXISTS ActiveGames ( 
             SERV_ID varchar(255) NOT NULL,
             GameName varchar(255) NOT NULL,
@@ -59,8 +59,8 @@ export class ActiveGame {
         );
     }
 
-    private inactivizeGames(db: mysql.Connection): void {
-        db.query(
+    private inactivizeGames(db: Connection | Pool): void {
+        db.execute(
             `UPDATE ActiveGames SET isActive = 0 WHERE isActive = 1 and SERV_ID = ${this.serverID};`,
             (err, res) => {
                 if (err) {
@@ -71,12 +71,12 @@ export class ActiveGame {
         );
     }
 
-    addToTable(db: mysql.Connection) {
+    addToTable(db: Connection | Pool) {
         //Sets currently active game(s) to inactive
         this.inactivizeGames(db);
 
         //Inserts new game to the game table, set as the active game
-        db.query(
+        db.execute(
             `INSERT INTO ActiveGames (SERV_ID, GameName, GameType, DM, isActive, Round, Turn, HideHP, MessageID, ChannelID)
         VALUES (${this.serverID}, "${this.gameName}", "${this.gameType}", ${this.DM}, ${this.isActive}, 
                 ${this.round}, ${this.turn}, ${this.hideHP}, ${this.messageID}, ${this.channelID});`,
@@ -89,8 +89,8 @@ export class ActiveGame {
         );
     }
 
-    setDM(db: mysql.Connection) {
-        db.query(
+    setDM(db: Connection | Pool) {
+        db.execute(
             `UPDATE ActiveGames SET DM = '${this.DM}' 
                     WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`,
             (err, res) => {
@@ -103,7 +103,7 @@ export class ActiveGame {
     }
 
     updateInit(
-        db: mysql.Connection,
+        db: Connection | Pool,
         newChnnlID: string | null,
         newMsgID: string | null,
         newRoll: string,
@@ -114,7 +114,7 @@ export class ActiveGame {
         this.channelID = newChnnlID;
         this.messageID = newMsgID;
         this.defaultRoll = newRoll;
-        db.query(
+        db.execute(
             `UPDATE ActiveGames SET MessageID = ${newMsgID},
                                             ChannelID = ${newChnnlID},
                                             DefaultRoll = '${newRoll}',
@@ -131,10 +131,10 @@ export class ActiveGame {
         );
     }
 
-    changeGame(db: mysql.Connection) {
+    changeGame(db: Connection | Pool) {
         this.inactivizeGames(db);
 
-        db.query(
+        db.execute(
             `UPDATE ActiveGames SET isActive = 1 WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`,
             (err, res) => {
                 if (err) {
@@ -146,7 +146,7 @@ export class ActiveGame {
     }
 
     static getCurrentGame(
-        db: mysql.Connection,
+        db: Connection | Pool,
         dbName: string,
         serverID: string | null,
         gameName: string | null
@@ -160,7 +160,7 @@ export class ActiveGame {
                 queryParam = `GameName = '${gameName}'`;
             }
 
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT * FROM ${dbName}.ActiveGames WHERE ${queryParam} AND SERV_ID = '${serverID}';`,
                 (err, res) => {
                     if (err || res.length != 1) {

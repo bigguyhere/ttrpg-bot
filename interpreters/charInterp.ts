@@ -4,7 +4,7 @@ import {
     Client,
     CommandInteractionOptionResolver,
 } from "discord.js";
-import { Connection } from "mysql2";
+import { Connection, Pool } from "mysql2";
 import { Character } from "../models/character";
 import { UtilityFunctions } from "../utility/general";
 import { Bridge, Interpreter } from "./abstract_models";
@@ -13,7 +13,7 @@ export class CharacterInterpreter extends Interpreter {
     protected userID: string;
 
     constructor(
-        gamedb: Connection,
+        gamedb: Connection | Pool,
         tableNameBase: string,
         options: Omit<
             CommandInteractionOptionResolver<CacheType>,

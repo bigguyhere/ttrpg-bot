@@ -4,7 +4,7 @@ import {
     Client,
     CommandInteractionOptionResolver,
 } from "discord.js";
-import { Connection } from "mysql2";
+import { Connection, Pool } from "mysql2";
 import { ActiveGame } from "../models/activegame";
 import { Character } from "../models/character";
 
@@ -33,7 +33,10 @@ export abstract class Bridge {
      * @param gamedb - Database connection where game data resides
      * @param tableNameBase - Prefix for all table names
      */
-    constructor(protected gamedb: Connection, protected tableNameBase: string) {
+    constructor(
+        protected gamedb: Connection | Pool,
+        protected tableNameBase: string
+    ) {
         this.gamedb = gamedb;
         this.tableNameBase;
     }
@@ -134,7 +137,7 @@ export class BaseBridge extends Bridge {
 
 export abstract class Interpreter {
     constructor(
-        protected gamedb: Connection,
+        protected gamedb: Connection | Pool,
         protected tableNameBase: string,
         protected options: Omit<
             CommandInteractionOptionResolver<CacheType>,

@@ -1,6 +1,6 @@
 import { DRSkill } from "../drmodels/drskill";
 import { parse } from "csv-parse";
-import mysql from "mysql2";
+import mysql, { Connection, Pool } from "mysql2";
 import * as fs from "fs";
 import * as path from "path";
 import { UtilityFunctions } from "../../../utility/general";
@@ -14,7 +14,7 @@ type SkillType = {
 
 module DRUtilityFunctions {
     export function importGeneralSkills(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string
     ) {
         const stream = fs.readFileSync(

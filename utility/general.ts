@@ -150,7 +150,6 @@ module UtilityFunctions {
                 numRolls = numRolls =
                     splitArr[0].length === 0 ? 1 : parseInt(splitArr[0]);
             }
-            console.log(opValue);
 
             errorCheck(
                 opValue > diceValue,
@@ -230,7 +229,6 @@ module UtilityFunctions {
         const sections = query.match(
             /\+|-|-|\^|\(|\)|\/\/|\%|\/|\*|1?d[0-9]+(adv|dis)|[0-9]*d[0-9]+[[t|b|e]?[0-9]*]?|[0-9]+/g
         ) as Array<string>;
-        console.log(sections);
 
         errorCheck(
             sections == null || sections.length == 0,

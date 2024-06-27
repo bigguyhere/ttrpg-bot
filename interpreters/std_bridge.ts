@@ -1,5 +1,5 @@
 import { Client, CacheType, ChatInputCommandInteraction } from "discord.js";
-import { Connection } from "mysql2";
+import { Connection, Pool } from "mysql2";
 import { SelectBridge } from "../modules/select_interpreter";
 import { ActiveGame } from "../models/activegame";
 import { UtilityFunctions } from "../utility/general";
@@ -18,7 +18,7 @@ module CommandBridge {
      */
     export async function reply(
         interaction: ChatInputCommandInteraction<CacheType>,
-        gamedb: Connection,
+        gamedb: Connection | Pool,
         guildID: string,
         client: Client<boolean>
     ): Promise<void> {
@@ -40,7 +40,7 @@ module CommandBridge {
      */
     async function bridge(
         interaction: ChatInputCommandInteraction<CacheType>,
-        gamedb: Connection,
+        gamedb: Connection | Pool,
         guildID: string,
         client: Client<boolean>
     ): Promise<string | null> {

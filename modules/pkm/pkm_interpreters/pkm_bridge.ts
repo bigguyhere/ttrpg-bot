@@ -1,4 +1,4 @@
-import { Connection } from "mysql2";
+import { Connection, Pool } from "mysql2";
 import {
     Bridge,
     DisabledCommand,
@@ -20,7 +20,7 @@ export class PkmBridge extends Bridge {
     protected disabledCmds: DisabledCommand[];
     protected overridenCmds: OverridedCommand[];
 
-    constructor(gamedb: Connection, tableNameBase: string) {
+    constructor(gamedb: Connection | Pool, tableNameBase: string) {
         super(gamedb, tableNameBase);
         this.disabledCmds = [
             new DisabledCommand(

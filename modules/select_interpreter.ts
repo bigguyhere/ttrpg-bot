@@ -1,4 +1,4 @@
-import { Connection } from "mysql2";
+import { Connection, Pool } from "mysql2";
 import { BaseBridge, Bridge } from "../interpreters/abstract_models";
 import { DRBridge } from "./dr/dr_interpreters/dr_bridge";
 import { PkmBridge } from "./pkm/pkm_interpreters/pkm_bridge";
@@ -13,7 +13,7 @@ export class SelectBridge {
      */
     static select(
         gameType: string | null | undefined,
-        gamedb: Connection,
+        gamedb: Connection | Pool,
         tableNameBase: string
     ): Bridge {
         switch (gameType) {

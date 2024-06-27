@@ -1,4 +1,4 @@
-import mysql, { RowDataPacket } from "mysql2";
+import mysql, { Connection, Pool, RowDataPacket } from "mysql2";
 import { ActiveGame } from "./activegame";
 import { IInitiativeObj } from "./objectDefs";
 
@@ -20,8 +20,8 @@ export class Initiative {
         this.Dmg = Dmg;
     }
 
-    public static createTable(db: mysql.Connection, tableNameBase: string) {
-        db.query(
+    public static createTable(db: Connection | Pool, tableNameBase: string) {
+        db.execute(
             `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Initiative ( 
             Name varchar(255) NOT NULL,
             Roll SMALLINT NOT NULL,
@@ -40,8 +40,8 @@ export class Initiative {
         );
     }
 
-    public static dropTable(db: mysql.Connection, tableNameBase: string) {
-        db.query(
+    public static dropTable(db: Connection | Pool, tableNameBase: string) {
+        db.execute(
             `DROP TABLE IF EXISTS ${tableNameBase}_Initiative;`,
             (err, res) => {
                 if (err) {
@@ -53,11 +53,11 @@ export class Initiative {
     }
 
     public async addToTable(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string
     ): Promise<boolean> {
         return new Promise((resolve) => {
-            db.query(
+            db.execute(
                 `INSERT INTO ${tableNameBase}_Initiative (Name, Roll, HP, Dmg, isTurn, User, Emote)
             VALUES ("${this.name}", ${this.rollValue}, ${this.HP}, ${this.Dmg}, ${this.isTurn}, "${this.user}", "${this.emote}");`,
                 (err, res) => {
@@ -76,8 +76,8 @@ export class Initiative {
         });
     }
 
-    removeFromTable(db: mysql.Connection, tableBaseName: string) {
-        db.query(
+    removeFromTable(db: Connection | Pool, tableBaseName: string) {
+        db.execute(
             `DELETE FROM ${tableBaseName}_Initiative WHERE Name = '${this.name}'`,
             (err, res) => {
                 if (err) {
@@ -88,8 +88,8 @@ export class Initiative {
         );
     }
 
-    updateDMG(db: mysql.Connection, tableBaseName: string, value: number) {
-        db.query(
+    updateDMG(db: Connection | Pool, tableBaseName: string, value: number) {
+        db.execute(
             `UPDATE ${tableBaseName}_Initiative SET Dmg = Dmg+${value} WHERE Name = '${this.name}';`,
             (err, res) => {
                 if (err) {
@@ -101,11 +101,11 @@ export class Initiative {
     }
 
     static getAllInitChrs(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string
     ): Promise<Array<Initiative> | null> {
         return new Promise((resolve) => {
-            db.query<IInitiativeObj[]>(
+            db.execute<IInitiativeObj[]>(
                 `SELECT * FROM ${tableBaseName}_Initiative ORDER BY Roll DESC;`,
                 (err, res) => {
                     if (err) {
@@ -115,29 +115,19 @@ export class Initiative {
 
                     let retArr = new Array<Initiative>();
 
-                    res.forEach(
-                        (init: {
-                            Name: string;
-                            Roll: number;
-                            isTurn: boolean;
-                            HP: number;
-                            Dmg: number;
-                            User: string;
-                            Emote: string | null;
-                        }) => {
-                            let retInit = new Initiative(
-                                init.Name,
-                                init.Roll,
-                                init.Emote,
-                                init.User,
-                                init.isTurn,
-                                init.HP,
-                                init.Dmg
-                            );
+                    res.forEach((init) => {
+                        let retInit = new Initiative(
+                            init.Name,
+                            init.Roll,
+                            init.Emote,
+                            init.User,
+                            init.isTurn,
+                            init.HP,
+                            init.Dmg
+                        );
 
-                            retArr.push(retInit);
-                        }
-                    );
+                        retArr.push(retInit);
+                    });
 
                     return resolve(retArr);
                 }
@@ -146,12 +136,12 @@ export class Initiative {
     }
 
     static getInitChr(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         chrName: string
     ): Promise<Initiative | null> {
         return new Promise((resolve) => {
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT * FROM ${tableBaseName}_Initiative WHERE Name = '${chrName}'`,
                 (err, res) => {
                     if (err || res.length != 1) {
@@ -217,11 +207,11 @@ export class Initiative {
     }
 
     static updateInitChar(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string,
         activeChr: Initiative
     ): Initiative {
-        db.query(
+        db.execute(
             `UPDATE ${tableNameBase}_Initiative SET isTurn = ${!activeChr.isTurn} WHERE Name = '${
                 activeChr.name
             }';`,
@@ -239,11 +229,11 @@ export class Initiative {
     }
 
     static updateInitChars(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string,
         activeChrs: [Initiative, Initiative, boolean]
     ): Initiative {
-        db.query(
+        db.execute(
             `UPDATE ${tableNameBase}_Initiative SET isTurn = ${!activeChrs[0]
                 .isTurn} WHERE Name = '${activeChrs[0].name}';
                 UPDATE ${tableNameBase}_Initiative SET isTurn = ${!activeChrs[1]
@@ -263,12 +253,12 @@ export class Initiative {
     }
 
     changeInit(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string,
         activeGame: ActiveGame
     ): Promise<boolean> {
         return new Promise((resolve) => {
-            db.query(
+            db.execute(
                 `UPDATE ${tableNameBase}_Initiative SET isTurn = false;
                     UPDATE ${tableNameBase}_Initiative SET isTurn = true WHERE Name = '${this.name}';`,
                 (err, res) => {
@@ -284,7 +274,7 @@ export class Initiative {
     }
 
     static async nextTurn(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string,
         activeGame: ActiveGame
     ): Promise<Initiative | undefined> {
@@ -341,7 +331,7 @@ export class Initiative {
     }
 
     static startInit(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string,
         initChrs: Array<Initiative>
     ): Initiative | undefined {
@@ -355,7 +345,7 @@ export class Initiative {
     }
 
     public static async buildInitMsg(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string,
         activeGame: ActiveGame
     ): Promise<string> {

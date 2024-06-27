@@ -5,7 +5,7 @@ import {
     CommandInteractionOptionResolver,
     GuildMember,
 } from "discord.js";
-import { Connection } from "mysql2";
+import { Connection, Pool } from "mysql2";
 import { ActiveGame } from "../../../models/activegame";
 import { DRCharacter } from "../drmodels/drcharacter";
 import { DRRelationship } from "../drmodels/drrelationship";
@@ -29,7 +29,7 @@ export class DRBridge extends Bridge {
     protected disabledCmds: DisabledCommand[];
     protected overridenCmds: OverridedCommand[];
 
-    constructor(gamedb: Connection, tableNameBase: string) {
+    constructor(gamedb: Connection | Pool, tableNameBase: string) {
         super(gamedb, tableNameBase);
         this.disabledCmds = [
             new DisabledCommand(

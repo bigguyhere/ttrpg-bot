@@ -1,4 +1,4 @@
-import mysql, { RowDataPacket } from "mysql2";
+import mysql, { Connection, Pool, RowDataPacket } from "mysql2";
 import DiscordJS, { Client, EmbedBuilder } from "discord.js";
 import { ActiveGame } from "./activegame";
 
@@ -23,8 +23,8 @@ export class Inventory {
         }
     }
 
-    static createTable(db: mysql.Connection, tableNameBase: string) {
-        db.query(
+    static createTable(db: Connection | Pool, tableNameBase: string) {
+        db.execute(
             `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Inventories (
             CHR_ID INT NOT NULL,
             ItemName varchar(255) NOT NULL,
@@ -42,11 +42,11 @@ export class Inventory {
         );
     }
 
-    addToTable(db: mysql.Connection, tableBaseName: string) {
+    addToTable(db: Connection | Pool, tableBaseName: string) {
         let desc = this.desc == null ? "null" : `"${this.desc}"`;
         let weight = this.weight == null ? "null" : `"${this.weight}"`;
 
-        db.query(
+        db.execute(
             `INSERT INTO ${tableBaseName}_Inventories (CHR_ID, ItemName, Quantity, Description, Weight)
         VALUES ("${this.chrId}", "${this.itemName}", "${this.quantity}", ${desc}, ${weight});`,
             (err, res) => {
@@ -59,13 +59,13 @@ export class Inventory {
     }
 
     static getItem(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         char_id: number,
         item_name: string
     ): Promise<Inventory | boolean | null> {
         return new Promise((resolve) => {
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT * FROM ${tableBaseName}_Inventories WHERE CHR_ID = '${char_id}' AND ItemName = '${item_name}';`,
                 (err, res) => {
                     if (err) {
@@ -124,8 +124,8 @@ export class Inventory {
             .setTimestamp();
     }
 
-    removeFromTable(db: mysql.Connection, tableBaseName: string) {
-        db.query(
+    removeFromTable(db: Connection | Pool, tableBaseName: string) {
+        db.execute(
             `DELETE FROM ${tableBaseName}_Inventories WHERE CHR_ID = '${this.chrId}' AND ItemName = '${this.itemName}';`,
             (err, res) => {
                 if (err) {
@@ -137,13 +137,13 @@ export class Inventory {
     }
 
     updateItem(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         newQuantity: number,
         newWeight: number | null,
         newDesc: string | null
     ) {
-        db.query(
+        db.execute(
             `UPDATE ${tableBaseName}_Inventories SET Quantity = '${newQuantity}' ${
                 newWeight == null ? `, Weight = ${newWeight}` : ""
             } ${newDesc == null ? `, Description = ${newDesc}` : ""}

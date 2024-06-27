@@ -1,6 +1,6 @@
 import DiscordJS, { Client, EmbedBuilder } from "discord.js";
 import { Character } from "../../../models/character";
-import mysql, { RowDataPacket } from "mysql2";
+import mysql, { Connection, Pool, RowDataPacket } from "mysql2";
 import { IPKMCharacterObj } from "./pkm_objectDefs";
 
 export class PokeCharacter extends Character {
@@ -35,7 +35,7 @@ export class PokeCharacter extends Character {
         this.calling = calling;
     }
 
-    static createTable(db: mysql.Connection, tableNameBase: string) {
+    static createTable(db: Connection | Pool, tableNameBase: string) {
         const pkmCols: string[] = [
             "Heart TINYINT NOT NULL",
             "Fitness TINYINT NOT NULL",
@@ -51,7 +51,7 @@ export class PokeCharacter extends Character {
         super.createTable(db, tableNameBase, pkmCols);
     }
 
-    addToTable(db: mysql.Connection, tableBaseName: string): Promise<boolean> {
+    addToTable(db: Connection | Pool, tableBaseName: string): Promise<boolean> {
         const queryStr =
             "Heart, Fitness, Research, Tactics, Advancement, Exp, Money, FirstImp, Calling";
         const valueStr = `${this.heart}, ${this.fitness}, ${this.research}, ${
@@ -67,12 +67,12 @@ export class PokeCharacter extends Character {
     }
 
     static getCharacter(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         char_name: string
     ): Promise<PokeCharacter | null> {
         return new Promise((resolve) => {
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT * FROM ${tableBaseName}_Characters WHERE Name = "${char_name}";`,
                 (err, res) => {
                     if (err || res.length != 1) {
@@ -107,7 +107,7 @@ export class PokeCharacter extends Character {
     }
 
     static getAllCharacters(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         onlyAlive: boolean = false
     ): Promise<Array<PokeCharacter> | null> {
@@ -115,7 +115,7 @@ export class PokeCharacter extends Character {
             let condStr = onlyAlive
                 ? " WHERE Status != 'Victim' AND Status != 'Dead'"
                 : "";
-            db.query<IPKMCharacterObj[]>(
+            db.execute<IPKMCharacterObj[]>(
                 `SELECT * FROM ${tableBaseName}_Characters${condStr} ORDER BY Name;`,
                 (err, res) => {
                     if (err) {
@@ -125,46 +125,29 @@ export class PokeCharacter extends Character {
 
                     let retArr = new Array<PokeCharacter>();
 
-                    res.forEach(
-                        (char: {
-                            Name: string;
-                            Emote: string | null | undefined;
-                            Pronouns: string | null | undefined;
-                            Owner: string | undefined;
-                            Heart: number | undefined;
-                            Fitness: number | undefined;
-                            Research: number | undefined;
-                            Tactics: number | undefined;
-                            Advancement: number | undefined;
-                            Exp: number | undefined;
-                            Money: number | undefined;
-                            FirstImp: string | null | undefined;
-                            Calling: string | null | undefined;
-                            CHR_ID: number;
-                        }) => {
-                            let retChr = new PokeCharacter(
-                                char.Name,
-                                char.Emote,
-                                char.Pronouns,
-                                char.Owner,
-                                char.Heart,
-                                char.Fitness,
-                                char.Research,
-                                char.Tactics,
-                                char.Advancement,
-                                char.Exp,
-                                char.Money,
-                                char.FirstImp,
-                                char.Calling
-                            );
-                            retChr.id = char.CHR_ID;
-                            retChr.status = res[0].Status;
-                            retChr.health = res[0].Health;
-                            retChr.dmgTaken = res[0].DmgTaken;
+                    res.forEach((char) => {
+                        let retChr = new PokeCharacter(
+                            char.Name,
+                            char.Emote,
+                            char.Pronouns,
+                            char.Owner,
+                            char.Heart,
+                            char.Fitness,
+                            char.Research,
+                            char.Tactics,
+                            char.Advancement,
+                            char.Exp,
+                            char.Money,
+                            char.FirstImp,
+                            char.Calling
+                        );
+                        retChr.id = char.CHR_ID;
+                        retChr.status = res[0].Status;
+                        retChr.health = res[0].Health;
+                        retChr.dmgTaken = res[0].DmgTaken;
 
-                            retArr.push(retChr);
-                        }
-                    );
+                        retArr.push(retChr);
+                    });
 
                     return resolve(retArr);
                 }

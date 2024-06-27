@@ -1,5 +1,10 @@
 import DiscordJS, { Client, EmbedBuilder } from "discord.js";
-import mysql, { ResultSetHeader, RowDataPacket } from "mysql2";
+import mysql, {
+    Connection,
+    Pool,
+    ResultSetHeader,
+    RowDataPacket,
+} from "mysql2";
 import { ActiveGame } from "../../../models/activegame";
 import { IDRTruthBulletObj } from "./dr_objectDefs";
 
@@ -24,8 +29,8 @@ export class DRTruthBullet {
         }
     }
 
-    static createTables(db: mysql.Connection, tableNameBase: string) {
-        db.query(
+    static createTables(db: Connection | Pool, tableNameBase: string) {
+        db.execute(
             `CREATE TABLE IF NOT EXISTS ${tableNameBase}_TruthBullets ( 
             TB_ID INT NOT NULL AUTO_INCREMENT,
             Name varchar(255) NOT NULL,
@@ -45,7 +50,7 @@ export class DRTruthBullet {
     }
 
     static getTB(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         tb_name: string,
         trial: number | null
@@ -56,7 +61,7 @@ export class DRTruthBullet {
                 trialStr = `AND Trial = "${trial}"`;
             }
 
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT * FROM ${tableBaseName}_TruthBullets WHERE Name = "${tb_name}" ${trialStr};`,
                 (err, res) => {
                     if (err || res.length == 0) {
@@ -78,7 +83,7 @@ export class DRTruthBullet {
     }
 
     static getAllTBs(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         trial: number | null
     ): Promise<Array<DRTruthBullet> | null> {
@@ -88,7 +93,7 @@ export class DRTruthBullet {
                 trialStr = `WHERE Trial = "${trial}"`;
             }
 
-            db.query<IDRTruthBulletObj[]>(
+            db.execute<IDRTruthBulletObj[]>(
                 `SELECT * FROM ${tableBaseName}_TruthBullets ${trialStr};`,
                 (err, res) => {
                     if (err) {
@@ -98,25 +103,17 @@ export class DRTruthBullet {
 
                     let retArr = new Array<DRTruthBullet>();
 
-                    res.forEach(
-                        (tb: {
-                            Name: string;
-                            Description: string;
-                            Trial: number | null;
-                            isUsed: boolean;
-                            TB_ID: number;
-                        }) => {
-                            let retTB = new DRTruthBullet(
-                                tb.Name,
-                                tb.Trial,
-                                tb.Description,
-                                tb.isUsed
-                            );
-                            retTB.id = tb.TB_ID;
+                    res.forEach((tb) => {
+                        let retTB = new DRTruthBullet(
+                            tb.Name,
+                            tb.Trial,
+                            tb.Description,
+                            tb.isUsed
+                        );
+                        retTB.id = tb.TB_ID;
 
-                            retArr.push(retTB);
-                        }
-                    );
+                        retArr.push(retTB);
+                    });
 
                     return resolve(retArr);
                 }
@@ -240,9 +237,9 @@ export class DRTruthBullet {
         return embeds;
     }
 
-    isViewable(db: mysql.Connection, tableBaseName: string, owner: string) {
+    isViewable(db: Connection | Pool, tableBaseName: string, owner: string) {
         return new Promise((resolve) => {
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT DISTINCT TruthBullets.TB_ID FROM ${tableBaseName}_TruthBullets as TruthBullets
                         JOIN ${tableBaseName}_ChrTBs as ChrTBs
                         JOIN ${tableBaseName}_Characters as Characters 
@@ -269,8 +266,8 @@ export class DRTruthBullet {
         });
     }
 
-    addToTable(db: mysql.Connection, tableBaseName: string) {
-        db.query<ResultSetHeader>(
+    addToTable(db: Connection | Pool, tableBaseName: string) {
+        db.execute<ResultSetHeader>(
             `INSERT INTO ${tableBaseName}_TruthBullets (Name, Description, Trial, isUsed)
         VALUES ("${this.name}", "${this.desc}", "${this.trial}", ${this.isUsed});`,
             (err, res) => {
@@ -284,13 +281,13 @@ export class DRTruthBullet {
         );
     }
 
-    removeFromTable(db: mysql.Connection, tableBaseName: string) {
+    removeFromTable(db: Connection | Pool, tableBaseName: string) {
         let trialStr = "";
         if (this.trial != null) {
             trialStr = `AND Trial = "${this.trial}"`;
         }
 
-        db.query(
+        db.execute(
             `DELETE FROM ${tableBaseName}_TruthBullets WHERE Name = '${this.name}' ${trialStr};`,
             (err, res) => {
                 if (err) {
@@ -302,14 +299,14 @@ export class DRTruthBullet {
     }
 
     useTB(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         value: boolean | null = null
     ) {
         let trialStr = this.trial == null ? "" : `AND Trial = ${this.trial}`;
         let valueStr = value == null ? "NOT isUsed" : String(value);
 
-        db.query(
+        db.execute(
             `UPDATE ${tableBaseName}_TruthBullets SET isUsed = ${valueStr} WHERE Name = "${this.name}" ${trialStr};`,
             (err, res) => {
                 if (err) {
@@ -327,8 +324,8 @@ export class DRChrTBs {
         this.tbId = tbId;
     }
 
-    static createTables(db: mysql.Connection, tableNameBase: string) {
-        db.query(
+    static createTables(db: Connection | Pool, tableNameBase: string) {
+        db.execute(
             `CREATE TABLE IF NOT EXISTS ${tableNameBase}_ChrTBs (
             CHR_ID INT NOT NULL,
             TB_ID INT NOT NULL,
@@ -343,8 +340,8 @@ export class DRChrTBs {
         );
     }
 
-    addToTable(db: mysql.Connection, tableBaseName: string) {
-        db.query(
+    addToTable(db: Connection | Pool, tableBaseName: string) {
+        db.execute(
             `INSERT INTO ${tableBaseName}_ChrTBs (CHR_ID, TB_ID)
         VALUES ("${this.chrId}", "${this.tbId}");`,
             (err, res) => {
@@ -356,8 +353,8 @@ export class DRChrTBs {
         );
     }
 
-    removeFromTable(db: mysql.Connection, tableBaseName: string) {
-        db.query(
+    removeFromTable(db: Connection | Pool, tableBaseName: string) {
+        db.execute(
             `DELETE FROM ${tableBaseName}_ChrTBs WHERE CHR_ID = '${this.chrId}' AND TB_ID = '${this.tbId}';`,
             (err, res) => {
                 if (err) {
@@ -370,11 +367,11 @@ export class DRChrTBs {
 
     //TODO: See if you can make a SQL query in future that can delete if exists and add if doesn't
     ifExists(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string
     ): Promise<boolean | null> {
         return new Promise((resolve) => {
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT * FROM ${tableBaseName}_ChrTBs WHERE CHR_ID = '${this.chrId}' AND TB_ID = '${this.tbId}';`,
                 (err, res) => {
                     if (err || res.length > 1) {

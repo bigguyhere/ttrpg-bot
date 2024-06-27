@@ -1,5 +1,5 @@
 import DiscordJS, { Client, EmbedBuilder } from "discord.js";
-import mysql, { RowDataPacket } from "mysql2";
+import mysql, { Connection, Pool, RowDataPacket } from "mysql2";
 import { Character } from "../../../models/character";
 import { DRSkill } from "./drskill";
 import { DRTruthBullet } from "./drtruthbullet";
@@ -41,7 +41,7 @@ export class DRCharacter extends Character {
         this.spUsed = 0;
     }
 
-    static createTable(db: mysql.Connection, tableNameBase: string) {
+    static createTable(db: Connection | Pool, tableNameBase: string) {
         const drCols: string[] = [
             "Talent varchar(255)",
             "Hope TINYINT NOT NULL",
@@ -62,7 +62,7 @@ export class DRCharacter extends Character {
         TODO: Rewrite this method to just call it's parent's addToTable method with the additional 
       dr columns as additional cols (Will allow for less commands)
     */
-    addToTable(db: mysql.Connection, tableBaseName: string): Promise<boolean> {
+    addToTable(db: Connection | Pool, tableBaseName: string): Promise<boolean> {
         let talent;
         if (this.talent != null) {
             talent = `"${this.talent}"`;
@@ -78,12 +78,12 @@ export class DRCharacter extends Character {
     }
 
     static getCharacter(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         char_name: string
     ): Promise<DRCharacter | null> {
         return new Promise((resolve) => {
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT * FROM ${tableBaseName}_Characters WHERE Name = "${char_name}";`,
                 (err, res) => {
                     if (err || res.length != 1) {
@@ -119,7 +119,7 @@ export class DRCharacter extends Character {
     }
 
     static getAllCharacters(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         onlyAlive: boolean = false
     ): Promise<Array<DRCharacter> | null> {
@@ -127,7 +127,7 @@ export class DRCharacter extends Character {
             let condStr = onlyAlive
                 ? " WHERE Status != 'Victim' AND Status != 'Dead'"
                 : "";
-            db.query<IDRCharacterObj[]>(
+            db.execute<IDRCharacterObj[]>(
                 `SELECT * FROM ${tableBaseName}_Characters${condStr} ORDER BY Name;`,
                 (err, res) => {
                     if (err) {
@@ -137,44 +137,28 @@ export class DRCharacter extends Character {
 
                     let retArr = new Array<DRCharacter>();
 
-                    res.forEach(
-                        (char: {
-                            Name: string;
-                            Emote: string | null;
-                            Pronouns: string | null;
-                            Owner: string;
-                            Talent: string | null;
-                            Hope: number;
-                            Despair: number;
-                            Brains: number;
-                            Brawn: number;
-                            Nimble: number;
-                            Social: number;
-                            Intuition: number;
-                            CHR_ID: number;
-                        }) => {
-                            let retChr = new DRCharacter(
-                                char.Name,
-                                char.Emote,
-                                char.Pronouns,
-                                char.Owner,
-                                char.Talent,
-                                char.Hope,
-                                char.Despair,
-                                char.Brains,
-                                char.Brawn,
-                                char.Nimble,
-                                char.Social,
-                                char.Intuition
-                            );
-                            retChr.id = char.CHR_ID;
-                            retChr.status = res[0].Status;
-                            retChr.health = res[0].Health;
-                            retChr.dmgTaken = res[0].DmgTaken;
+                    res.forEach((char) => {
+                        let retChr = new DRCharacter(
+                            char.Name,
+                            char.Emote,
+                            char.Pronouns,
+                            char.Owner,
+                            char.Talent,
+                            char.Hope,
+                            char.Despair,
+                            char.Brains,
+                            char.Brawn,
+                            char.Nimble,
+                            char.Social,
+                            char.Intuition
+                        );
+                        retChr.id = char.CHR_ID;
+                        retChr.status = res[0].Status;
+                        retChr.health = res[0].Health;
+                        retChr.dmgTaken = res[0].DmgTaken;
 
-                            retArr.push(retChr);
-                        }
-                    );
+                        retArr.push(retChr);
+                    });
 
                     return resolve(retArr);
                 }
@@ -183,7 +167,7 @@ export class DRCharacter extends Character {
     }
 
     static setToDead(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         blackenedWon: boolean
     ) {
@@ -191,7 +175,7 @@ export class DRCharacter extends Character {
             ? `UPDATE ${tableBaseName}_Characters SET Status = 'Dead' WHERE Status != 'Blackened';
            UPDATE ${tableBaseName}_Characters SET Status = 'Survivor' WHERE Status = 'Blackened';`
             : `UPDATE ${tableBaseName}_Characters SET Status = 'Dead' WHERE Status != 'Alive';`;
-        db.query(queryStr, (err, res) => {
+        db.execute(queryStr, (err, res) => {
             if (err) {
                 console.log(err);
                 throw err;
@@ -200,13 +184,13 @@ export class DRCharacter extends Character {
     }
 
     async updateHD(
-        db: mysql.Connection,
+        db: Connection | Pool,
         client: Client<boolean>,
         tableBaseName: string,
         hope: number,
         despair: number
     ) {
-        db.query(
+        db.execute(
             `UPDATE ${tableBaseName}_Characters SET Hope = Hope+${hope}, Despair = Despair+${despair}
                  WHERE Name = '${this.name}' AND (Status = 'Alive' OR Status = 'Blackened');`,
             (err, res) => {
@@ -221,7 +205,7 @@ export class DRCharacter extends Character {
     }
 
     public async checkHDNotif(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         client: Client<boolean>
     ) {
@@ -439,7 +423,7 @@ export class DRCharacter extends Character {
     }
 
     async generateRelations(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string
     ): Promise<boolean> {
         let allChars = await Character.getAllCharacters(db, tableNameBase);
@@ -461,7 +445,7 @@ export class DRCharacter extends Character {
             }
         }
         queryStr = queryStr.replace(/.$/, ";");
-        db.query(queryStr, (err, res) => {
+        db.execute(queryStr, (err, res) => {
             if (err) {
                 console.log(err);
                 throw err;
@@ -472,11 +456,11 @@ export class DRCharacter extends Character {
     }
 
     getAllChrSkills(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string
     ): Promise<Array<DRSkill> | null> {
         return new Promise((resolve) => {
-            db.query<IDRSkillObj[]>(
+            db.execute<IDRSkillObj[]>(
                 `SELECT * FROM ${tableBaseName}_Skills as Skills JOIN ${tableBaseName}_ChrSkills as ChrSkills 
                             WHERE ChrSkills.CHR_ID = ${this.id} AND ChrSkills.SKL_ID = Skills.SKL_ID ORDER BY Name;`,
                 (err, res) => {
@@ -487,27 +471,18 @@ export class DRCharacter extends Character {
 
                     let retArr = new Array<DRSkill>();
 
-                    res.forEach(
-                        (skill: {
-                            Name: string;
-                            Prereqs: string | null | undefined;
-                            Description: string | undefined;
-                            SPCost: number | undefined;
-                            Type: string | null | undefined;
-                            SKL_ID: number;
-                        }) => {
-                            let retSkill = new DRSkill(
-                                skill.Name,
-                                skill.Prereqs,
-                                skill.Description,
-                                skill.SPCost,
-                                skill.Type
-                            );
-                            retSkill.id = skill.SKL_ID;
+                    res.forEach((skill) => {
+                        let retSkill = new DRSkill(
+                            skill.Name,
+                            skill.Prereqs,
+                            skill.Description,
+                            skill.SPCost,
+                            skill.Type
+                        );
+                        retSkill.id = skill.SKL_ID;
 
-                            retArr.push(retSkill);
-                        }
-                    );
+                        retArr.push(retSkill);
+                    });
 
                     return resolve(retArr);
                 }
@@ -516,7 +491,7 @@ export class DRCharacter extends Character {
     }
 
     getAllChrTBs(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         trial: number | null
     ): Promise<Array<DRTruthBullet> | null> {
@@ -525,7 +500,7 @@ export class DRCharacter extends Character {
             if (trial != null) {
                 trialStr = `AND TBs.Trial = "${trial}"`;
             }
-            db.query<IDRTruthBulletObj[]>(
+            db.execute<IDRTruthBulletObj[]>(
                 `SELECT * FROM ${tableBaseName}_TruthBullets as TBs JOIN ${tableBaseName}_ChrTBs as ChrTBs 
                             WHERE ChrTBs.CHR_ID = ${this.id} AND ChrTBs.TB_ID = TBs.TB_ID ${trialStr};`,
                 (err, res) => {
@@ -536,25 +511,17 @@ export class DRCharacter extends Character {
 
                     let retArr = new Array<DRTruthBullet>();
 
-                    res.forEach(
-                        (tb: {
-                            Name: string;
-                            Description: string;
-                            Trial: number | null;
-                            isUsed: boolean;
-                            TB_ID: number;
-                        }) => {
-                            let retTB = new DRTruthBullet(
-                                tb.Name,
-                                tb.Trial,
-                                tb.Description,
-                                tb.isUsed
-                            );
-                            retTB.id = tb.TB_ID;
+                    res.forEach((tb) => {
+                        let retTB = new DRTruthBullet(
+                            tb.Name,
+                            tb.Trial,
+                            tb.Description,
+                            tb.isUsed
+                        );
+                        retTB.id = tb.TB_ID;
 
-                            retArr.push(retTB);
-                        }
-                    );
+                        retArr.push(retTB);
+                    });
 
                     return resolve(retArr);
                 }
@@ -562,8 +529,8 @@ export class DRCharacter extends Character {
         });
     }
 
-    removeFromTable(db: mysql.Connection, tableBaseName: string) {
-        db.query(
+    removeFromTable(db: Connection | Pool, tableBaseName: string) {
+        db.execute(
             `DELETE FROM ${tableBaseName}_Relationships WHERE (CHR_ID1 = ${this.id} OR CHR_ID2 = ${this.id});`,
             (err, res) => {
                 if (err) {

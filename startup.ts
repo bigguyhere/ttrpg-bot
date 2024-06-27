@@ -4,6 +4,7 @@ import { SetupFunctions } from "./setup";
 import { CommandBridge } from "./interpreters/std_bridge";
 import { DatabaseFunctions } from "./utility/database";
 import { UtilityFunctions } from "./utility/general";
+import { Connection, Pool } from "mysql2";
 
 dotenv.config();
 
@@ -29,9 +30,14 @@ UtilityFunctions.errorCheck(
     "Database name must be provided"
 );
 
-const gamesDBName = process.env.DATABASE;
-const dbHost = process.env.HOST === undefined ? "localhost" : process.env.HOST;
-const guildID = String(process.env.TESTGUILD);
+const gamesDBName: string | undefined = process.env.DATABASE;
+const connectionMode: string | undefined = process.env.CONNECTIONMODE;
+const guildID: string = String(process.env.TESTGUILD);
+let gamedb: Connection | Pool | undefined = undefined;
+let port: number | undefined = parseInt(String(process.env.PORT?.trim()));
+port = isNaN(port) ? undefined : port;
+const isPool: boolean =
+    connectionMode === undefined || connectionMode.toLowerCase() === "pool";
 
 client.on(Events.ClientReady, () => {
     console.log("Bot is ready.");
@@ -40,6 +46,24 @@ client.on(Events.ClientReady, () => {
         process.env.MODE === "test"
             ? client.guilds.cache.get(guildID)
             : undefined;
+
+    DatabaseFunctions.createDatabase(
+        process.env.HOST,
+        process.env.USER,
+        process.env.PASSWORD,
+        gamesDBName,
+        port
+    );
+
+    if (isPool) {
+        gamedb = DatabaseFunctions.createPool(
+            process.env.HOST,
+            process.env.USER,
+            process.env.PASSWORD,
+            gamesDBName,
+            port
+        );
+    }
 
     SetupFunctions.commandSetup(guild, client);
 
@@ -51,18 +75,25 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return;
     }
 
-    const gamedb = DatabaseFunctions.connect(
-        dbHost,
-        process.env.USER,
-        process.env.PASSWORD,
-        gamesDBName
-    );
+    if (!isPool || gamedb === undefined) {
+        gamedb = DatabaseFunctions.connect(
+            process.env.HOST,
+            process.env.USER,
+            process.env.PASSWORD,
+            gamesDBName,
+            port
+        );
+    }
 
-    let id =
-        process.env.MODE === "test" ? guildID : String(interaction.guild?.id);
+    const id =
+        process.env.EXECUTIONMODE?.toLowerCase() === "test"
+            ? guildID
+            : String(interaction.guild?.id);
 
     await CommandBridge.reply(interaction, gamedb, id, client).then(() => {
-        DatabaseFunctions.disconnect(gamedb);
+        if (!isPool) {
+            DatabaseFunctions.disconnect(gamedb);
+        }
     });
 });
 

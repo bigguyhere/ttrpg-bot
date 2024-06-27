@@ -1,4 +1,9 @@
-import mysql, { ResultSetHeader, RowDataPacket } from "mysql2";
+import mysql, {
+    Connection,
+    Pool,
+    ResultSetHeader,
+    RowDataPacket,
+} from "mysql2";
 import { IArbitraryStat, ICharacterObj, IItemObj } from "./objectDefs";
 import DiscordJS, { Client, EmbedBuilder } from "discord.js";
 import { Inventory } from "./inventory";
@@ -43,7 +48,7 @@ export class Character {
     }
 
     static createTable(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string,
         additionalStats: string[]
     ) {
@@ -63,7 +68,7 @@ export class Character {
 
         queryStr += "PRIMARY KEY (CHR_ID));";
 
-        db.query(queryStr, (err, res) => {
+        db.execute(queryStr, (err, res) => {
             if (err) {
                 console.log(err);
                 throw err;
@@ -72,7 +77,7 @@ export class Character {
     }
 
     addToTable(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         addQuery?: string,
         addValue?: string
@@ -88,7 +93,7 @@ export class Character {
                 addValue === undefined ? "" : `, ${addValue}`
             })`;
 
-            db.query<ResultSetHeader>(
+            db.execute<ResultSetHeader>(
                 `${queryStr}\n${valuesStr}`,
                 (err, res) => {
                     if (err) {
@@ -109,7 +114,7 @@ export class Character {
     }
 
     private incrementStat(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         statName: string,
         statValue: string
@@ -121,7 +126,7 @@ export class Character {
                 return resolve(false);
             }
 
-            db.query(
+            db.execute(
                 `UPDATE ${tableBaseName}_Characters SET ${statName} = ${statName}+${value} WHERE Name = '${this.name}';`,
                 (err, res) => {
                     if (err) {
@@ -135,7 +140,7 @@ export class Character {
     }
 
     updateStat(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         statName: string,
         statValue: string,
@@ -151,7 +156,7 @@ export class Character {
                 );
             }
 
-            db.query(
+            db.execute(
                 `UPDATE ${tableBaseName}_Characters SET ${statName} = '${statValue}' WHERE Name = '${this.name}';`,
                 (err, res) => {
                     if (err) {
@@ -164,8 +169,8 @@ export class Character {
         });
     }
 
-    removeFromTable(db: mysql.Connection, tableBaseName: string) {
-        db.query(
+    removeFromTable(db: Connection | Pool, tableBaseName: string) {
+        db.execute(
             `DELETE FROM ${tableBaseName}_Characters WHERE Name='${this.name}'`,
             (err, res) => {
                 if (err) {
@@ -177,12 +182,12 @@ export class Character {
     }
 
     static getCharacter(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string,
         char_name: string | number
     ): Promise<Character | null> {
         return new Promise((resolve) => {
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT * FROM ${tableBaseName}_Characters WHERE Name = "${char_name}";`,
                 (err, res) => {
                     if (err || res.length != 1) {
@@ -190,7 +195,7 @@ export class Character {
                         return resolve(null);
                     }
 
-                    db.query<IArbitraryStat[]>(
+                    db.execute<IArbitraryStat[]>(
                         `SHOW COLUMNS FROM ${tableBaseName}_Characters;`,
                         (errr, ress) => {
                             if (errr) {
@@ -210,21 +215,14 @@ export class Character {
                                 "Status",
                             ];
 
-                            ress.forEach(
-                                (stat: {
-                                    Field: string;
-                                    Type: string | number | boolean;
-                                }) => {
-                                    if (!baseStats.includes(stat.Field)) {
-                                        stats.push([
-                                            stat.Field,
-                                            String(
-                                                eval(`res[0].${stat.Field}`)
-                                            ),
-                                        ]);
-                                    }
+                            ress.forEach((stat) => {
+                                if (!baseStats.includes(stat.Field)) {
+                                    stats.push([
+                                        stat.Field,
+                                        String(eval(`res[0].${stat.Field}`)),
+                                    ]);
                                 }
-                            );
+                            });
 
                             let retChr = new Character(
                                 res[0].Name,
@@ -247,11 +245,11 @@ export class Character {
     }
 
     static getAllCharacters(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string
     ): Promise<Array<Character> | null> {
         return new Promise((resolve) => {
-            db.query<ICharacterObj[]>(
+            db.execute<ICharacterObj[]>(
                 `SELECT * FROM ${tableBaseName}_Characters ORDER BY Name;`,
                 (err, res) => {
                     if (err) {
@@ -261,32 +259,21 @@ export class Character {
 
                     let retArr = new Array<Character>();
 
-                    res.forEach(
-                        (char: {
-                            CHR_ID: number;
-                            Name: string;
-                            Emote: string | null;
-                            Pronouns: string | null;
-                            Owner: string;
-                            Health: number | null;
-                            DmgTaken: number;
-                            Status: string | null;
-                        }) => {
-                            let retChr = new Character(
-                                char.Name,
-                                char.Emote,
-                                char.Pronouns,
-                                char.Owner,
-                                char.Health,
-                                char.DmgTaken,
-                                char.Status,
-                                []
-                            );
-                            retChr.id = char.CHR_ID;
+                    res.forEach((char) => {
+                        let retChr = new Character(
+                            char.Name,
+                            char.Emote,
+                            char.Pronouns,
+                            char.Owner,
+                            char.Health,
+                            char.DmgTaken,
+                            char.Status,
+                            []
+                        );
+                        retChr.id = char.CHR_ID;
 
-                            retArr.push(retChr);
-                        }
-                    );
+                        retArr.push(retChr);
+                    });
 
                     return resolve(retArr);
                 }
@@ -295,11 +282,11 @@ export class Character {
     }
 
     getAllChrItems(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableBaseName: string
     ): Promise<Array<Inventory> | null> {
         return new Promise((resolve) => {
-            db.query<IItemObj[]>(
+            db.execute<IItemObj[]>(
                 `SELECT * FROM ${tableBaseName}_Inventories as Inventories WHERE Inventories.CHR_ID = ${this.id};`,
                 (err, res) => {
                     if (err) {
@@ -309,25 +296,17 @@ export class Character {
 
                     let retArr = new Array<Inventory>();
 
-                    res.forEach(
-                        (item: {
-                            CHR_ID: number;
-                            ItemName: string;
-                            Quantity: number | null;
-                            Description: string | null;
-                            Weight: number | null;
-                        }) => {
-                            let retItem = new Inventory(
-                                item.CHR_ID,
-                                item.ItemName,
-                                item.Quantity,
-                                item.Description,
-                                item.Weight
-                            );
+                    res.forEach((item) => {
+                        let retItem = new Inventory(
+                            item.CHR_ID,
+                            item.ItemName,
+                            item.Quantity,
+                            item.Description,
+                            item.Weight
+                        );
 
-                            retArr.push(retItem);
-                        }
-                    );
+                        retArr.push(retItem);
+                    });
 
                     return resolve(retArr);
                 }

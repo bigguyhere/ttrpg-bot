@@ -1,5 +1,5 @@
 import DiscordJS, { Client, EmbedBuilder } from "discord.js";
-import mysql, { RowDataPacket } from "mysql2";
+import mysql, { Connection, Pool, RowDataPacket } from "mysql2";
 import { DRCharacter } from "./drcharacter";
 import { IDRHopeDespairChangeObj } from "./dr_objectDefs";
 
@@ -13,11 +13,11 @@ export class DRRelationship {
     }
 
     changeRelationship(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string,
         newValue: number
     ) {
-        db.query(
+        db.execute(
             `UPDATE ${tableNameBase}_Relationships SET Value = ${newValue} 
             WHERE (CHR_ID1 = ${this.char1.id} and CHR_ID2 = ${this.char2.id}) 
             OR (CHR_ID1 = ${this.char2.id} and CHR_ID2 = ${this.char1.id});`,
@@ -31,11 +31,11 @@ export class DRRelationship {
     }
 
     getRelationship(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string
     ): Promise<DRRelationship | null> {
         return new Promise((resolve) => {
-            db.query<RowDataPacket[]>(
+            db.execute<RowDataPacket[]>(
                 `SELECT * FROM ${tableNameBase}_Relationships WHERE (CHR_ID1 = ${this.char1.id} and CHR_ID2 = ${this.char2.id}) OR (CHR_ID1 = ${this.char2.id} and CHR_ID2 = ${this.char1.id});`,
                 (err, res) => {
                     if (err || res.length != 1) {
@@ -52,12 +52,12 @@ export class DRRelationship {
     }
 
     static getHDChange(
-        db: mysql.Connection,
+        db: Connection | Pool,
         tableNameBase: string,
         status: string
     ): Promise<Array<[string, number]> | null> {
         return new Promise((resolve) => {
-            db.query<IDRHopeDespairChangeObj[]>(
+            db.execute<IDRHopeDespairChangeObj[]>(
                 `SELECT Char1.Name, 
             SUM(CASE 
                 WHEN Value > 0 THEN -2
@@ -80,7 +80,7 @@ export class DRRelationship {
 
                     let retArr: Array<[string, number]> = [];
 
-                    res.forEach((result: { Name: string; Change: number }) => {
+                    res.forEach((result) => {
                         retArr.push([result.Name, result.Change]);
                     });
 
@@ -90,8 +90,8 @@ export class DRRelationship {
         });
     }
 
-    static createTable(db: mysql.Connection, tableNameBase: string) {
-        db.query(
+    static createTable(db: Connection | Pool, tableNameBase: string) {
+        db.execute(
             `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Relationships ( 
             CHR_ID1 INT NOT NULL,
             CHR_ID2 INT NOT NULL,
