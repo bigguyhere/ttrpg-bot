@@ -1,26 +1,26 @@
 import FileSystem from "fs";
 import Path from "path";
 
+export enum LogLevel {
+    DEFAULT,
+    INFO,
+    DEBUG,
+    WARNING,
+    ERROR,
+    CRITICAL,
+}
+
+export enum SeverityLevel {
+    NONE,
+    VERY_LOW,
+    LOW,
+    MEDIUM,
+    HIGH,
+    VERY_HIGH,
+}
+
 module LoggingFunctions {
     export let DefaultPath: string = getDefaultPath();
-
-    export enum LogLevel {
-        DEFAULT,
-        INFO,
-        DEBUG,
-        WARNING,
-        ERROR,
-        CRITICAL,
-    }
-
-    export enum SeverityLevel {
-        NONE,
-        VERY_LOW,
-        LOW,
-        MEDIUM,
-        HIGH,
-        VERY_HIGH,
-    }
 
     function getDefaultPath(): string {
         let returnStr = "";
@@ -56,7 +56,7 @@ module LoggingFunctions {
         path: string = DefaultPath,
         printToConsole: boolean = false,
         time?: number | string
-    ): Promise<void> {
+    ): Promise<string> {
         const logLvlStr = logLevel === 0 ? "" : ` ${LogLevel[logLevel]}`;
         const severityStr =
             severity === 0 ? "" : ` (${SeverityLevel[severity]})`;
@@ -78,6 +78,8 @@ module LoggingFunctions {
         if (printToConsole) {
             console.log(logMsg);
         }
+
+        return message;
     }
 
     export async function logFunc<T>(

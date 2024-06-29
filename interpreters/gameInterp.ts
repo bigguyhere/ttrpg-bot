@@ -13,6 +13,7 @@ import { UtilityFunctions } from "../utility/general";
 import { Pagination } from "../utility/pagination";
 import { SelectBridge } from "../modules/select_interpreter";
 import { Interpreter } from "./abstract_models";
+import { LogLevel, LoggingFunctions, SeverityLevel } from "../utility/logging";
 
 export class GameInterpreter extends Interpreter {
     protected userID: string;
@@ -103,8 +104,17 @@ export class GameInterpreter extends Interpreter {
     }
 
     public async viewSummary(activeGame: ActiveGame): Promise<string | null> {
+        LoggingFunctions.log(
+            `Viewing game summary for game \"${activeGame.gameName}\" for server ID \"${this.guildID}\"`,
+            LogLevel.INFO
+        );
+
         if (activeGame == null) {
-            return "Issue retrieving active game.";
+            return LoggingFunctions.log(
+                "Issue retrieving active game. Please contact administrator.",
+                LogLevel.ERROR,
+                SeverityLevel.MEDIUM
+            );
         }
 
         let embeds = await Character.buildSummaryEmbed(
@@ -116,7 +126,11 @@ export class GameInterpreter extends Interpreter {
         );
 
         if (embeds == null) {
-            return "Error finding all characters and building embed.";
+            return LoggingFunctions.log(
+                "Error finding all characters and building embed.",
+                LogLevel.ERROR,
+                SeverityLevel.MEDIUM
+            );
         }
 
         const replyStr = `The characters in **\"${activeGame.gameName}\"** has been successfully viewed.`;

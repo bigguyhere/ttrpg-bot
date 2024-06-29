@@ -5,7 +5,7 @@ import { CommandBridge } from "./interpreters/std_bridge";
 import { DatabaseFunctions } from "./utility/database";
 import { UtilityFunctions } from "./utility/general";
 import { Connection, Pool } from "mysql2";
-import { LoggingFunctions } from "./utility/logging";
+import { LogLevel, LoggingFunctions } from "./utility/logging";
 
 dotenv.config();
 
@@ -43,7 +43,7 @@ const isPool: boolean =
 client.on(Events.ClientReady, () => {
     LoggingFunctions.log(
         "Bot is ready.",
-        LoggingFunctions.LogLevel.INFO,
+        LogLevel.INFO,
         undefined,
         undefined,
         true
@@ -76,7 +76,7 @@ client.on(Events.ClientReady, () => {
 
     LoggingFunctions.log(
         "Bot has completed setup.",
-        LoggingFunctions.LogLevel.INFO,
+        LogLevel.INFO,
         undefined,
         undefined,
         true
