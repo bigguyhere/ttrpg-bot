@@ -12,11 +12,11 @@ export enum LogLevel {
 
 export enum SeverityLevel {
     NONE,
-    VERY_LOW,
-    LOW,
-    MEDIUM,
-    HIGH,
-    VERY_HIGH,
+    VERY_LOW, // Negligible errors: Errors that do not effect much of anything at all
+    LOW, // Lower scale errors: Typically functionality can still be performed, but some minor inessential part has failed due to configuration or user error
+    MEDIUM, // Typical errors: Errors where functionality cannot be performed, but doesn't imply a larger issue that will cause further problems
+    HIGH, // Large-scale errors: Errors that cause functionality of command to not work and imply a larger system/configuration/implementation issue
+    VERY_HIGH, // Critical/Load-bearing errors: Errors that cause entire application as a whole to not be able to function
 }
 
 module LoggingFunctions {

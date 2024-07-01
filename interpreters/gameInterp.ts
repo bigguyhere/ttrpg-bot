@@ -113,7 +113,7 @@ export class GameInterpreter extends Interpreter {
             return LoggingFunctions.log(
                 "Issue retrieving active game. Please contact administrator.",
                 LogLevel.ERROR,
-                SeverityLevel.MEDIUM
+                SeverityLevel.VERY_HIGH
             );
         }
 

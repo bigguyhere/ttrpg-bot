@@ -1,6 +1,7 @@
 import mysql, { Connection, Pool, RowDataPacket } from "mysql2";
 import DiscordJS, { Client, EmbedBuilder } from "discord.js";
 import { ActiveGame } from "./activegame";
+import { LogLevel, LoggingFunctions, SeverityLevel } from "../utility/logging";
 
 export class Inventory {
     public quantity: number;
@@ -23,19 +24,23 @@ export class Inventory {
         }
     }
 
-    static createTable(db: Connection | Pool, tableNameBase: string) {
+    static createTable(db: Connection | Pool, tableBaseName: string) {
         db.execute(
-            `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Inventories (
+            `CREATE TABLE IF NOT EXISTS ${tableBaseName}_Inventories (
             CHR_ID INT NOT NULL,
             ItemName varchar(255) NOT NULL,
             Quantity INT NOT NULL,
             Description varchar(1000),
             Weight INT,
             PRIMARY KEY (CHR_ID, ItemName),
-            FOREIGN KEY (CHR_ID) REFERENCES ${tableNameBase}_Characters(CHR_ID) ON DELETE CASCADE);`,
+            FOREIGN KEY (CHR_ID) REFERENCES ${tableBaseName}_Characters(CHR_ID) ON DELETE CASCADE);`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to create table \"${tableBaseName}_Inventories\"\n${err}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
@@ -51,7 +56,11 @@ export class Inventory {
         VALUES ("${this.chrId}", "${this.itemName}", "${this.quantity}", ${desc}, ${weight});`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to add \"${this.itemName}\" to table \"${tableBaseName}_Inventories\"\n${err}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
@@ -69,11 +78,20 @@ export class Inventory {
                 `SELECT * FROM ${tableBaseName}_Inventories WHERE CHR_ID = '${char_id}' AND ItemName = '${item_name}';`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to get \"${item_name}\" from table \"${tableBaseName}_Inventories\"\n${err}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(null);
                     }
 
                     if (res.length != 1) {
+                        LoggingFunctions.log(
+                            `${res.length} items obtained under name \"${item_name}\" from table \"${tableBaseName}_Inventories\"\n${err}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.MEDIUM
+                        );
                         return resolve(false);
                     }
 
@@ -129,7 +147,11 @@ export class Inventory {
             `DELETE FROM ${tableBaseName}_Inventories WHERE CHR_ID = '${this.chrId}' AND ItemName = '${this.itemName}';`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to remove item \"${this.itemName}\" from \"${tableBaseName}_Inventories\"\n${err}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.LOW
+                    );
                     throw err;
                 }
             }
@@ -150,7 +172,11 @@ export class Inventory {
             WHERE CHR_ID = '${this.chrId}' AND ItemName = '${this.itemName}';`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to update item \"${this.itemName}\" from \"${tableBaseName}_Inventories\"\n${err}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
