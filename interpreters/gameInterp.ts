@@ -91,11 +91,6 @@ export class GameInterpreter extends Interpreter {
 
     public async changeDM(activeGame: ActiveGame): Promise<string> {
         const newDM = this.options.getUser("newdm-name", true);
-
-        if (activeGame == null) {
-            return "Issue retrieving active game.";
-        }
-
         const oldDM = await this.client.users.fetch(activeGame.defaultRoll);
         activeGame.DM = newDM.id;
         activeGame.setDM(this.gamedb);
@@ -104,19 +99,6 @@ export class GameInterpreter extends Interpreter {
     }
 
     public async viewSummary(activeGame: ActiveGame): Promise<string | null> {
-        LoggingFunctions.log(
-            `Viewing game summary for game \"${activeGame.gameName}\" for server ID \"${this.guildID}\"`,
-            LogLevel.INFO
-        );
-
-        if (activeGame == null) {
-            return LoggingFunctions.log(
-                "Issue retrieving active game. Please contact administrator.",
-                LogLevel.ERROR,
-                SeverityLevel.VERY_HIGH
-            );
-        }
-
         let embeds = await Character.buildSummaryEmbed(
             this.client,
             this.interaction.user,
@@ -126,11 +108,7 @@ export class GameInterpreter extends Interpreter {
         );
 
         if (embeds == null) {
-            return LoggingFunctions.log(
-                "Error finding all characters and building embed.",
-                LogLevel.ERROR,
-                SeverityLevel.MEDIUM
-            );
+            return "Error finding all characters and building embed.";
         }
 
         const replyStr = `The characters in **\"${activeGame.gameName}\"** has been successfully viewed.`;

@@ -72,7 +72,7 @@ export class Character {
         db.execute(queryStr, (err, res) => {
             if (err) {
                 LoggingFunctions.log(
-                    `Unable to create table \"${tableBaseName}_Characters\"\n${err}`,
+                    `Unable to create table \"${tableBaseName}_Characters\"\n${err.stack}`,
                     LogLevel.ERROR,
                     SeverityLevel.HIGH
                 );
@@ -105,14 +105,14 @@ export class Character {
                         if (err.errno == 1062) {
                             // Duplicate Character
                             LoggingFunctions.log(
-                                `Unable to add character \"${this.name}\" to \"${tableBaseName}_Characters\" (Character has already been added)\n${err}`,
+                                `Unable to add character \"${this.name}\" to \"${tableBaseName}_Characters\" (Character has already been added)\n${err.stack}`,
                                 LogLevel.WARNING,
                                 SeverityLevel.LOW
                             );
                             return resolve(false);
                         }
                         LoggingFunctions.log(
-                            `Unable to add character \"${this.name}\" to \"${tableBaseName}_Characters\"\n${err}`,
+                            `Unable to add character \"${this.name}\" to \"${tableBaseName}_Characters\"\n${err.stack}`,
                             LogLevel.ERROR,
                             SeverityLevel.HIGH
                         );
@@ -150,7 +150,7 @@ export class Character {
                 (err, res) => {
                     if (err) {
                         LoggingFunctions.log(
-                            `Unable to increment stat \"${statName}\" for character \"${this.name}\" from \"${tableBaseName}_Characters\"\n${err}`,
+                            `Unable to increment stat \"${statName}\" for character \"${this.name}\" from \"${tableBaseName}_Characters\"\n${err.stack}`,
                             LogLevel.ERROR,
                             SeverityLevel.HIGH
                         );
@@ -184,7 +184,7 @@ export class Character {
                 (err, res) => {
                     if (err) {
                         LoggingFunctions.log(
-                            `Unable to update stat \"${statName}\" for character \"${this.name}\" from \"${tableBaseName}_Characters\"\n${err}`,
+                            `Unable to update stat \"${statName}\" for character \"${this.name}\" from \"${tableBaseName}_Characters\"\n${err.stack}`,
                             LogLevel.ERROR,
                             SeverityLevel.HIGH
                         );
@@ -202,7 +202,7 @@ export class Character {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to delete character \"${this.name}\" from \"${tableBaseName}_Characters\"\n${err}`,
+                        `Unable to delete character \"${this.name}\" from \"${tableBaseName}_Characters\"\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.LOW
                     );
@@ -222,9 +222,12 @@ export class Character {
                 `SELECT * FROM ${tableBaseName}_Characters WHERE Name = "${char_name}";`,
                 (err, res) => {
                     if (err || res.length != 1) {
-                        console.log(err);
                         LoggingFunctions.log(
-                            `Unable to get character \"${char_name}\" from \"${tableBaseName}_Characters\"\n${err}`,
+                            `Unable to get character \"${char_name}\" from \"${tableBaseName}_Characters\"\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
                             LogLevel.ERROR,
                             SeverityLevel.LOW
                         );
@@ -294,7 +297,7 @@ export class Character {
                 (err, res) => {
                     if (err) {
                         LoggingFunctions.log(
-                            `Unable to get all characters from \"${tableBaseName}_Characters\"\n${err}`,
+                            `Unable to get all characters from \"${tableBaseName}_Characters\"\n${err.stack}`,
                             LogLevel.ERROR,
                             SeverityLevel.HIGH
                         );
@@ -335,11 +338,10 @@ export class Character {
                 (err, res) => {
                     if (err) {
                         LoggingFunctions.log(
-                            `Unable to get all character items from \"${tableBaseName}_Inventories\" for character \"${this.name}\"\n${err}`,
+                            `Unable to get all character items from \"${tableBaseName}_Inventories\" for character \"${this.name}\"\n${err.stack}`,
                             LogLevel.ERROR,
                             SeverityLevel.HIGH
                         );
-                        console.log(err);
                         return resolve(null);
                     }
 

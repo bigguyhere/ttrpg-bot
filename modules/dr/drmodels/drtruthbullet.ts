@@ -7,6 +7,11 @@ import mysql, {
 } from "mysql2";
 import { ActiveGame } from "../../../models/activegame";
 import { IDRTruthBulletObj } from "./dr_objectDefs";
+import {
+    LogLevel,
+    LoggingFunctions,
+    SeverityLevel,
+} from "../../../utility/logging";
 
 export class DRTruthBullet {
     public id: number;
@@ -29,9 +34,9 @@ export class DRTruthBullet {
         }
     }
 
-    static createTables(db: Connection | Pool, tableNameBase: string) {
+    static createTables(db: Connection | Pool, tableBaseName: string) {
         db.execute(
-            `CREATE TABLE IF NOT EXISTS ${tableNameBase}_TruthBullets ( 
+            `CREATE TABLE IF NOT EXISTS ${tableBaseName}_TruthBullets ( 
             TB_ID INT NOT NULL AUTO_INCREMENT,
             Name varchar(255) NOT NULL,
             Description varchar(1000),
@@ -40,13 +45,17 @@ export class DRTruthBullet {
             PRIMARY KEY (TB_ID));`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to create table \"${tableBaseName}_TruthBullets\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
         );
 
-        DRChrTBs.createTables(db, tableNameBase);
+        DRChrTBs.createTables(db, tableBaseName);
     }
 
     static getTB(
@@ -65,6 +74,15 @@ export class DRTruthBullet {
                 `SELECT * FROM ${tableBaseName}_TruthBullets WHERE Name = "${tb_name}" ${trialStr};`,
                 (err, res) => {
                     if (err || res.length == 0) {
+                        LoggingFunctions.log(
+                            `Unable to get DR truth bullet \"${tb_name}\" from \"${tableBaseName}_TruthBullets\"\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
+                            LogLevel.ERROR,
+                            SeverityLevel.LOW
+                        );
                         return resolve(null);
                     }
 
@@ -97,7 +115,11 @@ export class DRTruthBullet {
                 `SELECT * FROM ${tableBaseName}_TruthBullets ${trialStr};`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to get all DR truth bullets from \"${tableBaseName}_TruthBullets\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(null);
                     }
 
@@ -250,7 +272,11 @@ export class DRTruthBullet {
                                             ORDER BY TruthBullets.TB_ID;`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to check if truth bullets are viewable for character \"${owner}\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.LOW
+                        );
                         return resolve(null);
                     }
 
@@ -272,7 +298,11 @@ export class DRTruthBullet {
         VALUES ("${this.name}", "${this.desc}", "${this.trial}", ${this.isUsed});`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to add truth bullet \"${this.name}\" to \"${tableBaseName}_TruthBullets\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
 
@@ -291,7 +321,11 @@ export class DRTruthBullet {
             `DELETE FROM ${tableBaseName}_TruthBullets WHERE Name = '${this.name}' ${trialStr};`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to delete truth bullet \"${this.name}\" from \"${tableBaseName}_TruthBullets\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.LOW
+                    );
                     throw err;
                 }
             }
@@ -310,7 +344,11 @@ export class DRTruthBullet {
             `UPDATE ${tableBaseName}_TruthBullets SET isUsed = ${valueStr} WHERE Name = "${this.name}" ${trialStr};`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to use truth bullet \"${this.name}\" from \"${tableBaseName}_TruthBullets\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.MEDIUM
+                    );
                     throw err;
                 }
             }
@@ -324,16 +362,20 @@ export class DRChrTBs {
         this.tbId = tbId;
     }
 
-    static createTables(db: Connection | Pool, tableNameBase: string) {
+    static createTables(db: Connection | Pool, tableBaseName: string) {
         db.execute(
-            `CREATE TABLE IF NOT EXISTS ${tableNameBase}_ChrTBs (
+            `CREATE TABLE IF NOT EXISTS ${tableBaseName}_ChrTBs (
             CHR_ID INT NOT NULL,
             TB_ID INT NOT NULL,
-            FOREIGN KEY (CHR_ID) REFERENCES ${tableNameBase}_Characters(CHR_ID) ON DELETE CASCADE,
-            FOREIGN KEY (TB_ID) REFERENCES ${tableNameBase}_TruthBullets(TB_ID) ON DELETE CASCADE);`,
+            FOREIGN KEY (CHR_ID) REFERENCES ${tableBaseName}_Characters(CHR_ID) ON DELETE CASCADE,
+            FOREIGN KEY (TB_ID) REFERENCES ${tableBaseName}_TruthBullets(TB_ID) ON DELETE CASCADE);`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to create table \"${tableBaseName}_ChrTBs\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
@@ -346,7 +388,11 @@ export class DRChrTBs {
         VALUES ("${this.chrId}", "${this.tbId}");`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to add truth bullet (${this.tbId}) for \"${this.chrId}\" to \"${tableBaseName}_ChrTBs\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
@@ -358,7 +404,11 @@ export class DRChrTBs {
             `DELETE FROM ${tableBaseName}_ChrTBs WHERE CHR_ID = '${this.chrId}' AND TB_ID = '${this.tbId}';`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to delete truth bullet (${this.tbId}) for \"${this.chrId}\" to \"${tableBaseName}_ChrTBs\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.LOW
+                    );
                     throw err;
                 }
             }
@@ -375,6 +425,17 @@ export class DRChrTBs {
                 `SELECT * FROM ${tableBaseName}_ChrTBs WHERE CHR_ID = '${this.chrId}' AND TB_ID = '${this.tbId}';`,
                 (err, res) => {
                     if (err || res.length > 1) {
+                        LoggingFunctions.log(
+                            `Unable to check if character \"${
+                                this.chrId
+                            }\" has truth bullet \"${this.tbId}\"\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
+                            LogLevel.ERROR,
+                            SeverityLevel.MEDIUM
+                        );
                         return resolve(null);
                     }
 

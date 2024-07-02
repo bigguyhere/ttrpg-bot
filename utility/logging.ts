@@ -64,16 +64,7 @@ module LoggingFunctions {
         const logMsg = `${new Date().toISOString()}${logLvlStr}${severityStr}: ${timeStr} ${message}`;
 
         const absolutePath = Path.resolve(path);
-        FileSystem.writeFile(
-            absolutePath,
-            logMsg + "\n",
-            { flag: "a" },
-            (err) => {
-                if (err) {
-                    throw `Error: Unable to write to file (${absolutePath})\n${err}`;
-                }
-            }
-        );
+        FileSystem.writeFileSync(absolutePath, logMsg + "\n", { flag: "a" });
 
         if (printToConsole) {
             console.log(logMsg);

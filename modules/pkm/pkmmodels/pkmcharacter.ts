@@ -2,6 +2,11 @@ import DiscordJS, { Client, EmbedBuilder } from "discord.js";
 import { Character } from "../../../models/character";
 import mysql, { Connection, Pool, RowDataPacket } from "mysql2";
 import { IPKMCharacterObj } from "./pkm_objectDefs";
+import {
+    LogLevel,
+    LoggingFunctions,
+    SeverityLevel,
+} from "../../../utility/logging";
 
 export class PokeCharacter extends Character {
     public wounds: number = 0;
@@ -76,7 +81,15 @@ export class PokeCharacter extends Character {
                 `SELECT * FROM ${tableBaseName}_Characters WHERE Name = "${char_name}";`,
                 (err, res) => {
                     if (err || res.length != 1) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to get PKM character \"${char_name}\" from \"${tableBaseName}_Characters\"\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
+                            LogLevel.ERROR,
+                            SeverityLevel.LOW
+                        );
                         return resolve(null);
                     }
 
@@ -119,7 +132,11 @@ export class PokeCharacter extends Character {
                 `SELECT * FROM ${tableBaseName}_Characters${condStr} ORDER BY Name;`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to get all PKM characters from \"${tableBaseName}_Characters\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(null);
                     }
 

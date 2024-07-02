@@ -2,6 +2,11 @@ import DiscordJS, { Client, EmbedBuilder } from "discord.js";
 import mysql, { Connection, Pool, RowDataPacket } from "mysql2";
 import { DRCharacter } from "./drcharacter";
 import { IDRHopeDespairChangeObj } from "./dr_objectDefs";
+import {
+    LogLevel,
+    LoggingFunctions,
+    SeverityLevel,
+} from "../../../utility/logging";
 
 export class DRRelationship {
     public value: number;
@@ -14,16 +19,20 @@ export class DRRelationship {
 
     changeRelationship(
         db: Connection | Pool,
-        tableNameBase: string,
+        tableBaseName: string,
         newValue: number
     ) {
         db.execute(
-            `UPDATE ${tableNameBase}_Relationships SET Value = ${newValue} 
+            `UPDATE ${tableBaseName}_Relationships SET Value = ${newValue} 
             WHERE (CHR_ID1 = ${this.char1.id} and CHR_ID2 = ${this.char2.id}) 
             OR (CHR_ID1 = ${this.char2.id} and CHR_ID2 = ${this.char1.id});`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to update relationship between character \"${this.char1.name}\" and character \"${this.char2.name}\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
@@ -32,14 +41,24 @@ export class DRRelationship {
 
     getRelationship(
         db: Connection | Pool,
-        tableNameBase: string
+        tableBaseName: string
     ): Promise<DRRelationship | null> {
         return new Promise((resolve) => {
             db.execute<RowDataPacket[]>(
-                `SELECT * FROM ${tableNameBase}_Relationships WHERE (CHR_ID1 = ${this.char1.id} and CHR_ID2 = ${this.char2.id}) OR (CHR_ID1 = ${this.char2.id} and CHR_ID2 = ${this.char1.id});`,
+                `SELECT * FROM ${tableBaseName}_Relationships WHERE (CHR_ID1 = ${this.char1.id} and CHR_ID2 = ${this.char2.id}) OR (CHR_ID1 = ${this.char2.id} and CHR_ID2 = ${this.char1.id});`,
                 (err, res) => {
                     if (err || res.length != 1) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to get relationship between character \"${
+                                this.char1.name
+                            }\" and character \"${this.char2.name}\"\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
+                            LogLevel.ERROR,
+                            SeverityLevel.MEDIUM
+                        );
                         return resolve(null);
                     }
 
@@ -53,7 +72,7 @@ export class DRRelationship {
 
     static getHDChange(
         db: Connection | Pool,
-        tableNameBase: string,
+        tableBaseName: string,
         status: string
     ): Promise<Array<[string, number]> | null> {
         return new Promise((resolve) => {
@@ -65,16 +84,20 @@ export class DRRelationship {
                 ELSE 0
                 END) AS 'Change'
             FROM 
-            ${tableNameBase}_Characters as Char1
-            JOIN ${tableNameBase}_Relationships as Relationships
-            JOIN ${tableNameBase}_Characters as Char2
+            ${tableBaseName}_Characters as Char1
+            JOIN ${tableBaseName}_Relationships as Relationships
+            JOIN ${tableBaseName}_Characters as Char2
             ON Relationships.CHR_ID1 = Char1.CHR_ID AND
             Relationships.CHR_ID2 = Char2.CHR_ID
             WHERE Char2.Status = '${status}' AND Char1.Status = 'Alive'
             GROUP BY Char1.Name;`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to change hope an despair\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(null);
                     }
 
@@ -90,18 +113,22 @@ export class DRRelationship {
         });
     }
 
-    static createTable(db: Connection | Pool, tableNameBase: string) {
+    static createTable(db: Connection | Pool, tableBaseName: string) {
         db.execute(
-            `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Relationships ( 
+            `CREATE TABLE IF NOT EXISTS ${tableBaseName}_Relationships ( 
             CHR_ID1 INT NOT NULL,
             CHR_ID2 INT NOT NULL,
             Value INT NOT NULL,
             PRIMARY KEY (CHR_ID1, CHR_ID2),
-            FOREIGN KEY (CHR_ID1) REFERENCES ${tableNameBase}_Characters(CHR_ID) ON DELETE CASCADE,
-            FOREIGN KEY (CHR_ID2) REFERENCES ${tableNameBase}_Characters(CHR_ID) ON DELETE CASCADE);`,
+            FOREIGN KEY (CHR_ID1) REFERENCES ${tableBaseName}_Characters(CHR_ID) ON DELETE CASCADE,
+            FOREIGN KEY (CHR_ID2) REFERENCES ${tableBaseName}_Characters(CHR_ID) ON DELETE CASCADE);`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to create table \"${tableBaseName}_Relationships\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }

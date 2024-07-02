@@ -37,7 +37,7 @@ export class Inventory {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to create table \"${tableBaseName}_Inventories\"\n${err}`,
+                        `Unable to create table \"${tableBaseName}_Inventories\"\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.HIGH
                     );
@@ -57,7 +57,7 @@ export class Inventory {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to add \"${this.itemName}\" to table \"${tableBaseName}_Inventories\"\n${err}`,
+                        `Unable to add \"${this.itemName}\" to table \"${tableBaseName}_Inventories\"\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.HIGH
                     );
@@ -79,7 +79,7 @@ export class Inventory {
                 (err, res) => {
                     if (err) {
                         LoggingFunctions.log(
-                            `Unable to get \"${item_name}\" from table \"${tableBaseName}_Inventories\"\n${err}`,
+                            `Unable to get \"${item_name}\" from table \"${tableBaseName}_Inventories\"\n${err.stack}`,
                             LogLevel.ERROR,
                             SeverityLevel.HIGH
                         );
@@ -88,7 +88,7 @@ export class Inventory {
 
                     if (res.length != 1) {
                         LoggingFunctions.log(
-                            `${res.length} items obtained under name \"${item_name}\" from table \"${tableBaseName}_Inventories\"\n${err}`,
+                            `${res.length} items obtained under name \"${item_name}\" from table \"${tableBaseName}_Inventories\"`,
                             LogLevel.ERROR,
                             SeverityLevel.MEDIUM
                         );
@@ -148,7 +148,7 @@ export class Inventory {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to remove item \"${this.itemName}\" from \"${tableBaseName}_Inventories\"\n${err}`,
+                        `Unable to remove item \"${this.itemName}\" from \"${tableBaseName}_Inventories\"\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.LOW
                     );
@@ -173,7 +173,7 @@ export class Inventory {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to update item \"${this.itemName}\" from \"${tableBaseName}_Inventories\"\n${err}`,
+                        `Unable to update item \"${this.itemName}\" from \"${tableBaseName}_Inventories\"\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.HIGH
                     );

@@ -54,7 +54,7 @@ export class ActiveGame {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to create table \"ActiveGames\"\n${err}`,
+                        `Unable to create table \"ActiveGames\"\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.VERY_HIGH
                     );
@@ -70,7 +70,7 @@ export class ActiveGame {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to set active games within \"ActiveGames\" to disabled for server ${this.serverID}\n${err}`,
+                        `Unable to set active games within \"ActiveGames\" to disabled for server ${this.serverID}\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.HIGH
                     );
@@ -92,7 +92,7 @@ export class ActiveGame {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to add new game \"${this.gameName}\" to table \"ActiveGames\" for server ${this.serverID}\n${err}`,
+                        `Unable to add new game \"${this.gameName}\" to table \"ActiveGames\" for server ${this.serverID}\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.HIGH
                     );
@@ -109,7 +109,7 @@ export class ActiveGame {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to change DM for \"${this.gameName}\" in table \"ActiveGames\" for server ${this.serverID}\n${err}`,
+                        `Unable to change DM for \"${this.gameName}\" in table \"ActiveGames\" for server ${this.serverID}\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.MEDIUM
                     );
@@ -142,7 +142,7 @@ export class ActiveGame {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to update initiative for \"${this.gameName}\" in table \"ActiveGames\" for server ${this.serverID}\n${err}`,
+                        `Unable to update initiative for \"${this.gameName}\" in table \"ActiveGames\" for server ${this.serverID}\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.HIGH
                     );
@@ -160,7 +160,7 @@ export class ActiveGame {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to change game to \"${this.gameName}\" in table \"ActiveGames\" for server ${this.serverID}\n${err}`,
+                        `Unable to change game to \"${this.gameName}\" in table \"ActiveGames\" for server ${this.serverID}\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.VERY_HIGH
                     );
@@ -190,7 +190,11 @@ export class ActiveGame {
                 (err, res) => {
                     if (err || res.length != 1) {
                         LoggingFunctions.log(
-                            `Unable to get current game in table \"ActiveGames\" for server ${serverID}\n${err}`,
+                            `Unable to get current game in table \"ActiveGames\" for server ${serverID}\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
                             LogLevel.WARNING,
                             SeverityLevel.MEDIUM
                         );

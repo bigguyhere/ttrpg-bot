@@ -35,7 +35,7 @@ export class Initiative {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to create table \"${tableBaseName}_Initiative\"\n${err}`,
+                        `Unable to create table \"${tableBaseName}_Initiative\"\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.HIGH
                     );
@@ -51,7 +51,7 @@ export class Initiative {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to drop table \"${this.name}\" from \"${tableBaseName}_Initiative\"\n${err}`,
+                        `Unable to drop table \"${this.name}\" from \"${tableBaseName}_Initiative\"\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.LOW
                     );
@@ -74,14 +74,14 @@ export class Initiative {
                         if (err.errno == 1062) {
                             // Duplicate Character
                             LoggingFunctions.log(
-                                `Unable to add character \"${this.name}\" to \"${tableBaseName}_Initiative\" (Character has already been added to initiative)\n${err}`,
+                                `Unable to add character \"${this.name}\" to \"${tableBaseName}_Initiative\" (Character has already been added to initiative)\n${err.stack}`,
                                 LogLevel.WARNING,
                                 SeverityLevel.LOW
                             );
                             return resolve(false);
                         }
                         LoggingFunctions.log(
-                            `Unable to add character \"${this.name}\" to \"${tableBaseName}_Initiative\"\n${err}`,
+                            `Unable to add character \"${this.name}\" to \"${tableBaseName}_Initiative\"\n${err.stack}`,
                             LogLevel.ERROR,
                             SeverityLevel.HIGH
                         );
@@ -100,7 +100,7 @@ export class Initiative {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to delete character \"${this.name}\" from \"${tableBaseName}_Initiative\"\n${err}`,
+                        `Unable to delete character \"${this.name}\" from \"${tableBaseName}_Initiative\"\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.LOW
                     );
@@ -116,7 +116,7 @@ export class Initiative {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to update initiative health/damage for \"${this.name}\" from \"${tableBaseName}_Initiative\"\n${err}`,
+                        `Unable to update initiative health/damage for \"${this.name}\" from \"${tableBaseName}_Initiative\"\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.LOW
                     );
@@ -136,7 +136,7 @@ export class Initiative {
                 (err, res) => {
                     if (err) {
                         LoggingFunctions.log(
-                            `Unable to get all initiative characters from \"${tableBaseName}_Initiative\"\n${err}`,
+                            `Unable to get all initiative characters from \"${tableBaseName}_Initiative\"\n${err.stack}`,
                             LogLevel.ERROR,
                             SeverityLevel.HIGH
                         );
@@ -176,7 +176,11 @@ export class Initiative {
                 (err, res) => {
                     if (err || res.length != 1) {
                         LoggingFunctions.log(
-                            `Unable to get initiative character \"${chrName}\" from \"${tableBaseName}_Initiative\"\n${err}`,
+                            `Unable to get initiative character \"${chrName}\" from \"${tableBaseName}_Initiative\"\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
                             LogLevel.ERROR,
                             SeverityLevel.LOW
                         );
@@ -257,7 +261,7 @@ export class Initiative {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to update turn for character \"${activeChr.name}\" from \"${tableBaseName}_Initiative\"\n${err}`,
+                        `Unable to update turn for character \"${activeChr.name}\" from \"${tableBaseName}_Initiative\"\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.HIGH
                     );
@@ -284,7 +288,7 @@ export class Initiative {
             (err, res) => {
                 if (err) {
                     LoggingFunctions.log(
-                        `Unable to update turns for characters \"${activeChrs[0].name}\" and \"${activeChrs[1].name}\" from \"${tableBaseName}_Initiative\"\n${err}`,
+                        `Unable to update turns for characters \"${activeChrs[0].name}\" and \"${activeChrs[1].name}\" from \"${tableBaseName}_Initiative\"\n${err.stack}`,
                         LogLevel.ERROR,
                         SeverityLevel.HIGH
                     );
@@ -307,7 +311,7 @@ export class Initiative {
                 (err, res) => {
                     if (err) {
                         LoggingFunctions.log(
-                            `Unable to update turn for character \"${this.name}\" from \"${tableBaseName}_Initiative\"\n${err}`,
+                            `Unable to update turn for character \"${this.name}\" from \"${tableBaseName}_Initiative\"\n${err.stack}`,
                             LogLevel.ERROR,
                             SeverityLevel.HIGH
                         );

@@ -4,6 +4,11 @@ import mysql, { Connection, Pool } from "mysql2";
 import * as fs from "fs";
 import * as path from "path";
 import { UtilityFunctions } from "../../../utility/general";
+import {
+    LogLevel,
+    LoggingFunctions,
+    SeverityLevel,
+} from "../../../utility/logging";
 
 type SkillType = {
     SkillName: string;
@@ -32,7 +37,11 @@ module DRUtilityFunctions {
             },
             (err, res: SkillType[]) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Error: Cannot parse CSV for preloading DR Skills\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.LOW
+                    );
                 }
 
                 for (const skill of res) {
