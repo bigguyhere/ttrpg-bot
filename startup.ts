@@ -5,6 +5,7 @@ import { CommandBridge } from "./interpreters/std_bridge";
 import { DatabaseFunctions } from "./utility/database";
 import { UtilityFunctions } from "./utility/general";
 import { Connection, Pool } from "mysql2";
+import { LogLevel, LoggingFunctions } from "./utility/logging";
 
 dotenv.config();
 
@@ -40,7 +41,13 @@ const isPool: boolean =
     connectionMode === undefined || connectionMode.toLowerCase() === "pool";
 
 client.on(Events.ClientReady, () => {
-    console.log("Bot is ready.");
+    LoggingFunctions.log(
+        "Bot is ready.",
+        LogLevel.INFO,
+        undefined,
+        undefined,
+        true
+    );
 
     const guild =
         process.env.MODE === "test"
@@ -67,7 +74,13 @@ client.on(Events.ClientReady, () => {
 
     SetupFunctions.commandSetup(guild, client);
 
-    console.log("Bot has completed setup.");
+    LoggingFunctions.log(
+        "Bot has completed setup.",
+        LogLevel.INFO,
+        undefined,
+        undefined,
+        true
+    );
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {

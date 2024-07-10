@@ -1,5 +1,6 @@
 import mysql, { Connection } from "mysql2";
 import { Pool } from "mysql2/typings/mysql/lib/Pool";
+import { LogLevel, LoggingFunctions, SeverityLevel } from "./logging";
 
 module DatabaseFunctions {
     export function createDatabase(
@@ -21,7 +22,13 @@ module DatabaseFunctions {
             `CREATE DATABASE IF NOT EXISTS \`${dbName}\`;`,
             (err) => {
                 if (err) {
-                    console.log(`Issue Connecting to MYSQL Database. ${err}`);
+                    LoggingFunctions.log(
+                        `Issue Connecting to MYSQL Database\n${err.stack}`,
+                        LogLevel.CRITICAL,
+                        SeverityLevel.VERY_HIGH,
+                        undefined,
+                        true
+                    );
                     throw err;
                 }
             }
@@ -57,7 +64,13 @@ module DatabaseFunctions {
 
         gamedb.connect((err) => {
             if (err) {
-                console.log(`Issue Connecting to MYSQL Database. ${err}`);
+                LoggingFunctions.log(
+                    `Issue Connecting to MYSQL Database\n${err.stack}`,
+                    LogLevel.CRITICAL,
+                    SeverityLevel.VERY_HIGH,
+                    undefined,
+                    true
+                );
                 throw err;
             }
         });
@@ -96,7 +109,11 @@ module DatabaseFunctions {
 
         gamedb.end((err) => {
             if (err) {
-                console.log(`Issue disconnecting from MYSQL Database. ${err}`);
+                LoggingFunctions.log(
+                    `Issue disconnecting from MYSQL Database\n${err.stack}`,
+                    LogLevel.ERROR,
+                    SeverityLevel.HIGH
+                );
                 throw err;
             }
         });

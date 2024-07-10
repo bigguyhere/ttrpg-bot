@@ -7,6 +7,11 @@ import { Pagination } from "../../../utility/pagination";
 import { PkmUtilityFunctions } from "../pkm_utility";
 import { PokeDBMove } from "../pkmmodels/pokedbmoves";
 import { PokeDBAbility } from "../pkmmodels/pokedbabilities";
+import {
+    LogLevel,
+    LoggingFunctions,
+    SeverityLevel,
+} from "../../../utility/logging";
 
 export class PokeDBInterpreter extends Interpreter {
     protected apiURL: string = "https://beta.pokeapi.co/graphql/v1beta/";
@@ -60,7 +65,11 @@ export class PokeDBInterpreter extends Interpreter {
                 }
             }
         } catch (e) {
-            console.log(e);
+            LoggingFunctions.log(
+                `Unable to obtain data for \"${pkmName}\" from PokeAPI \n${e}`,
+                LogLevel.ERROR,
+                SeverityLevel.LOW
+            );
             return `Pokemon **\"${pkmName}\"** could not be found.`;
         }
 
@@ -134,7 +143,11 @@ export class PokeDBInterpreter extends Interpreter {
                 }
             }
         } catch (e) {
-            console.log(e);
+            LoggingFunctions.log(
+                `Unable to obtain moves for \"${pkmName}\" from PokeAPI \n${e}`,
+                LogLevel.ERROR,
+                SeverityLevel.LOW
+            );
             return `Pokemon **\"${pkmName}\"** could not be found.`;
         }
 
@@ -217,7 +230,7 @@ export class PokeDBInterpreter extends Interpreter {
             result = await axios.post(
                 this.apiURL,
                 PkmUtilityFunctions.getPkmAbilityQuery(
-                    "moveQuery",
+                    "abilityQuery",
                     pkmName,
                     searchParam
                 )
@@ -235,7 +248,11 @@ export class PokeDBInterpreter extends Interpreter {
                 }
             }
         } catch (e) {
-            console.log(e);
+            LoggingFunctions.log(
+                `Unable to obtain abilities for \"${pkmName}\" from PokeAPI \n${e}`,
+                LogLevel.ERROR,
+                SeverityLevel.LOW
+            );
             return `Pokemon **\"${pkmName}\"** could not be found.`;
         }
 
@@ -327,7 +344,11 @@ export class PokeDBInterpreter extends Interpreter {
                 }
             }
         } catch (e) {
-            console.log(e);
+            LoggingFunctions.log(
+                `Unable to obtain data for move \"${moveName}\" from PokeAPI \n${e}`,
+                LogLevel.ERROR,
+                SeverityLevel.LOW
+            );
             return `Move **\"${moveName}\"** could not be found.`;
         }
 
@@ -396,7 +417,11 @@ export class PokeDBInterpreter extends Interpreter {
                 }
             }
         } catch (e) {
-            console.log(e);
+            LoggingFunctions.log(
+                `Unable to obtain data for abiluity \"${abilityName}\" from PokeAPI \n${e}`,
+                LogLevel.ERROR,
+                SeverityLevel.LOW
+            );
             return `Ability **\"${abilityName}\"** could not be found.`;
         }
 

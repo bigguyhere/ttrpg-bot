@@ -7,6 +7,11 @@ import mysql, {
 } from "mysql2";
 import { ActiveGame } from "../../../models/activegame";
 import { IDRSkillObj } from "./dr_objectDefs";
+import {
+    LogLevel,
+    LoggingFunctions,
+    SeverityLevel,
+} from "../../../utility/logging";
 
 export class DRSkill {
     public id: number;
@@ -27,9 +32,9 @@ export class DRSkill {
         this.prereqs = prereqs == null ? "None" : prereqs;
     }
 
-    static createTables(db: Connection | Pool, tableNameBase: string) {
+    static createTables(db: Connection | Pool, tableBaseName: string) {
         db.execute(
-            `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Skills ( 
+            `CREATE TABLE IF NOT EXISTS ${tableBaseName}_Skills ( 
             SKL_ID INT NOT NULL AUTO_INCREMENT,
             Name varchar(255) NOT NULL,
             Prereqs varchar(255),
@@ -39,13 +44,17 @@ export class DRSkill {
             PRIMARY KEY (SKL_ID));`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to create table \"${tableBaseName}_Skills\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
         );
 
-        DRChrSkills.createTables(db, tableNameBase);
+        DRChrSkills.createTables(db, tableBaseName);
     }
 
     static getSkill(
@@ -58,6 +67,15 @@ export class DRSkill {
                 `SELECT * FROM ${tableBaseName}_Skills WHERE Name = "${skill_name}";`,
                 (err, res) => {
                     if (err || res.length != 1) {
+                        LoggingFunctions.log(
+                            `Unable to get DR skills \"${skill_name}\" from \"${tableBaseName}_Skills\"\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
+                            LogLevel.ERROR,
+                            SeverityLevel.LOW
+                        );
                         return resolve(null);
                     }
 
@@ -94,7 +112,11 @@ export class DRSkill {
 
             db.execute<IDRSkillObj[]>(queryStr, (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to get all DR skills from \"${tableBaseName}_Skills\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     return resolve(null);
                 }
 
@@ -136,7 +158,11 @@ export class DRSkill {
                                             ORDER BY Skills.SKL_ID;`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to check if skills are viewable for character \"${owner}\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.LOW
+                        );
                         return resolve(null);
                     }
 
@@ -264,7 +290,11 @@ export class DRSkill {
         VALUES ("${this.name}", "${this.prereqs}", "${this.desc}", "${this.spCost}", "${this.Type}");`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to add skill \"${this.name}\" to \"${tableBaseName}_Skills\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
 
@@ -278,7 +308,11 @@ export class DRSkill {
             `DELETE FROM ${tableBaseName}_Skills WHERE Name = '${this.name}';`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to delete skill \"${this.name}\" from \"${tableBaseName}_Skills\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.LOW
+                    );
                     throw err;
                 }
             }
@@ -292,16 +326,20 @@ export class DRChrSkills {
         this.sklId = sklId;
     }
 
-    static createTables(db: Connection | Pool, tableNameBase: string) {
+    static createTables(db: Connection | Pool, tableBaseName: string) {
         db.execute(
-            `CREATE TABLE IF NOT EXISTS ${tableNameBase}_ChrSkills (
+            `CREATE TABLE IF NOT EXISTS ${tableBaseName}_ChrSkills (
             CHR_ID INT NOT NULL,
             SKL_ID INT NOT NULL,
-            FOREIGN KEY (CHR_ID) REFERENCES ${tableNameBase}_Characters(CHR_ID) ON DELETE CASCADE,
-            FOREIGN KEY (SKL_ID) REFERENCES ${tableNameBase}_Skills(SKL_ID) ON DELETE CASCADE);`,
+            FOREIGN KEY (CHR_ID) REFERENCES ${tableBaseName}_Characters(CHR_ID) ON DELETE CASCADE,
+            FOREIGN KEY (SKL_ID) REFERENCES ${tableBaseName}_Skills(SKL_ID) ON DELETE CASCADE);`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to create table \"${tableBaseName}_ChrSkills\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
@@ -314,7 +352,11 @@ export class DRChrSkills {
         VALUES ("${this.chrId}", "${this.sklId}");`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to add skill (${this.sklId}) for \"${this.chrId}\" to \"${tableBaseName}_ChrSkills\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
@@ -326,7 +368,11 @@ export class DRChrSkills {
             `DELETE FROM ${tableBaseName}_ChrSkills WHERE CHR_ID = '${this.chrId}' AND SKL_ID = '${this.sklId}';`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to delete skill (${this.sklId}) for \"${this.chrId}\" to \"${tableBaseName}_ChrSkills\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.LOW
+                    );
                     throw err;
                 }
             }
@@ -343,6 +389,17 @@ export class DRChrSkills {
                 `SELECT * FROM ${tableBaseName}_ChrSkills WHERE CHR_ID = '${this.chrId}' AND SKL_ID = '${this.sklId}';`,
                 (err, res) => {
                     if (err || res.length > 1) {
+                        LoggingFunctions.log(
+                            `Unable to check if character \"${
+                                this.chrId
+                            }\" has skills \"${this.sklId}\"\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
+                            LogLevel.ERROR,
+                            SeverityLevel.MEDIUM
+                        );
                         return resolve(null);
                     }
 

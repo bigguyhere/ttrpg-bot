@@ -8,6 +8,11 @@ import {
     IDRSkillObj,
     IDRTruthBulletObj,
 } from "./dr_objectDefs";
+import {
+    LogLevel,
+    LoggingFunctions,
+    SeverityLevel,
+} from "../../../utility/logging";
 
 export class DRCharacter extends Character {
     public spTotal: number;
@@ -41,7 +46,7 @@ export class DRCharacter extends Character {
         this.spUsed = 0;
     }
 
-    static createTable(db: Connection | Pool, tableNameBase: string) {
+    static createTable(db: Connection | Pool, tableBaseName: string) {
         const drCols: string[] = [
             "Talent varchar(255)",
             "Hope TINYINT NOT NULL",
@@ -55,7 +60,7 @@ export class DRCharacter extends Character {
             "SPUsed TINYINT NOT NULL",
         ];
 
-        super.createTable(db, tableNameBase, drCols);
+        super.createTable(db, tableBaseName, drCols);
     }
 
     /*
@@ -87,7 +92,15 @@ export class DRCharacter extends Character {
                 `SELECT * FROM ${tableBaseName}_Characters WHERE Name = "${char_name}";`,
                 (err, res) => {
                     if (err || res.length != 1) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to get DR character \"${char_name}\" from \"${tableBaseName}_Characters\"\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
+                            LogLevel.ERROR,
+                            SeverityLevel.LOW
+                        );
                         return resolve(null);
                     }
 
@@ -131,7 +144,11 @@ export class DRCharacter extends Character {
                 `SELECT * FROM ${tableBaseName}_Characters${condStr} ORDER BY Name;`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to get all DR characters from \"${tableBaseName}_Characters\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(null);
                     }
 
@@ -177,7 +194,11 @@ export class DRCharacter extends Character {
             : `UPDATE ${tableBaseName}_Characters SET Status = 'Dead' WHERE Status != 'Alive';`;
         db.execute(queryStr, (err, res) => {
             if (err) {
-                console.log(err);
+                LoggingFunctions.log(
+                    `Unable to update Blackened, Survivor, or Dead status within table \"${tableBaseName}_Characters\"`,
+                    LogLevel.ERROR,
+                    SeverityLevel.MEDIUM
+                );
                 throw err;
             }
         });
@@ -195,7 +216,11 @@ export class DRCharacter extends Character {
                  WHERE Name = '${this.name}' AND (Status = 'Alive' OR Status = 'Blackened');`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to update hope and despair for character \"${this.name}\" for table \"${tableBaseName}_Characters\"`,
+                        LogLevel.ERROR,
+                        SeverityLevel.MEDIUM
+                    );
                     throw err;
                 }
             }
@@ -424,10 +449,10 @@ export class DRCharacter extends Character {
 
     async generateRelations(
         db: Connection | Pool,
-        tableNameBase: string
+        tableBaseName: string
     ): Promise<boolean> {
-        let allChars = await Character.getAllCharacters(db, tableNameBase);
-        let queryStr = `INSERT INTO ${tableNameBase}_Relationships (CHR_ID1, CHR_ID2, VALUE)\nVALUES `;
+        let allChars = await Character.getAllCharacters(db, tableBaseName);
+        let queryStr = `INSERT INTO ${tableBaseName}_Relationships (CHR_ID1, CHR_ID2, VALUE)\nVALUES `;
 
         if (allChars == undefined) {
             return false;
@@ -447,7 +472,11 @@ export class DRCharacter extends Character {
         queryStr = queryStr.replace(/.$/, ";");
         db.execute(queryStr, (err, res) => {
             if (err) {
-                console.log(err);
+                LoggingFunctions.log(
+                    `Unable to generate relations for table \"${tableBaseName}_Relationships\"\n${err.stack}`,
+                    LogLevel.ERROR,
+                    SeverityLevel.MEDIUM
+                );
                 throw err;
             }
         });
@@ -465,7 +494,11 @@ export class DRCharacter extends Character {
                             WHERE ChrSkills.CHR_ID = ${this.id} AND ChrSkills.SKL_ID = Skills.SKL_ID ORDER BY Name;`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to obtain skills for character \"${this.name}\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(null);
                     }
 
@@ -505,7 +538,11 @@ export class DRCharacter extends Character {
                             WHERE ChrTBs.CHR_ID = ${this.id} AND ChrTBs.TB_ID = TBs.TB_ID ${trialStr};`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to obtain truth bullets for character \"${this.name}\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(null);
                     }
 
@@ -534,7 +571,11 @@ export class DRCharacter extends Character {
             `DELETE FROM ${tableBaseName}_Relationships WHERE (CHR_ID1 = ${this.id} OR CHR_ID2 = ${this.id});`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to remove character relationships for character \"${this.name}\" for table \"${tableBaseName}_Relationships\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.MEDIUM
+                    );
                     throw err;
                 }
             }

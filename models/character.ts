@@ -9,6 +9,7 @@ import DiscordJS, { Client, EmbedBuilder } from "discord.js";
 import { Inventory } from "./inventory";
 import { ActiveGame } from "./activegame";
 import { UtilityFunctions } from "../utility/general";
+import { LogLevel, LoggingFunctions, SeverityLevel } from "../utility/logging";
 
 export class Character {
     public static defaultEmbedColor = 0x7852a9;
@@ -49,10 +50,10 @@ export class Character {
 
     static createTable(
         db: Connection | Pool,
-        tableNameBase: string,
+        tableBaseName: string,
         additionalStats: string[]
     ) {
-        let queryStr = `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Characters ( 
+        let queryStr = `CREATE TABLE IF NOT EXISTS ${tableBaseName}_Characters ( 
             CHR_ID INT NOT NULL AUTO_INCREMENT,
             Name varchar(255) NOT NULL UNIQUE,
             Emote varchar(255),
@@ -70,7 +71,11 @@ export class Character {
 
         db.execute(queryStr, (err, res) => {
             if (err) {
-                console.log(err);
+                LoggingFunctions.log(
+                    `Unable to create table \"${tableBaseName}_Characters\"\n${err.stack}`,
+                    LogLevel.ERROR,
+                    SeverityLevel.HIGH
+                );
                 throw err;
             }
         });
@@ -99,9 +104,18 @@ export class Character {
                     if (err) {
                         if (err.errno == 1062) {
                             // Duplicate Character
+                            LoggingFunctions.log(
+                                `Unable to add character \"${this.name}\" to \"${tableBaseName}_Characters\" (Character has already been added)\n${err.stack}`,
+                                LogLevel.WARNING,
+                                SeverityLevel.LOW
+                            );
                             return resolve(false);
                         }
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to add character \"${this.name}\" to \"${tableBaseName}_Characters\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         throw err;
                     }
 
@@ -123,6 +137,11 @@ export class Character {
             const value = parseInt(statValue.replace(/,/g, ""));
 
             if (isNaN(value)) {
+                LoggingFunctions.log(
+                    `Stat value for \"${statName}\" and character \"${this.name}\" was unable to be numerically parsed"`,
+                    LogLevel.WARNING,
+                    SeverityLevel.MEDIUM
+                );
                 return resolve(false);
             }
 
@@ -130,7 +149,11 @@ export class Character {
                 `UPDATE ${tableBaseName}_Characters SET ${statName} = ${statName}+${value} WHERE Name = '${this.name}';`,
                 (err, res) => {
                     if (err) {
-                        //console.log(err)
+                        LoggingFunctions.log(
+                            `Unable to increment stat \"${statName}\" for character \"${this.name}\" from \"${tableBaseName}_Characters\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(false);
                     }
                     return resolve(true);
@@ -160,7 +183,11 @@ export class Character {
                 `UPDATE ${tableBaseName}_Characters SET ${statName} = '${statValue}' WHERE Name = '${this.name}';`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to update stat \"${statName}\" for character \"${this.name}\" from \"${tableBaseName}_Characters\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(false);
                     }
                     return resolve(true);
@@ -174,7 +201,11 @@ export class Character {
             `DELETE FROM ${tableBaseName}_Characters WHERE Name='${this.name}'`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to delete character \"${this.name}\" from \"${tableBaseName}_Characters\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.LOW
+                    );
                     throw err;
                 }
             }
@@ -191,7 +222,15 @@ export class Character {
                 `SELECT * FROM ${tableBaseName}_Characters WHERE Name = "${char_name}";`,
                 (err, res) => {
                     if (err || res.length != 1) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to get character \"${char_name}\" from \"${tableBaseName}_Characters\"\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
+                            LogLevel.ERROR,
+                            SeverityLevel.LOW
+                        );
                         return resolve(null);
                     }
 
@@ -199,7 +238,11 @@ export class Character {
                         `SHOW COLUMNS FROM ${tableBaseName}_Characters;`,
                         (errr, ress) => {
                             if (errr) {
-                                console.log(errr);
+                                LoggingFunctions.log(
+                                    `Unable to get arbitrary stats for character \"${char_name}\" from \"${tableBaseName}_Characters\"\n${errr}`,
+                                    LogLevel.WARNING,
+                                    SeverityLevel.MEDIUM
+                                );
                                 return resolve(null);
                             }
 
@@ -253,7 +296,11 @@ export class Character {
                 `SELECT * FROM ${tableBaseName}_Characters ORDER BY Name;`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to get all characters from \"${tableBaseName}_Characters\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(null);
                     }
 
@@ -290,7 +337,11 @@ export class Character {
                 `SELECT * FROM ${tableBaseName}_Inventories as Inventories WHERE Inventories.CHR_ID = ${this.id};`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to get all character items from \"${tableBaseName}_Inventories\" for character \"${this.name}\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(null);
                     }
 

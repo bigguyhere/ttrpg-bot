@@ -254,13 +254,7 @@ export class InitInterpreter extends Interpreter {
             return "Issue finding initiative character.";
         }
 
-        if (
-            !(await initChr.changeInit(
-                this.gamedb,
-                this.tableNameBase,
-                activeGame
-            ))
-        ) {
+        if (!(await initChr.changeInit(this.gamedb, this.tableNameBase))) {
             return "Error: Initiative hasn't started yet";
         }
 

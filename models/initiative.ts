@@ -1,6 +1,7 @@
 import mysql, { Connection, Pool, RowDataPacket } from "mysql2";
 import { ActiveGame } from "./activegame";
 import { IInitiativeObj } from "./objectDefs";
+import { LogLevel, LoggingFunctions, SeverityLevel } from "../utility/logging";
 
 export class Initiative {
     constructor(
@@ -20,9 +21,9 @@ export class Initiative {
         this.Dmg = Dmg;
     }
 
-    public static createTable(db: Connection | Pool, tableNameBase: string) {
+    public static createTable(db: Connection | Pool, tableBaseName: string) {
         db.execute(
-            `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Initiative ( 
+            `CREATE TABLE IF NOT EXISTS ${tableBaseName}_Initiative ( 
             Name varchar(255) NOT NULL,
             Roll SMALLINT NOT NULL,
             HP SMALLINT,
@@ -33,19 +34,27 @@ export class Initiative {
             PRIMARY KEY (Name));`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to create table \"${tableBaseName}_Initiative\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
         );
     }
 
-    public static dropTable(db: Connection | Pool, tableNameBase: string) {
+    public static dropTable(db: Connection | Pool, tableBaseName: string) {
         db.execute(
-            `DROP TABLE IF EXISTS ${tableNameBase}_Initiative;`,
+            `DROP TABLE IF EXISTS ${tableBaseName}_Initiative;`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to drop table \"${this.name}\" from \"${tableBaseName}_Initiative\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.LOW
+                    );
                     throw err;
                 }
             }
@@ -54,19 +63,28 @@ export class Initiative {
 
     public async addToTable(
         db: Connection | Pool,
-        tableNameBase: string
+        tableBaseName: string
     ): Promise<boolean> {
         return new Promise((resolve) => {
             db.execute(
-                `INSERT INTO ${tableNameBase}_Initiative (Name, Roll, HP, Dmg, isTurn, User, Emote)
+                `INSERT INTO ${tableBaseName}_Initiative (Name, Roll, HP, Dmg, isTurn, User, Emote)
             VALUES ("${this.name}", ${this.rollValue}, ${this.HP}, ${this.Dmg}, ${this.isTurn}, "${this.user}", "${this.emote}");`,
                 (err, res) => {
                     if (err) {
                         if (err.errno == 1062) {
                             // Duplicate Character
+                            LoggingFunctions.log(
+                                `Unable to add character \"${this.name}\" to \"${tableBaseName}_Initiative\" (Character has already been added to initiative)\n${err.stack}`,
+                                LogLevel.WARNING,
+                                SeverityLevel.LOW
+                            );
                             return resolve(false);
                         }
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to add character \"${this.name}\" to \"${tableBaseName}_Initiative\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         throw err;
                     }
 
@@ -81,7 +99,11 @@ export class Initiative {
             `DELETE FROM ${tableBaseName}_Initiative WHERE Name = '${this.name}'`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to delete character \"${this.name}\" from \"${tableBaseName}_Initiative\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.LOW
+                    );
                     throw err;
                 }
             }
@@ -93,7 +115,11 @@ export class Initiative {
             `UPDATE ${tableBaseName}_Initiative SET Dmg = Dmg+${value} WHERE Name = '${this.name}';`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to update initiative health/damage for \"${this.name}\" from \"${tableBaseName}_Initiative\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.LOW
+                    );
                     throw err;
                 }
             }
@@ -109,7 +135,11 @@ export class Initiative {
                 `SELECT * FROM ${tableBaseName}_Initiative ORDER BY Roll DESC;`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to get all initiative characters from \"${tableBaseName}_Initiative\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(null);
                     }
 
@@ -145,7 +175,15 @@ export class Initiative {
                 `SELECT * FROM ${tableBaseName}_Initiative WHERE Name = '${chrName}'`,
                 (err, res) => {
                     if (err || res.length != 1) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to get initiative character \"${chrName}\" from \"${tableBaseName}_Initiative\"\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
+                            LogLevel.ERROR,
+                            SeverityLevel.LOW
+                        );
                         return resolve(null);
                     }
 
@@ -173,6 +211,11 @@ export class Initiative {
         initChrs: Array<Initiative>
     ): [Initiative, Initiative, boolean] | null {
         if (initChrs.length == 0) {
+            LoggingFunctions.log(
+                `No characters in initative`,
+                LogLevel.WARNING,
+                SeverityLevel.LOW
+            );
             return null;
         }
 
@@ -208,16 +251,20 @@ export class Initiative {
 
     static updateInitChar(
         db: Connection | Pool,
-        tableNameBase: string,
+        tableBaseName: string,
         activeChr: Initiative
     ): Initiative {
         db.execute(
-            `UPDATE ${tableNameBase}_Initiative SET isTurn = ${!activeChr.isTurn} WHERE Name = '${
+            `UPDATE ${tableBaseName}_Initiative SET isTurn = ${!activeChr.isTurn} WHERE Name = '${
                 activeChr.name
             }';`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to update turn for character \"${activeChr.name}\" from \"${tableBaseName}_Initiative\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
@@ -230,17 +277,21 @@ export class Initiative {
 
     static updateInitChars(
         db: Connection | Pool,
-        tableNameBase: string,
+        tableBaseName: string,
         activeChrs: [Initiative, Initiative, boolean]
     ): Initiative {
         db.execute(
-            `UPDATE ${tableNameBase}_Initiative SET isTurn = ${!activeChrs[0]
+            `UPDATE ${tableBaseName}_Initiative SET isTurn = ${!activeChrs[0]
                 .isTurn} WHERE Name = '${activeChrs[0].name}';
-                UPDATE ${tableNameBase}_Initiative SET isTurn = ${!activeChrs[1]
+                UPDATE ${tableBaseName}_Initiative SET isTurn = ${!activeChrs[1]
                 .isTurn} WHERE Name = '${activeChrs[1].name}';`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to update turns for characters \"${activeChrs[0].name}\" and \"${activeChrs[1].name}\" from \"${tableBaseName}_Initiative\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
@@ -252,18 +303,18 @@ export class Initiative {
         return activeChrs[1];
     }
 
-    changeInit(
-        db: Connection | Pool,
-        tableNameBase: string,
-        activeGame: ActiveGame
-    ): Promise<boolean> {
+    changeInit(db: Connection | Pool, tableBaseName: string): Promise<boolean> {
         return new Promise((resolve) => {
             db.execute(
-                `UPDATE ${tableNameBase}_Initiative SET isTurn = false;
-                    UPDATE ${tableNameBase}_Initiative SET isTurn = true WHERE Name = '${this.name}';`,
+                `UPDATE ${tableBaseName}_Initiative SET isTurn = false;
+                    UPDATE ${tableBaseName}_Initiative SET isTurn = true WHERE Name = '${this.name}';`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to update turn for character \"${this.name}\" from \"${tableBaseName}_Initiative\"\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.HIGH
+                        );
                         return resolve(false);
                     }
 
@@ -275,12 +326,17 @@ export class Initiative {
 
     static async nextTurn(
         db: Connection | Pool,
-        tableNameBase: string,
+        tableBaseName: string,
         activeGame: ActiveGame
     ): Promise<Initiative | undefined> {
-        let initChrs = await this.getAllInitChrs(db, tableNameBase);
+        let initChrs = await this.getAllInitChrs(db, tableBaseName);
 
         if (initChrs == null || initChrs.length == 0) {
+            LoggingFunctions.log(
+                `No initiative characters obtained from \"${tableBaseName}_Initiative\"`,
+                LogLevel.WARNING,
+                SeverityLevel.LOW
+            );
             return undefined;
         }
 
@@ -295,7 +351,7 @@ export class Initiative {
                 activeGame.hideHP
             );
             initChrs[0].isTurn = false;
-            return Initiative.updateInitChar(db, tableNameBase, initChrs[0]);
+            return Initiative.updateInitChar(db, tableBaseName, initChrs[0]);
         }
 
         if (activeGame.turn == 0) {
@@ -308,7 +364,7 @@ export class Initiative {
                 ++activeGame.turn,
                 activeGame.hideHP
             );
-            return Initiative.startInit(db, tableNameBase, initChrs);
+            return Initiative.startInit(db, tableBaseName, initChrs);
         }
 
         let activeChrs = this.getActiveChrs(initChrs);
@@ -324,7 +380,7 @@ export class Initiative {
                 activeGame.hideHP
             );
 
-            return this.updateInitChars(db, tableNameBase, activeChrs);
+            return this.updateInitChars(db, tableBaseName, activeChrs);
         }
 
         return undefined;
@@ -332,26 +388,32 @@ export class Initiative {
 
     static startInit(
         db: Connection | Pool,
-        tableNameBase: string,
+        tableBaseName: string,
         initChrs: Array<Initiative>
     ): Initiative | undefined {
         let maxChr = Initiative.getMaxChr(initChrs);
 
         if (maxChr == null) {
+            LoggingFunctions.log(
+                `Unable to obtain max character in initative for \"${tableBaseName}_Initiative\"`,
+                LogLevel.ERROR,
+                SeverityLevel.MEDIUM
+            );
+
             return undefined;
         }
 
-        return Initiative.updateInitChar(db, tableNameBase, maxChr);
+        return Initiative.updateInitChar(db, tableBaseName, maxChr);
     }
 
     public static async buildInitMsg(
         db: Connection | Pool,
-        tableNameBase: string,
+        tableBaseName: string,
         activeGame: ActiveGame
     ): Promise<string> {
         let retStr = `\`\`\`md\nRound: ${activeGame.round} (Turn: ${activeGame.turn})\n`;
         retStr += "-".repeat(retStr.length) + "\n";
-        const allInitChrs = await Initiative.getAllInitChrs(db, tableNameBase);
+        const allInitChrs = await Initiative.getAllInitChrs(db, tableBaseName);
 
         if (allInitChrs != null) {
             allInitChrs.forEach((initChr) => {

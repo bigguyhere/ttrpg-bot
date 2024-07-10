@@ -7,6 +7,7 @@ import {
 } from "discord.js";
 import DiscordJS, { EmbedBuilder } from "discord.js";
 import mysql, { RowDataPacket, Connection, Pool } from "mysql2";
+import { LogLevel, LoggingFunctions, SeverityLevel } from "../utility/logging";
 
 export class ActiveGame {
     constructor(
@@ -52,7 +53,11 @@ export class ActiveGame {
             PRIMARY KEY (SERV_ID, GameName));`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to create table \"ActiveGames\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.VERY_HIGH
+                    );
                     throw err;
                 }
             }
@@ -64,7 +69,11 @@ export class ActiveGame {
             `UPDATE ActiveGames SET isActive = 0 WHERE isActive = 1 and SERV_ID = ${this.serverID};`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to set active games within \"ActiveGames\" to disabled for server ${this.serverID}\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
@@ -82,7 +91,11 @@ export class ActiveGame {
                 ${this.round}, ${this.turn}, ${this.hideHP}, ${this.messageID}, ${this.channelID});`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to add new game \"${this.gameName}\" to table \"ActiveGames\" for server ${this.serverID}\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
@@ -95,7 +108,11 @@ export class ActiveGame {
                     WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to change DM for \"${this.gameName}\" in table \"ActiveGames\" for server ${this.serverID}\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.MEDIUM
+                    );
                     throw err;
                 }
             }
@@ -124,7 +141,11 @@ export class ActiveGame {
                     WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to update initiative for \"${this.gameName}\" in table \"ActiveGames\" for server ${this.serverID}\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
                     throw err;
                 }
             }
@@ -138,7 +159,11 @@ export class ActiveGame {
             `UPDATE ActiveGames SET isActive = 1 WHERE GameName = '${this.gameName}' and SERV_ID = ${this.serverID};`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to change game to \"${this.gameName}\" in table \"ActiveGames\" for server ${this.serverID}\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.VERY_HIGH
+                    );
                     throw err;
                 }
             }
@@ -164,6 +189,15 @@ export class ActiveGame {
                 `SELECT * FROM ${dbName}.ActiveGames WHERE ${queryParam} AND SERV_ID = '${serverID}';`,
                 (err, res) => {
                     if (err || res.length != 1) {
+                        LoggingFunctions.log(
+                            `Unable to get current game in table \"ActiveGames\" for server ${serverID}\n${
+                                res.length === 1
+                                    ? err?.stack
+                                    : `Multiple values (${res.length}) returned.`
+                            }`,
+                            LogLevel.WARNING,
+                            SeverityLevel.MEDIUM
+                        );
                         return resolve(null);
                     }
 

@@ -5,7 +5,6 @@ import {
     ButtonStyle,
     CacheType,
     ChatInputCommandInteraction,
-    Message,
 } from "discord.js";
 
 module Pagination {

@@ -13,6 +13,7 @@ import { UtilityFunctions } from "../utility/general";
 import { Pagination } from "../utility/pagination";
 import { SelectBridge } from "../modules/select_interpreter";
 import { Interpreter } from "./abstract_models";
+import { LogLevel, LoggingFunctions, SeverityLevel } from "../utility/logging";
 
 export class GameInterpreter extends Interpreter {
     protected userID: string;
@@ -90,11 +91,6 @@ export class GameInterpreter extends Interpreter {
 
     public async changeDM(activeGame: ActiveGame): Promise<string> {
         const newDM = this.options.getUser("newdm-name", true);
-
-        if (activeGame == null) {
-            return "Issue retrieving active game.";
-        }
-
         const oldDM = await this.client.users.fetch(activeGame.defaultRoll);
         activeGame.DM = newDM.id;
         activeGame.setDM(this.gamedb);
@@ -103,10 +99,6 @@ export class GameInterpreter extends Interpreter {
     }
 
     public async viewSummary(activeGame: ActiveGame): Promise<string | null> {
-        if (activeGame == null) {
-            return "Issue retrieving active game.";
-        }
-
         let embeds = await Character.buildSummaryEmbed(
             this.client,
             this.interaction.user,

@@ -3,6 +3,11 @@ import mysql, { Connection, Pool, RowDataPacket } from "mysql2";
 import { UtilityFunctions } from "../../../utility/general";
 import { DRCharacter } from "./drcharacter";
 import { IDRVoteResults } from "./dr_objectDefs";
+import {
+    LogLevel,
+    LoggingFunctions,
+    SeverityLevel,
+} from "../../../utility/logging";
 
 export class DRVote {
     constructor(public voter: DRCharacter, public vote: DRCharacter) {
@@ -10,17 +15,22 @@ export class DRVote {
         this.vote = vote;
     }
 
-    public static createTable(db: Connection | Pool, tableNameBase: string) {
+    public static createTable(db: Connection | Pool, tableBaseName: string) {
         db.execute(
-            `CREATE TABLE IF NOT EXISTS ${tableNameBase}_Votes ( 
+            `CREATE TABLE IF NOT EXISTS ${tableBaseName}_Votes ( 
             Voter INT NOT NULL,
             Vote INT,
             PRIMARY KEY (Voter),
-            FOREIGN KEY (Voter) REFERENCES ${tableNameBase}_Characters(CHR_ID),
-            FOREIGN KEY (Vote) REFERENCES ${tableNameBase}_Characters(CHR_ID));`,
+            FOREIGN KEY (Voter) REFERENCES ${tableBaseName}_Characters(CHR_ID),
+            FOREIGN KEY (Vote) REFERENCES ${tableBaseName}_Characters(CHR_ID));`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to create table \"${tableBaseName}_Votes\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.HIGH
+                    );
+
                     throw err;
                 }
             }
@@ -29,10 +39,10 @@ export class DRVote {
 
     static generateVotes(
         db: Connection | Pool,
-        tableNameBase: string,
+        tableBaseName: string,
         allChars: Array<DRCharacter>
     ) {
-        let queryStr = `INSERT INTO ${tableNameBase}_Votes (Voter, Vote)\nVALUES `;
+        let queryStr = `INSERT INTO ${tableBaseName}_Votes (Voter, Vote)\nVALUES `;
 
         if (allChars.length == 0) {
             return;
@@ -46,7 +56,11 @@ export class DRVote {
 
         db.execute(queryStr, (err, res) => {
             if (err) {
-                console.log(err);
+                LoggingFunctions.log(
+                    `Unable to generate voting pairs for \"${tableBaseName}_Votes\"\n${err.stack}`,
+                    LogLevel.ERROR,
+                    SeverityLevel.HIGH
+                );
                 throw err;
             }
         });
@@ -54,13 +68,17 @@ export class DRVote {
 
     public static async dropTable(
         db: Connection | Pool,
-        tableNameBase: string
+        tableBaseName: string
     ) {
         db.execute(
-            `DROP TABLE IF EXISTS ${tableNameBase}_Votes;`,
+            `DROP TABLE IF EXISTS ${tableBaseName}_Votes;`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to drop table \"${tableBaseName}_Votes\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.MEDIUM
+                    );
                     throw err;
                 }
             }
@@ -76,7 +94,11 @@ export class DRVote {
                 "SHOW FULL TABLES IN GamesDB WHERE Table_Type LIKE 'BASE TABLE' AND Tables_in_GamesDB LIKE '%_Votes';",
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to check if \"${tableBaseName}_Votes\" exists\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.MEDIUM
+                        );
                         throw err;
                     }
 
@@ -92,7 +114,11 @@ export class DRVote {
         WHERE Voter = ${this.voter.id};`,
             (err, res) => {
                 if (err) {
-                    console.log(err);
+                    LoggingFunctions.log(
+                        `Unable to update vote for character ${this.voter.name} on table \"${tableBaseName}_Votes\"\n${err.stack}`,
+                        LogLevel.ERROR,
+                        SeverityLevel.MEDIUM
+                    );
                     throw err;
                 }
             }
@@ -101,16 +127,20 @@ export class DRVote {
 
     static getResults(
         db: Connection | Pool,
-        tableNameBase: string
+        tableBaseName: string
     ): Promise<Array<[DRCharacter, number]>> {
         return new Promise((resolve) => {
             db.execute<IDRVoteResults[]>(
                 `SELECT ChrTbl.Name as Candidate, ChrTbl.Emote, COUNT(VoteTbl.Voter) as Votes, ChrTbl.Status, ChrTbl.Talent
-            FROM ${tableNameBase}_Votes as VoteTbl LEFT JOIN ${tableNameBase}_Characters as ChrTbl 
+            FROM ${tableBaseName}_Votes as VoteTbl LEFT JOIN ${tableBaseName}_Characters as ChrTbl 
             ON VoteTbl.Vote=ChrTbl.CHR_ID GROUP BY VoteTbl.Vote ORDER BY Votes DESC;`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to obtain voting results\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.MEDIUM
+                        );
                         throw err;
                     }
 
@@ -152,7 +182,11 @@ export class DRVote {
                 `SELECT COUNT(*) as Count FROM ${tableBaseName}_Votes WHERE Vote is null;`,
                 (err, res) => {
                     if (err) {
-                        console.log(err);
+                        LoggingFunctions.log(
+                            `Unable to count the amount of remaining votes needed\n${err.stack}`,
+                            LogLevel.ERROR,
+                            SeverityLevel.MEDIUM
+                        );
                         throw err;
                     }
 
