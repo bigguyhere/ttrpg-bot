@@ -1,5 +1,3 @@
-import test from "node:test";
-
 let temp = 0;
 
 afterEach(() => {

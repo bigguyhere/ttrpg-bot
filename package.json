@@ -4,9 +4,9 @@
     "description": "Codebase for TTRPG Bot Personal Project",
     "main": "startup.ts",
     "scripts": {
-        "global": "jest & ts-node .\\startup.ts",
-        "local": "jest & npx ts-node .\\startup.ts",
-        "test": "jest"
+        "global": "npm run test & ts-node .\\startup.ts",
+        "local": "npm run test  & npx ts-node .\\startup.ts",
+        "test": "jest --config .\\unit_tests\\jest.config.ts"
     },
     "repository": {
         "type": "git",
